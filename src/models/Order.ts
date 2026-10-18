@@ -22,6 +22,8 @@ export interface IOrder extends Document {
   paymentStatus: 'PAID_CASH' | 'PAID_ONLINE' | 'PENDING' | 'COD' | 'PAID';
   whatsappStatus: 'GENERATED' | 'SENT';
   notes?: string;
+  gstNumber?: string;
+  googleProfileUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -65,6 +67,8 @@ const OrderSchema: Schema<IOrder> = new Schema(
       default: 'GENERATED',
     },
     notes: { type: String, default: '' },
+    gstNumber: { type: String, default: '' },
+    googleProfileUrl: { type: String, default: '' },
   },
   { timestamps: true }
 );
@@ -72,5 +76,8 @@ const OrderSchema: Schema<IOrder> = new Schema(
 OrderSchema.index({ tenantId: 1, createdAt: -1 });
 OrderSchema.index({ tenantId: 1, orderNumber: 1 });
 
+if (process.env.NODE_ENV !== 'production' && mongoose.models && mongoose.models.Order) {
+  delete (mongoose.models as any).Order;
+}
 export const Order: Model<IOrder> =
   mongoose.models.Order || mongoose.model<IOrder>('Order', OrderSchema);

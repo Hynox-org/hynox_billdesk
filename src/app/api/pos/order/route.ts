@@ -32,15 +32,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const body = await req.json();
     const {
       customerName = 'Valued Customer',
       customerPhone,
       items,
       tax = 0,
-      discount = 0,
       paymentStatus = 'PAID_CASH',
+      paymentMethod = 'CASH',
       notes = '',
-    } = await req.json();
+    } = body;
+    const rawDiscount = body.discount !== undefined ? body.discount : body.discountAmount;
 
     if (!customerPhone || !customerPhone.trim()) {
       return NextResponse.json(
@@ -75,7 +77,8 @@ export async function POST(req: NextRequest) {
 
     const subtotal = sanitizedItems.reduce((acc: number, item: any) => acc + item.lineTotal, 0);
     const taxAmount = Math.max(0, Number(tax) || 0);
-    const discountAmount = Math.max(0, Number(discount) || 0);
+    const parsedDiscount = Math.max(0, Number(rawDiscount) || 0);
+    const discountAmount = Math.min(subtotal + taxAmount, parsedDiscount);
     const totalAmount = Number((subtotal + taxAmount - discountAmount).toFixed(2));
 
     const orderNumber = generateOrderNumber();
@@ -95,7 +98,12 @@ export async function POST(req: NextRequest) {
       discount: discountAmount,
       totalAmount,
       paymentStatus: normalizedPaymentStatus,
+      paymentMethod,
       defaultCountryCode: auth.tenant.countryCode || '1',
+      gstNumber: auth.tenant.gstNumber,
+      showGstOnReceipt: Boolean(auth.tenant.showGstOnReceipt),
+      googleProfileUrl: auth.tenant.googleProfileUrl,
+      showGoogleReviewOnReceipt: Boolean(auth.tenant.showGoogleReviewOnReceipt),
     });
 
     // Save Order into Database
@@ -113,6 +121,8 @@ export async function POST(req: NextRequest) {
       paymentStatus: normalizedPaymentStatus,
       whatsappStatus: 'GENERATED',
       notes: notes ? notes.trim() : '',
+      gstNumber: auth.tenant.showGstOnReceipt && auth.tenant.gstNumber ? auth.tenant.gstNumber.trim() : '',
+      googleProfileUrl: auth.tenant.showGoogleReviewOnReceipt && auth.tenant.googleProfileUrl ? auth.tenant.googleProfileUrl.trim() : '',
     });
 
     // Decrement inventory for tracked items
@@ -132,6 +142,8 @@ export async function POST(req: NextRequest) {
         whatsappUrl: url,
         cleanPhone,
         rawReceiptText: rawText,
+        gstNumber: auth.tenant.showGstOnReceipt && auth.tenant.gstNumber ? auth.tenant.gstNumber.trim() : null,
+        googleProfileUrl: auth.tenant.showGoogleReviewOnReceipt && auth.tenant.googleProfileUrl ? auth.tenant.googleProfileUrl.trim() : null,
       },
       { status: 201 }
     );

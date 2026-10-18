@@ -687,6 +687,14 @@ div[data-nextjs-route-announcer] {
   gap: 4px;
   transition: all 0.15s ease;
   white-space: nowrap;
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+}
+
+.pos-card-add-btn:hover:not(.disabled) {
+  background: var(--whatsapp);
+  color: #022c16;
+  border-color: var(--whatsapp);
 }
 
 .pos-card-add-btn.active {
@@ -698,6 +706,75 @@ div[data-nextjs-route-announcer] {
   background: var(--bg-input);
   color: var(--text-muted);
   border: 1px solid var(--border-subtle);
+  cursor: not-allowed;
+}
+
+/* Card Inline Quantity Stepper */
+.pos-card-qty-control {
+  display: inline-flex;
+  align-items: center;
+  background: var(--emerald-deep);
+  border: 1.5px solid var(--whatsapp);
+  border-radius: 8px;
+  padding: 2px 4px;
+  gap: 6px;
+  box-shadow: 0 2px 6px rgba(37, 211, 102, 0.18);
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.pos-card-qty-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: var(--whatsapp);
+  color: #022c16;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.pos-card-qty-btn:hover:not(:disabled) {
+  background: var(--whatsapp-hover);
+  transform: scale(1.08);
+}
+
+.pos-card-qty-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.pos-card-qty-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  background: var(--border-medium);
+  color: var(--text-muted);
+}
+
+.pos-card-qty-btn.pos-card-qty-minus {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.pos-card-qty-btn.pos-card-qty-minus:hover:not(:disabled) {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+}
+
+.pos-card-qty-count {
+  font-size: 0.88rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  color: var(--text-main);
+  min-width: 18px;
+  text-align: center;
+  line-height: 1;
 }
 
 /* Cart Panel */
@@ -744,6 +821,94 @@ div[data-nextjs-route-announcer] {
   display: grid;
   grid-template-columns: 1.1fr 1fr;
   gap: 8px;
+}
+
+/* POS Payment Method Selector Tiles */
+.pos-pay-method-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  width: 100%;
+}
+
+@media (max-width: 480px) {
+  .pos-pay-method-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+}
+
+.pos-pay-method-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border-radius: 10px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-subtle);
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--text-secondary);
+  font-family: inherit;
+  outline: none;
+  min-height: 60px;
+  user-select: none;
+}
+
+.pos-pay-method-card:hover {
+  border-color: var(--whatsapp);
+  background: var(--bg-card-hover);
+  color: var(--text-main);
+  transform: translateY(-1px);
+}
+
+.pos-pay-method-card.is-selected {
+  border-color: var(--whatsapp);
+  background: var(--emerald-deep);
+  color: var(--text-main);
+  box-shadow: 0 0 0 1px var(--whatsapp), 0 2px 8px rgba(37, 211, 102, 0.2);
+}
+
+.pos-pay-method-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--bg-input);
+  color: var(--emerald);
+  transition: all 0.18s ease;
+}
+
+.pos-pay-method-card.is-selected .pos-pay-method-icon-wrap {
+  background: var(--whatsapp);
+  color: #022c16;
+}
+
+.pos-pay-method-title {
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.pos-pay-method-check {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--whatsapp);
+  color: #022c16;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Mobile Floating Cart Summary */

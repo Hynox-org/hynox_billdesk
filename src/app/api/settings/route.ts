@@ -28,6 +28,10 @@ export async function GET() {
         phone: tenant.phone,
         currency: tenant.currency || '$',
         address: tenant.address || '',
+        gstNumber: tenant.gstNumber || '',
+        showGstOnReceipt: Boolean(tenant.showGstOnReceipt),
+        googleProfileUrl: tenant.googleProfileUrl || '',
+        showGoogleReviewOnReceipt: Boolean(tenant.showGoogleReviewOnReceipt),
         plan: tenant.plan,
         status: tenant.status,
         trialStartsAt: tenant.trialStartsAt,
@@ -52,7 +56,17 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { fullName, businessName, phone, address, currency } = body;
+    const {
+      fullName,
+      businessName,
+      phone,
+      address,
+      currency,
+      gstNumber,
+      showGstOnReceipt,
+      googleProfileUrl,
+      showGoogleReviewOnReceipt,
+    } = body;
 
     // 1. Update personal information (fullName)
     if (fullName && fullName.trim()) {
@@ -61,13 +75,17 @@ export async function PUT(req: NextRequest) {
       });
     }
 
-    // 2. Update business information (businessName, phone, address, currency)
+    // 2. Update business information (businessName, phone, address, currency, gstNumber, googleProfileUrl)
     // Restricted fields like slug, plan, status, trialEndsAt are deliberately omitted and preserved!
     const tenantUpdate: Record<string, any> = {};
     if (businessName && businessName.trim()) tenantUpdate.businessName = businessName.trim();
     if (phone && phone.trim()) tenantUpdate.phone = phone.trim();
     if (address !== undefined) tenantUpdate.address = address.trim();
     if (currency && currency.trim()) tenantUpdate.currency = currency.trim();
+    if (gstNumber !== undefined) tenantUpdate.gstNumber = typeof gstNumber === 'string' ? gstNumber.trim() : '';
+    if (showGstOnReceipt !== undefined) tenantUpdate.showGstOnReceipt = Boolean(showGstOnReceipt);
+    if (googleProfileUrl !== undefined) tenantUpdate.googleProfileUrl = typeof googleProfileUrl === 'string' ? googleProfileUrl.trim() : '';
+    if (showGoogleReviewOnReceipt !== undefined) tenantUpdate.showGoogleReviewOnReceipt = Boolean(showGoogleReviewOnReceipt);
 
     if (Object.keys(tenantUpdate).length > 0) {
       await Tenant.findByIdAndUpdate(auth.tenant._id, tenantUpdate);
@@ -101,6 +119,10 @@ export async function PUT(req: NextRequest) {
         phone: updatedTenant!.phone,
         currency: updatedTenant!.currency,
         address: updatedTenant!.address,
+        gstNumber: updatedTenant!.gstNumber || '',
+        showGstOnReceipt: Boolean(updatedTenant!.showGstOnReceipt),
+        googleProfileUrl: updatedTenant!.googleProfileUrl || '',
+        showGoogleReviewOnReceipt: Boolean(updatedTenant!.showGoogleReviewOnReceipt),
       },
     });
 

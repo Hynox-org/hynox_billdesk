@@ -7,6 +7,10 @@ export interface ITenant extends Document {
   currency: string;
   countryCode: string;
   address: string;
+  gstNumber?: string;
+  showGstOnReceipt?: boolean;
+  googleProfileUrl?: string;
+  showGoogleReviewOnReceipt?: boolean;
   status: 'ACTIVE' | 'SUSPENDED' | 'EXPIRED';
   plan: 'FREE_TRIAL' | 'PRO';
   trialStartsAt: Date;
@@ -24,6 +28,10 @@ const TenantSchema: Schema<ITenant> = new Schema(
     currency: { type: String, default: '$' },
     countryCode: { type: String, default: '1' },
     address: { type: String, default: '' },
+    gstNumber: { type: String, default: '', trim: true },
+    showGstOnReceipt: { type: Boolean, default: false },
+    googleProfileUrl: { type: String, default: '', trim: true },
+    showGoogleReviewOnReceipt: { type: Boolean, default: false },
     status: {
       type: String,
       enum: ['ACTIVE', 'SUSPENDED', 'EXPIRED'],
@@ -45,6 +53,9 @@ const TenantSchema: Schema<ITenant> = new Schema(
   { timestamps: true }
 );
 
-// Prevent re-compilation of model during HMR
+// Refresh model schema during development HMR
+if (process.env.NODE_ENV !== 'production' && mongoose.models && mongoose.models.Tenant) {
+  delete (mongoose.models as any).Tenant;
+}
 export const Tenant: Model<ITenant> =
   mongoose.models.Tenant || mongoose.model<ITenant>('Tenant', TenantSchema);

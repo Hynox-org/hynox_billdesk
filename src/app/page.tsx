@@ -346,7 +346,10 @@ export default function LandingPage() {
               <div className="landing-whatsapp-bubble">
                 {`*RECEIPT: #ORD-2610-8472*
 *Brew & Bite Artisan Cafe*
-Oct 18, 2026, 02:45 PM
+Address: 742 Artisan Walkway
+Contact: +1 555-019-2834
+GST: 22AAAAA0000A1Z5
+Date: Oct 18, 2026, 02:45 PM
 Customer: Valued Customer
 ━━━━━━━━━━━━━━━━━━━━
 • *Oat Milk Flat White*
@@ -359,8 +362,11 @@ Customer: Valued Customer
 Subtotal: ${currency}23.50
 *TOTAL: ${currency}23.50*
 ━━━━━━━━━━━━━━━━━━━━
-Status: Paid via Cash
-Address: 742 Artisan Walkway
+Payment: Paid via Cash
+
+*Review us on Google:*
+https://g.page/r/brew-and-bite/review
+
 _Thank you for your order!_`}
               </div>
             </div>

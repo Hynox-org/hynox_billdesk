@@ -20,6 +20,8 @@ import {
   KeyRound,
   RefreshCw,
   Mail,
+  FileText,
+  Globe,
 } from 'lucide-react';
 import { useCountry } from '@/context/CountryContext';
 
@@ -38,6 +40,10 @@ interface SettingsData {
     phone: string;
     currency: string;
     address: string;
+    gstNumber?: string;
+    showGstOnReceipt?: boolean;
+    googleProfileUrl?: string;
+    showGoogleReviewOnReceipt?: boolean;
     plan: 'FREE_TRIAL' | 'PRO';
     status: string;
     trialStartsAt: string;
@@ -60,6 +66,10 @@ export default function SettingsPage() {
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [currency, setCurrency] = useState('$');
+  const [gstNumber, setGstNumber] = useState('');
+  const [showGstOnReceipt, setShowGstOnReceipt] = useState(false);
+  const [googleProfileUrl, setGoogleProfileUrl] = useState('');
+  const [showGoogleReviewOnReceipt, setShowGoogleReviewOnReceipt] = useState(false);
   const [savingBusiness, setSavingBusiness] = useState(false);
   const [businessFeedback, setBusinessFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -109,6 +119,10 @@ export default function SettingsPage() {
           setPhone(rawPhone);
           setAddress(json.tenant?.address || '');
           setCurrency(json.tenant?.currency || '$');
+          setGstNumber(json.tenant?.gstNumber || '');
+          setShowGstOnReceipt(Boolean(json.tenant?.showGstOnReceipt));
+          setGoogleProfileUrl(json.tenant?.googleProfileUrl || '');
+          setShowGoogleReviewOnReceipt(Boolean(json.tenant?.showGoogleReviewOnReceipt));
           setFullName(json.user?.fullName || '');
         }
       } catch (err) {
@@ -142,13 +156,17 @@ export default function SettingsPage() {
           phone: fullPhone,
           address,
           currency,
+          gstNumber,
+          showGstOnReceipt,
+          googleProfileUrl,
+          showGoogleReviewOnReceipt,
         }),
       });
 
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Failed to update business details');
 
-      setBusinessFeedback({ type: 'success', text: 'Business profile and currency settings updated successfully!' });
+      setBusinessFeedback({ type: 'success', text: 'Business profile and receipt visibility settings updated successfully!' });
       // Update local state
       if (data) {
         setData({
@@ -159,6 +177,10 @@ export default function SettingsPage() {
             phone,
             address,
             currency,
+            gstNumber,
+            showGstOnReceipt,
+            googleProfileUrl,
+            showGoogleReviewOnReceipt,
           },
         });
       }
@@ -520,6 +542,189 @@ export default function SettingsPage() {
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                   />
+                </div>
+              </div>
+
+              {/* Tax & Google Online Presence (Receipt Configuration) */}
+              <div style={{ marginTop: '20px', paddingTop: '18px', borderTop: '1px solid var(--border-subtle)', marginBottom: '18px' }}>
+                <div style={{ marginBottom: '16px' }}>
+                  <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '4px' }}>
+                    Tax & Google Online Presence (Receipt Visibility)
+                  </h3>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    Manage your official GST identification and Google profile link, with options to display them on customer order receipts upon creation.
+                  </p>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                  {/* GST Information Card */}
+                  <div
+                    style={{
+                      background: 'var(--bg-input)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div
+                        style={{
+                          width: '30px',
+                          height: '30px',
+                          borderRadius: '8px',
+                          background: 'rgba(37, 211, 102, 0.15)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'var(--whatsapp)',
+                        }}
+                      >
+                        <FileText size={16} />
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-main)' }}>GST Information</span>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Tax Identification Number</span>
+                      </div>
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label" style={{ fontSize: '0.8rem' }}>GSTIN / Tax Number</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="e.g. 22AAAAA0000A1Z5"
+                        value={gstNumber}
+                        onChange={(e) => setGstNumber(e.target.value.toUpperCase())}
+                        style={{ textTransform: 'uppercase' }}
+                      />
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                        Your registered business GST or Tax ID.
+                      </span>
+                    </div>
+
+                    <label
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '10px',
+                        padding: '10px 12px',
+                        borderRadius: '8px',
+                        background: showGstOnReceipt ? 'rgba(37, 211, 102, 0.08)' : 'rgba(0, 0, 0, 0.02)',
+                        border: `1px solid ${showGstOnReceipt ? 'rgba(37, 211, 102, 0.3)' : 'var(--border-subtle)'}`,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        marginTop: 'auto',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={showGstOnReceipt}
+                        onChange={(e) => setShowGstOnReceipt(e.target.checked)}
+                        style={{
+                          marginTop: '3px',
+                          width: '16px',
+                          height: '16px',
+                          cursor: 'pointer',
+                          accentColor: 'var(--whatsapp)',
+                        }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)', display: 'block' }}>
+                          Visible on Order Receipt
+                        </span>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
+                          Display GST number under your business name on customer WhatsApp order receipts upon creation.
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+
+                  {/* Google Profile Link Card */}
+                  <div
+                    style={{
+                      background: 'var(--bg-input)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '12px',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div
+                        style={{
+                          width: '30px',
+                          height: '30px',
+                          borderRadius: '8px',
+                          background: 'rgba(59, 130, 246, 0.15)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#2563eb',
+                        }}
+                      >
+                        <Globe size={16} />
+                      </div>
+                      <div>
+                        <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-main)' }}>Google Profile Link</span>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Business Profile & Reviews</span>
+                      </div>
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label" style={{ fontSize: '0.8rem' }}>Google Profile / Review URL</label>
+                      <input
+                        type="url"
+                        className="form-input"
+                        placeholder="https://g.page/r/.../review or maps link"
+                        value={googleProfileUrl}
+                        onChange={(e) => setGoogleProfileUrl(e.target.value)}
+                      />
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                        Direct URL to your Google business listing or review page.
+                      </span>
+                    </div>
+
+                    <label
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '10px',
+                        padding: '10px 12px',
+                        borderRadius: '8px',
+                        background: showGoogleReviewOnReceipt ? 'rgba(37, 211, 102, 0.08)' : 'rgba(0, 0, 0, 0.02)',
+                        border: `1px solid ${showGoogleReviewOnReceipt ? 'rgba(37, 211, 102, 0.3)' : 'var(--border-subtle)'}`,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        marginTop: 'auto',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={showGoogleReviewOnReceipt}
+                        onChange={(e) => setShowGoogleReviewOnReceipt(e.target.checked)}
+                        style={{
+                          marginTop: '3px',
+                          width: '16px',
+                          height: '16px',
+                          cursor: 'pointer',
+                          accentColor: 'var(--whatsapp)',
+                        }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)', display: 'block' }}>
+                          Visible on Order Receipt
+                        </span>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
+                          Include a "Review us on Google" link at the bottom of customer WhatsApp order receipts upon creation.
+                        </span>
+                      </div>
+                    </label>
+                  </div>
                 </div>
               </div>
 

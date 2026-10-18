@@ -93,6 +93,10 @@ export async function POST(req: NextRequest) {
       totalAmount: order.totalAmount,
       paymentStatus: order.paymentStatus,
       defaultCountryCode: auth.tenant.countryCode || '1',
+      gstNumber: auth.tenant.gstNumber,
+      showGstOnReceipt: Boolean(auth.tenant.showGstOnReceipt),
+      googleProfileUrl: auth.tenant.googleProfileUrl,
+      showGoogleReviewOnReceipt: Boolean(auth.tenant.showGoogleReviewOnReceipt),
     });
 
     return NextResponse.json({

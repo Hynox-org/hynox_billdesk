@@ -36,7 +36,12 @@ export interface ReceiptOptions {
   discount?: number;
   totalAmount: number;
   paymentStatus?: string;
+  paymentMethod?: string;
   defaultCountryCode?: string;
+  gstNumber?: string;
+  showGstOnReceipt?: boolean;
+  googleProfileUrl?: string;
+  showGoogleReviewOnReceipt?: boolean;
 }
 
 /**
@@ -57,6 +62,11 @@ export function buildWhatsAppReceiptText(options: ReceiptOptions): string {
     discount = 0,
     totalAmount,
     paymentStatus = 'PAID_CASH',
+    paymentMethod,
+    gstNumber,
+    showGstOnReceipt,
+    googleProfileUrl,
+    showGoogleReviewOnReceipt,
   } = options;
 
   const dateStr = new Date().toLocaleString('en-US', {
@@ -68,13 +78,19 @@ export function buildWhatsAppReceiptText(options: ReceiptOptions): string {
   });
 
   const paymentLabels: Record<string, string> = {
+    CASH: 'Paid via Cash',
+    CARD: 'Paid via Card',
+    UPI: 'Paid via UPI / QR',
     PAID_CASH: 'Paid via Cash',
-    PAID_ONLINE: 'Paid Online / Transfer',
-    PENDING: 'Payment Pending',
+    PAID_ONLINE: 'Paid Online / Card / UPI',
+    PENDING: 'Payment Pending / Pay Later',
     COD: 'Cash on Delivery',
   };
 
-  const paymentStr = paymentLabels[paymentStatus] || paymentStatus;
+  const paymentStr =
+    (paymentMethod && paymentLabels[paymentMethod]) ||
+    paymentLabels[paymentStatus] ||
+    paymentStatus;
 
   const itemLines = items
     .map(
@@ -93,9 +109,17 @@ export function buildWhatsAppReceiptText(options: ReceiptOptions): string {
     breakdown += `\nDiscount: -${currency}${discount.toFixed(2)}`;
   }
 
+  const gstLine = showGstOnReceipt && gstNumber && gstNumber.trim() ? `GST: ${gstNumber.trim()}\n` : '';
+  const addressLine = businessAddress && businessAddress.trim() ? `Address: ${businessAddress.trim()}\n` : '';
+  const phoneLine = businessPhone && businessPhone.trim() ? `Contact: ${businessPhone.trim()}\n` : '';
+  const reviewLine =
+    showGoogleReviewOnReceipt && googleProfileUrl && googleProfileUrl.trim()
+      ? `\n*Review us on Google:*\n${googleProfileUrl.trim()}\n`
+      : '';
+
   const receipt = `*RECEIPT: #${orderNumber}*
 *${businessName}*
-${dateStr}
+${addressLine}${phoneLine}${gstLine}Date: ${dateStr}
 Customer: ${customerName || 'Valued Customer'}
 ━━━━━━━━━━━━━━━━━━━━
 ${itemLines}
@@ -103,9 +127,8 @@ ${itemLines}
 ${breakdown}
 *TOTAL: ${currency}${totalAmount.toFixed(2)}*
 ━━━━━━━━━━━━━━━━━━━━
-Status: ${paymentStr}
-${businessAddress ? `Address: ${businessAddress}\n` : ''}${businessPhone ? `Contact: ${businessPhone}\n` : ''}
-_Thank you for your order! Have a great day._`;
+Payment: ${paymentStr}${reviewLine}
+_Thank you for your order!_`;
 
   return receipt;
 }

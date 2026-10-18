@@ -12,6 +12,9 @@ import {
   Clock,
   Phone,
   CheckCircle2,
+  Receipt,
+  X,
+  Check,
 } from 'lucide-react';
 
 interface OrderItem {
@@ -41,6 +44,15 @@ export default function OrdersHistoryPage() {
   const [currency, setCurrency] = useState('$');
   const [loading, setLoading] = useState(true);
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [viewingId, setViewingId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [selectedReceipt, setSelectedReceipt] = useState<{
+    orderNumber: string;
+    rawText: string;
+    whatsappUrl: string;
+    phone: string;
+    totalAmount: number;
+  } | null>(null);
 
   const fetchOrders = async () => {
     try {
@@ -78,6 +90,40 @@ export default function OrdersHistoryPage() {
       console.error(err);
     } finally {
       setResendingId(null);
+    }
+  };
+
+  const handleViewReceipt = async (orderId: string) => {
+    setViewingId(orderId);
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId }),
+      });
+      const data = await res.json();
+      if (res.ok && data.rawReceiptText) {
+        const order = orders.find((o) => o._id === orderId);
+        setSelectedReceipt({
+          orderNumber: order?.orderNumber || '',
+          rawText: data.rawReceiptText,
+          whatsappUrl: data.whatsappUrl,
+          phone: order?.customerPhone || '',
+          totalAmount: order?.totalAmount || 0,
+        });
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setViewingId(null);
+    }
+  };
+
+  const handleCopyReceipt = () => {
+    if (selectedReceipt) {
+      navigator.clipboard.writeText(selectedReceipt.rawText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -193,16 +239,29 @@ export default function OrdersHistoryPage() {
                       </span>
                     </td>
                     <td style={{ padding: '14px 20px', textAlign: 'right' }}>
-                      <button
-                        type="button"
-                        onClick={() => handleResendWhatsApp(o._id)}
-                        disabled={resendingId === o._id}
-                        className="btn btn-whatsapp btn-sm"
-                        style={{ padding: '6px 12px', fontSize: '0.8rem' }}
-                      >
-                        <MessageSquare size={14} />
-                        {resendingId === o._id ? 'Opening...' : 'Resend Receipt'}
-                      </button>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleViewReceipt(o._id)}
+                          disabled={viewingId === o._id}
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '6px 10px', fontSize: '0.8rem', gap: '4px' }}
+                          title="View order receipt"
+                        >
+                          <Receipt size={14} />
+                          {viewingId === o._id ? 'Loading...' : 'View'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleResendWhatsApp(o._id)}
+                          disabled={resendingId === o._id}
+                          className="btn btn-whatsapp btn-sm"
+                          style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                        >
+                          <MessageSquare size={14} />
+                          {resendingId === o._id ? 'Opening...' : 'WhatsApp'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -211,6 +270,104 @@ export default function OrdersHistoryPage() {
           </div>
         )}
       </div>
+
+      {/* Order Receipt Modal */}
+      {selectedReceipt && (
+        <div className="modal-overlay">
+          <div className="modal-content pos-receipt-modal" style={{ maxWidth: '480px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div
+                  style={{
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '8px',
+                    background: 'rgba(37, 211, 102, 0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--whatsapp)',
+                  }}
+                >
+                  <Receipt size={18} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+                    Receipt #{selectedReceipt.orderNumber}
+                  </h3>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    Phone: {selectedReceipt.phone}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedReceipt(null)}
+                className="btn btn-secondary btn-sm"
+                style={{ padding: '4px 8px', borderRadius: '8px' }}
+                aria-label="Close"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Receipt Preview */}
+            <div
+              style={{
+                background: 'var(--bg-input)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: '12px',
+                padding: '14px',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '0.82rem',
+                color: 'var(--text-main)',
+                whiteSpace: 'pre-line',
+                maxHeight: '320px',
+                overflowY: 'auto',
+                marginBottom: '16px',
+                lineHeight: 1.45,
+              }}
+            >
+              {selectedReceipt.rawText}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => window.open(selectedReceipt.whatsappUrl, '_blank', 'noopener,noreferrer')}
+                className="btn btn-whatsapp"
+                style={{ width: '100%', justifyContent: 'center', padding: '10px' }}
+              >
+                <MessageSquare size={16} />
+                <span>Open in WhatsApp</span>
+                <ExternalLink size={14} />
+              </button>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={handleCopyReceipt}
+                  className="btn btn-secondary"
+                  style={{ flex: 1, justifyContent: 'center' }}
+                >
+                  {copied ? <Check size={16} style={{ color: 'var(--whatsapp)' }} /> : <Copy size={16} />}
+                  <span>{copied ? 'Copied!' : 'Copy Receipt'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedReceipt(null)}
+                  className="btn btn-secondary"
+                  style={{ flex: 1, justifyContent: 'center' }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

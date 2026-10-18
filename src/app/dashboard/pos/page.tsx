@@ -23,6 +23,11 @@ import {
   X,
   Check,
   ArrowLeft,
+  Tag,
+  Percent,
+  Banknote,
+  QrCode,
+  Clock,
 } from 'lucide-react';
 import { useCountry } from '@/context/CountryContext';
 
@@ -51,6 +56,15 @@ interface CartItem {
   lineTotal: number;
 }
 
+const PAYMENT_METHODS = [
+  { id: 'CASH', label: 'Cash', icon: Banknote },
+  { id: 'CARD', label: 'Card', icon: CreditCard },
+  { id: 'UPI', label: 'UPI / QR', icon: QrCode },
+  { id: 'PENDING', label: 'Pay Later', icon: Clock },
+] as const;
+
+type PaymentMethodId = (typeof PAYMENT_METHODS)[number]['id'];
+
 export default function OrderCreationPage() {
   const { country } = useCountry();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -65,9 +79,12 @@ export default function OrderCreationPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
-  const [paymentStatus, setPaymentStatus] = useState('PAID_CASH');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodId>('CASH');
   const [creatingOrder, setCreatingOrder] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
+
+  // Discount State (Simple numeric percentage)
+  const [discountPercent, setDiscountPercent] = useState<string>('');
 
   // Post-Order Sharing Modal
   const [completedOrder, setCompletedOrder] = useState<{
@@ -76,6 +93,16 @@ export default function OrderCreationPage() {
     rawReceipt: string;
     totalAmount: number;
     phone: string;
+    gstNumber?: string | null;
+    googleProfileUrl?: string | null;
+  } | null>(null);
+
+  const [tenantInfo, setTenantInfo] = useState<{
+    businessName?: string;
+    gstNumber?: string;
+    showGstOnReceipt?: boolean;
+    googleProfileUrl?: string;
+    showGoogleReviewOnReceipt?: boolean;
   } | null>(null);
 
   const [copied, setCopied] = useState(false);
@@ -101,6 +128,15 @@ export default function OrderCreationPage() {
         if (authRes.ok) {
           const authData = await authRes.json();
           if (authData.tenant?.currency) setCurrency(authData.tenant.currency);
+          if (authData.tenant) {
+            setTenantInfo({
+              businessName: authData.tenant.businessName,
+              gstNumber: authData.tenant.gstNumber,
+              showGstOnReceipt: Boolean(authData.tenant.showGstOnReceipt),
+              googleProfileUrl: authData.tenant.googleProfileUrl,
+              showGoogleReviewOnReceipt: Boolean(authData.tenant.showGoogleReviewOnReceipt),
+            });
+          }
         }
       } catch (err) {
         console.error('Failed to load catalog:', err);
@@ -209,6 +245,8 @@ export default function OrderCreationPage() {
     setCart([]);
     setCustomerPhone('');
     setCustomerName('');
+    setDiscountPercent('');
+    setPaymentMethod('CASH');
     setOrderError(null);
     setActiveStep(1);
   };
@@ -221,7 +259,9 @@ export default function OrderCreationPage() {
 
   // Calculations
   const subtotal = cart.reduce((acc, item) => acc + item.lineTotal, 0);
-  const totalAmount = subtotal;
+  const parsedPercent = Math.min(100, Math.max(0, parseFloat(discountPercent) || 0));
+  const discountAmount = Number(((subtotal * parsedPercent) / 100).toFixed(2));
+  const totalAmount = Number(Math.max(0, subtotal - discountAmount).toFixed(2));
   const totalItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   // Submit Order & Dispatch WhatsApp Link
@@ -250,6 +290,13 @@ export default function OrderCreationPage() {
     setOrderError(null);
     setCreatingOrder(true);
 
+    const paymentStatus =
+      paymentMethod === 'CASH'
+        ? 'PAID_CASH'
+        : paymentMethod === 'PENDING'
+        ? 'PENDING'
+        : 'PAID_ONLINE';
+
     try {
       const res = await fetch('/api/pos/order', {
         method: 'POST',
@@ -259,9 +306,11 @@ export default function OrderCreationPage() {
           customerPhone: fullInternationalPhone,
           items: cart,
           taxRate: 0,
-          discountAmount: 0,
-          paymentMethod: paymentStatus === 'PAID_CASH' ? 'CASH' : paymentStatus === 'PAID_ONLINE' ? 'ONLINE' : 'UPI',
-          paymentStatus: paymentStatus || 'PAID_CASH',
+          discount: discountAmount,
+          discountAmount: discountAmount,
+          discountPercent: parsedPercent,
+          paymentMethod: paymentMethod,
+          paymentStatus: paymentStatus,
         }),
       });
 
@@ -276,6 +325,8 @@ export default function OrderCreationPage() {
         rawReceipt: data.rawReceiptText,
         totalAmount: data.order.totalAmount,
         phone: `${country.dialCode} ${subscriberDigits}`,
+        gstNumber: data.gstNumber,
+        googleProfileUrl: data.googleProfileUrl,
       });
 
       // Clear the active cart
@@ -526,13 +577,18 @@ export default function OrderCreationPage() {
                 const remainingStock = prod.trackStock
                   ? Math.max(0, (prod.stockQuantity ?? 0) - qtyInCart)
                   : null;
+                const isMaxStockReached = Boolean(
+                  prod.trackStock &&
+                  (prod.stockQuantity ?? 0) > 0 &&
+                  qtyInCart >= (prod.stockQuantity ?? 0)
+                );
 
                 return (
                   <div
                     key={prod._id}
                     className={`pos-item-card ${isInCart ? 'is-in-cart' : ''} ${isOutOfStock ? 'is-out-of-stock' : ''}`}
                     onClick={() => {
-                      if (!isOutOfStock) addToCart(prod);
+                      if (!isOutOfStock && !isInCart) addToCart(prod);
                     }}
                   >
                     {/* Top status line: SKU on left, badge on right */}
@@ -560,19 +616,53 @@ export default function OrderCreationPage() {
                       <span className="pos-card-price">
                         {currency}{prod.price.toFixed(2)}
                       </span>
-                      <span
-                        className={`pos-card-add-btn ${
-                          isOutOfStock ? 'disabled' : isInCart ? 'active' : ''
-                        }`}
-                      >
-                        {isOutOfStock ? (
-                          'Unavailable'
-                        ) : (
-                          <>
-                            <Plus size={14} /> Add
-                          </>
-                        )}
-                      </span>
+                      {isOutOfStock ? (
+                        <span className="pos-card-add-btn disabled">Unavailable</span>
+                      ) : isInCart ? (
+                        <div
+                          className="pos-card-qty-control"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            type="button"
+                            className="pos-card-qty-btn pos-card-qty-minus"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateQuantity(prod._id, -1);
+                            }}
+                            title="Decrease quantity or remove"
+                            aria-label={`Decrease ${prod.name} quantity`}
+                          >
+                            <Minus size={13} />
+                          </button>
+                          <span className="pos-card-qty-count">{qtyInCart}</span>
+                          <button
+                            type="button"
+                            className="pos-card-qty-btn pos-card-qty-plus"
+                            disabled={isMaxStockReached}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              addToCart(prod);
+                            }}
+                            title={isMaxStockReached ? 'Stock limit reached' : 'Increase quantity'}
+                            aria-label={`Increase ${prod.name} quantity`}
+                          >
+                            <Plus size={13} />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          className="pos-card-add-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addToCart(prod);
+                          }}
+                          aria-label={`Add ${prod.name} to bill`}
+                        >
+                          <Plus size={14} /> Add
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -786,6 +876,66 @@ export default function OrderCreationPage() {
             )}
           </div>
 
+          {/* Simple Numeric Percentage Discount Field */}
+          <div style={{ marginBottom: '12px' }}>
+            <label
+              className="form-label"
+              style={{
+                fontSize: '0.8rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '4px',
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <Percent size={13} style={{ color: 'var(--whatsapp)' }} />
+                <span>Discount (%)</span>
+              </span>
+              {discountAmount > 0 && (
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--emerald)' }}>
+                  -{currency}{discountAmount.toFixed(2)} off
+                </span>
+              )}
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="any"
+                placeholder="0"
+                value={discountPercent}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === '' || (!isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 100)) {
+                    setDiscountPercent(val);
+                  }
+                }}
+                className="form-input"
+                style={{
+                  fontSize: '0.88rem',
+                  padding: '8px 32px 8px 12px',
+                  width: '100%',
+                }}
+              />
+              <span
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  color: 'var(--text-muted)',
+                  pointerEvents: 'none',
+                }}
+              >
+                %
+              </span>
+            </div>
+          </div>
+
           {/* Pricing Total Summary Box */}
           <div
             style={{
@@ -797,9 +947,26 @@ export default function OrderCreationPage() {
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              <span>Items Total ({totalItemsCount}):</span>
+              <span>Items Subtotal ({totalItemsCount}):</span>
               <span>{currency}{subtotal.toFixed(2)}</span>
             </div>
+
+            {discountAmount > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  marginBottom: '4px',
+                  fontSize: '0.85rem',
+                  color: 'var(--emerald)',
+                  fontWeight: 600,
+                }}
+              >
+                <span>Discount ({parsedPercent}%):</span>
+                <span>-{currency}{discountAmount.toFixed(2)}</span>
+              </div>
+            )}
+
             <div
               style={{
                 display: 'flex',
@@ -865,37 +1032,95 @@ export default function OrderCreationPage() {
               </div>
             </div>
 
-            <div className="pos-checkout-row">
-              <div>
-                <label className="form-label" style={{ fontSize: '0.78rem' }}>
-                  Customer Name (Optional)
-                </label>
-                <input
-                  type="text"
-                  className="form-input"
-                  style={{ fontSize: '0.82rem', padding: '7px 10px' }}
-                  placeholder="e.g. Rahul"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                />
-              </div>
+            {/* Customer Name */}
+            <div>
+              <label className="form-label" style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+                <User size={13} style={{ color: 'var(--text-muted)' }} /> Customer Name (Optional)
+              </label>
+              <input
+                type="text"
+                className="form-input"
+                style={{ fontSize: '0.88rem', padding: '8px 12px' }}
+                placeholder="e.g. Rahul"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+              />
+            </div>
 
-              <div>
-                <label className="form-label" style={{ fontSize: '0.78rem' }}>
-                  Payment Method
-                </label>
-                <select
-                  className="form-select"
-                  style={{ fontSize: '0.82rem', padding: '7px 10px' }}
-                  value={paymentStatus}
-                  onChange={(e) => setPaymentStatus(e.target.value)}
-                >
-                  <option value="PAID_CASH">Cash</option>
-                  <option value="PAID_ONLINE">Card / UPI</option>
-                  <option value="PENDING">Pay Later / Pending</option>
-                </select>
+            {/* Payment Method Option Tiles with Icons */}
+            <div>
+              <label className="form-label" style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '6px' }}>
+                <CreditCard size={13} style={{ color: 'var(--whatsapp)' }} /> Payment Method
+              </label>
+              <div className="pos-pay-method-grid">
+                {PAYMENT_METHODS.map((pm) => {
+                  const Icon = pm.icon;
+                  const isSelected = paymentMethod === pm.id;
+                  return (
+                    <button
+                      key={pm.id}
+                      type="button"
+                      onClick={() => setPaymentMethod(pm.id)}
+                      className={`pos-pay-method-card ${isSelected ? 'is-selected' : ''}`}
+                      aria-pressed={isSelected}
+                    >
+                      <div className="pos-pay-method-icon-wrap">
+                        <Icon size={17} />
+                      </div>
+                      <span className="pos-pay-method-title">{pm.label}</span>
+                      {isSelected && (
+                        <span className="pos-pay-method-check">
+                          <Check size={9} />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
+
+            {/* Live Receipt Details Notice (if enabled in settings) */}
+            {((tenantInfo?.showGstOnReceipt && tenantInfo?.gstNumber) ||
+              (tenantInfo?.showGoogleReviewOnReceipt && tenantInfo?.googleProfileUrl)) && (
+              <div
+                style={{
+                  background: 'rgba(37, 211, 102, 0.05)',
+                  border: '1px solid rgba(37, 211, 102, 0.22)',
+                  borderRadius: '10px',
+                  padding: '9px 12px',
+                  fontSize: '0.78rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px',
+                  marginTop: '4px',
+                }}
+              >
+                <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.78rem' }}>
+                  Enabled on Order Receipt:
+                </div>
+                {tenantInfo?.showGstOnReceipt && tenantInfo?.gstNumber && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--whatsapp)' }}>GST:</span>
+                    <span style={{ fontFamily: 'var(--font-mono)' }}>{tenantInfo.gstNumber}</span>
+                  </div>
+                )}
+                {tenantInfo?.showGoogleReviewOnReceipt && tenantInfo?.googleProfileUrl && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
+                    <span style={{ fontWeight: 600, color: '#2563eb', flexShrink: 0 }}>Google Review:</span>
+                    <span
+                      style={{
+                        color: 'var(--text-muted)',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {tenantInfo.googleProfileUrl}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Primary Order Creation Button */}
             <button
@@ -966,6 +1191,58 @@ export default function OrderCreationPage() {
                 Total: <strong style={{ color: 'var(--emerald)' }}>{currency}{completedOrder.totalAmount.toFixed(2)}</strong> • Customer Phone: {completedOrder.phone}
               </p>
             </div>
+
+            {/* Visual Receipt Inclusions Badges */}
+            {(completedOrder.gstNumber || completedOrder.googleProfileUrl) && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                  marginBottom: '10px',
+                  justifyContent: 'center',
+                }}
+              >
+                {completedOrder.gstNumber && (
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      fontSize: '0.74rem',
+                      background: 'rgba(37, 211, 102, 0.1)',
+                      color: 'var(--whatsapp)',
+                      border: '1px solid rgba(37, 211, 102, 0.3)',
+                      padding: '3px 10px',
+                      borderRadius: '9999px',
+                      fontWeight: 600,
+                    }}
+                  >
+                    GST: {completedOrder.gstNumber}
+                  </span>
+                )}
+                {completedOrder.googleProfileUrl && (
+                  <a
+                    href={completedOrder.googleProfileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      fontSize: '0.74rem',
+                      background: 'rgba(59, 130, 246, 0.1)',
+                      color: '#2563eb',
+                      border: '1px solid rgba(59, 130, 246, 0.3)',
+                      padding: '3px 10px',
+                      borderRadius: '9999px',
+                      textDecoration: 'none',
+                      fontWeight: 600,
+                    }}
+                  >
+                    Google Review Link Attached
+                  </a>
+                )}
+              </div>
+            )}
 
             {/* Digital Receipt Card */}
             <div

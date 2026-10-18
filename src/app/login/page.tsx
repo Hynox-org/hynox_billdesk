@@ -93,7 +93,7 @@ export default function LoginPage() {
               <Zap size={20} />
             </div>
             <span style={{ fontWeight: 800, fontSize: '1.35rem', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
-              SwiftOrder <span style={{ color: 'var(--whatsapp)', fontSize: '0.9rem' }}>SaaS</span>
+              Bill<span style={{ color: 'var(--whatsapp)' }}>Desk</span>
             </span>
           </Link>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '6px', color: 'var(--text-main)' }}>Welcome back</h1>

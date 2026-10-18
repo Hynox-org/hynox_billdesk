@@ -348,7 +348,7 @@ export default function SuperAdminPage() {
                       <td style={{ padding: '14px 18px' }}>
                         <a
                           href={`https://wa.me/${t.phone.replace(/\D/g, '')}?text=${encodeURIComponent(
-                            `Hello ${t.businessName}, this is SwiftOrder Super Admin regarding your account.`
+                            `Hello ${t.businessName}, this is BillDesk Super Admin regarding your account.`
                           )}`}
                           target="_blank"
                           rel="noopener noreferrer"

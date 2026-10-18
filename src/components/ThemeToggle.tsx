@@ -8,7 +8,7 @@ export default function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('swiftorder_theme') as 'dark' | 'light' | null;
+    const saved = localStorage.getItem('billdesk_theme') as 'dark' | 'light' | null;
     const initialTheme = saved || 'dark';
     setTheme(initialTheme);
     document.documentElement.setAttribute('data-theme', initialTheme);
@@ -19,7 +19,7 @@ export default function ThemeToggle() {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
     document.documentElement.setAttribute('data-theme', nextTheme);
-    localStorage.setItem('swiftorder_theme', nextTheme);
+    localStorage.setItem('billdesk_theme', nextTheme);
   };
 
   if (!mounted) {

@@ -50,7 +50,7 @@ export default function LandingPage() {
           </div>
           <div className="landing-header-brand-text">
             <div style={{ fontWeight: 800, fontSize: '1.25rem', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
-              SwiftOrder <span style={{ color: 'var(--whatsapp)', fontSize: '0.9rem' }}>SaaS</span>
+              Bill<span style={{ color: 'var(--whatsapp)' }}>Desk</span>
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
               Multi-Tenant POS & WhatsApp Receipts
@@ -423,7 +423,7 @@ _Thank you for your order!_`}
           backgroundColor: 'var(--bg-header)',
         }}
       >
-        © 2026 SwiftOrder SaaS. Multi-Tenant Architecture & Direct WhatsApp Order Dispatching.
+        © 2026 BillDesk. Multi-Tenant Architecture & Direct WhatsApp Order Dispatching.
       </footer>
     </div>
   );

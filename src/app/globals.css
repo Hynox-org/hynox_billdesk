@@ -1,0 +1,746 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* Default Theme: Pure Black Background with Green System */
+:root, [data-theme="dark"] {
+  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Backgrounds: Pure Black */
+  --bg-dark: #000000;
+  --bg-card: #07150c;
+  --bg-card-hover: #0c2114;
+  --bg-surface: #040e08;
+  --bg-input: #030a05;
+  --bg-header: rgba(0, 0, 0, 0.92);
+
+  /* Borders: Subtle Green Tints */
+  --border-subtle: rgba(74, 222, 128, 0.16);
+  --border-medium: rgba(74, 222, 128, 0.32);
+  --border-glow: rgba(37, 211, 102, 0.45);
+
+  /* Typography: White & Crisp Light Mint Greens */
+  --text-main: #ffffff;
+  --text-secondary: #a7f3d0;
+  --text-muted: #6ee7b7;
+
+  /* Primary Brand: Pure Emerald & WhatsApp Greens */
+  --primary: #10b981;
+  --primary-glow: rgba(16, 185, 129, 0.35);
+  --primary-hover: #059669;
+
+  --whatsapp: #25D366;
+  --whatsapp-glow: rgba(37, 211, 102, 0.4);
+  --whatsapp-hover: #1ebd5a;
+
+  --emerald: #34d399;
+  --emerald-deep: #064e3b;
+  --emerald-dark: #022c16;
+
+  /* Status Greens */
+  --green-badge-bg: rgba(37, 211, 102, 0.15);
+  --green-badge-border: rgba(37, 211, 102, 0.35);
+  --green-badge-text: #86efac;
+
+  --moss-badge-bg: rgba(6, 78, 59, 0.6);
+  --moss-badge-border: rgba(52, 211, 153, 0.35);
+  --moss-badge-text: #a7f3d0;
+
+  --deep-badge-bg: rgba(4, 120, 87, 0.25);
+  --deep-badge-border: rgba(16, 185, 129, 0.4);
+  --deep-badge-text: #ecfdf5;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.8);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.85);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.95);
+  --shadow-glow: 0 0 30px var(--whatsapp-glow);
+}
+
+/* Light Theme: Pure White Background with Green System */
+[data-theme="light"] {
+  --bg-dark: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f0fdf4;
+  --bg-surface: #ffffff;
+  --bg-input: #f2fcf5;
+  --bg-header: rgba(255, 255, 255, 0.94);
+
+  /* Borders: Rich Jade Green Lines */
+  --border-subtle: rgba(22, 101, 52, 0.18);
+  --border-medium: rgba(22, 101, 52, 0.35);
+  --border-glow: rgba(37, 211, 102, 0.5);
+
+  /* Typography: Deep Forest Greens & Dark Charcoal/Black */
+  --text-main: #022c16;
+  --text-secondary: #064e3b;
+  --text-muted: #14532d;
+
+  --primary: #059669;
+  --primary-glow: rgba(5, 150, 105, 0.3);
+  --primary-hover: #047857;
+
+  --whatsapp: #25D366;
+  --whatsapp-glow: rgba(37, 211, 102, 0.3);
+  --whatsapp-hover: #1ebd5a;
+
+  --emerald: #059669;
+  --emerald-deep: #ecfdf5;
+  --emerald-dark: #022c16;
+
+  /* Status Greens for Light Mode */
+  --green-badge-bg: #dcfce7;
+  --green-badge-border: #86efac;
+  --green-badge-text: #14532d;
+
+  --moss-badge-bg: #e2fbe8;
+  --moss-badge-border: #6ee7b7;
+  --moss-badge-text: #064e3b;
+
+  --deep-badge-bg: #bbf7d0;
+  --deep-badge-border: #34d399;
+  --deep-badge-text: #022c16;
+
+  --shadow-sm: 0 2px 8px rgba(5, 40, 20, 0.06);
+  --shadow-md: 0 8px 24px rgba(5, 40, 20, 0.1);
+  --shadow-lg: 0 16px 40px rgba(5, 40, 20, 0.15);
+  --shadow-glow: 0 0 24px rgba(37, 211, 102, 0.25);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  background-image: none;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+}
+
+/* Glassmorphism Panel */
+.glass-panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-panel:hover {
+  border-color: var(--border-medium);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  text-align: center;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+}
+
+.btn-whatsapp {
+  background: linear-gradient(135deg, #25D366 0%, #1ebd5a 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 18px var(--whatsapp-glow);
+  font-weight: 700;
+}
+
+.btn-whatsapp:hover {
+  background: linear-gradient(135deg, #22bf5b 0%, #18a94e 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(37, 211, 102, 0.5);
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid var(--border-subtle);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-medium);
+}
+
+.btn-danger {
+  background: rgba(6, 78, 59, 0.4);
+  color: #a7f3d0;
+  border: 1px solid rgba(52, 211, 153, 0.4);
+}
+
+.btn-danger:hover {
+  background: rgba(6, 78, 59, 0.7);
+  border-color: var(--whatsapp);
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  border-radius: 8px;
+}
+
+.btn-lg {
+  padding: 14px 28px;
+  font-size: 1.05rem;
+  border-radius: 12px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Badges & Status Pills */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-radius: 9999px;
+}
+
+.badge-trial {
+  background: var(--green-badge-bg);
+  color: var(--green-badge-text);
+  border: 1px solid var(--green-badge-border);
+}
+
+.badge-pro {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.badge-expired {
+  background: var(--moss-badge-bg);
+  color: var(--moss-badge-text);
+  border: 1px solid var(--moss-badge-border);
+}
+
+.badge-admin {
+  background: var(--deep-badge-bg);
+  color: var(--deep-badge-text);
+  border: 1px solid var(--deep-badge-border);
+}
+
+/* Form Controls */
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 11px 14px;
+  color: var(--text-main);
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--whatsapp);
+  box-shadow: 0 0 0 3px var(--whatsapp-glow);
+}
+
+.form-input::placeholder, .form-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 20, 10, 0.82);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  padding: 28px;
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* POS Layout Specifics */
+.pos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 14px;
+}
+
+.pos-item-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 125px;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.pos-item-card:hover {
+  border-color: var(--whatsapp);
+  transform: translateY(-2px);
+  background: var(--bg-card-hover);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+}
+
+.pos-item-card:active {
+  transform: scale(0.98);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(37, 211, 102, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 32px rgba(37, 211, 102, 0.55);
+  }
+}
+
+.paywall-pulse {
+  animation: pulseGlow 2.5s infinite;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(74, 222, 128, 0.25);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(74, 222, 128, 0.45);
+}
+
+/* ============================================================
+   FLOATING BOTTOM NAVIGATION
+   ============================================================ */
+
+/* Hidden on desktop by default */
+.bottom-nav {
+  display: none;
+}
+
+/* Shown on tablet & mobile */
+@media (max-width: 1024px) {
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 32px);
+    max-width: 520px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-medium);
+    border-radius: 20px;
+    padding: 8px 8px;
+    gap: 4px;
+    z-index: 100;
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.45),
+      0 0 0 1px var(--border-subtle),
+      0 0 24px rgba(37, 211, 102, 0.12);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    align-items: stretch;
+  }
+}
+
+/* Each nav item */
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 6px;
+  border-radius: 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+  position: relative;
+  min-height: 56px;
+}
+
+.bottom-nav-item:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-secondary);
+}
+
+/* Active state */
+.bottom-nav-item.active {
+  background: linear-gradient(135deg, rgba(37, 211, 102, 0.18) 0%, rgba(16, 185, 129, 0.12) 100%);
+  color: var(--whatsapp);
+}
+
+/* Active indicator dot */
+.bottom-nav-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--whatsapp);
+  box-shadow: 0 0 8px var(--whatsapp-glow);
+}
+
+/* Icon wrapper */
+.bottom-nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bottom-nav-item.active .bottom-nav-icon {
+  transform: scale(1.12);
+}
+
+/* Label */
+.bottom-nav-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+/* Button variant (no link styling) */
+.bottom-nav-btn {
+  font-family: inherit;
+}
+
+/* Safe area for notched phones (iOS) */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  @media (max-width: 1024px) {
+    .bottom-nav {
+      bottom: calc(12px + env(safe-area-inset-bottom));
+    }
+  }
+}
+
+/* ============================================================
+   RESPONSIVE UTILITIES
+   ============================================================ */
+
+/* Responsive helper classes */
+.hide-mobile  { display: block; }
+.hide-tablet  { display: block; }
+.show-mobile  { display: none; }
+
+/* ============================================================
+   TABLET  (max-width: 1024px)
+   ============================================================ */
+@media (max-width: 1024px) {
+  /* Landing nav: hide subtitle, shrink buttons */
+  .landing-nav-subtitle { display: none; }
+
+  /* POS grid: switch to single stacked column */
+  .pos-main-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* POS cart panel: stop being sticky */
+  .pos-cart-panel {
+    position: static !important;
+    max-height: none !important;
+  }
+
+  /* Hide header nav tabs on tablet (bottom nav takes over) */
+  .dashboard-nav {
+    display: none !important;
+  }
+
+  /* Add bottom padding so content clears the floating bar */
+  .dashboard-main {
+    padding-bottom: 96px !important;
+  }
+
+  /* Dashboard header nav: allow wrap */
+  .dashboard-header-inner {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  /* Admin table: smaller padding */
+  .admin-table th,
+  .admin-table td {
+    padding: 10px 12px !important;
+    font-size: 0.82rem !important;
+  }
+}
+
+/* ============================================================
+   MOBILE  (max-width: 768px)
+   ============================================================ */
+@media (max-width: 768px) {
+  /* ── Body padding ── */
+  body { font-size: 15px; }
+
+  /* ── Landing page ── */
+  .landing-header {
+    padding: 14px 16px !important;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .landing-header-brand-text { display: none; }
+  .landing-nav-btns .btn-lg-text { display: none; }
+  .landing-hero {
+    padding: 36px 16px 48px !important;
+  }
+  .landing-hero-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+  .landing-hero-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .landing-trust-row {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 6px !important;
+    font-size: 0.8rem !important;
+  }
+  .landing-features-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .landing-receipt-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  /* ── Dashboard Header ── */
+  .dashboard-header {
+    padding: 10px 14px !important;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .dashboard-brand-subtitle { display: none; }
+  .dashboard-nav {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    gap: 6px !important;
+    scrollbar-width: none;
+  }
+  .dashboard-nav::-webkit-scrollbar { display: none; }
+  .dashboard-right-actions { gap: 6px !important; }
+
+  /* ── Dashboard main content ── */
+  .dashboard-main {
+    padding: 14px !important;
+  }
+
+  /* ── POS terminal ── */
+  .pos-main-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .pos-cart-panel {
+    position: static !important;
+    max-height: none !important;
+  }
+  .pos-checkout-row {
+    grid-template-columns: 1fr !important;
+  }
+  .pos-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  /* ── Catalog page ── */
+  .catalog-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  .catalog-actions {
+    width: 100%;
+    justify-content: stretch !important;
+  }
+  .catalog-actions .btn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  /* ── Register form ── */
+  .register-name-email-row {
+    grid-template-columns: 1fr !important;
+  }
+  .register-biz-currency-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── Admin page ── */
+  .admin-header {
+    padding: 12px 16px !important;
+  }
+  .admin-header-title-sub { display: none; }
+  .admin-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+  .admin-header-actions {
+    gap: 6px !important;
+  }
+  /* Hide less important admin table columns on mobile */
+  .admin-col-address { display: none; }
+  .admin-col-stats   { display: none; }
+
+  /* ── Auth pages ── */
+  .auth-card { padding: 24px 18px !important; }
+
+  /* ── Modals ── */
+  .modal-content {
+    padding: 20px 16px !important;
+    border-radius: 14px !important;
+    margin: 0 !important;
+    max-height: 95vh !important;
+  }
+
+  /* ── Buttons ── */
+  .btn-lg {
+    padding: 12px 20px !important;
+    font-size: 0.95rem !important;
+  }
+
+  /* ── Glass panels ── */
+  .glass-panel { border-radius: 12px !important; }
+
+  /* ── Footer ── */
+  .landing-footer {
+    padding: 18px 16px !important;
+    font-size: 0.78rem !important;
+  }
+}
+
+/* ============================================================
+   SMALL MOBILE  (max-width: 480px)
+   ============================================================ */
+@media (max-width: 480px) {
+  .pos-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .admin-kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .landing-header {
+    padding: 10px 14px !important;
+  }
+  /* POS checkout form: stack payment row */
+  .pos-checkout-row {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+  /* Receipt modal action buttons */
+  .receipt-modal-actions {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+  /* Badge text truncation */
+  .badge { font-size: 0.68rem !important; }
+}

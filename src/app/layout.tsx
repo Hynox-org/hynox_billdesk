@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { CountryProvider } from '@/context/CountryContext';
 
 export const metadata: Metadata = {
   title: 'BillDesk | Multi-Tenant Vendor POS & WhatsApp Ordering SaaS',
@@ -21,7 +22,9 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet" />
       </head>
-      <body>{children}</body>
+      <body>
+        <CountryProvider>{children}</CountryProvider>
+      </body>
     </html>
   );
 }

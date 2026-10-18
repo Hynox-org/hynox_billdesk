@@ -406,7 +406,7 @@ export default function SuperAdminPage() {
                       <td className="admin-col-stats" style={{ padding: '14px 18px' }}>
                         <div>{t.productCount} products</div>
                         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                          {t.totalOrders} orders (${t.totalGmv.toFixed(2)})
+                          {t.totalOrders} orders ({t.currency || '$'}{t.totalGmv.toFixed(2)})
                         </div>
                       </td>
 

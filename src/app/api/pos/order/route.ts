@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUserAndTenant } from '@/lib/auth';
 import { Order } from '@/models/Order';
+import { Product } from '@/models/Product';
 import { generateWhatsAppUrl } from '@/lib/whatsapp';
 
 function generateOrderNumber(): string {
@@ -102,10 +103,21 @@ export async function POST(req: NextRequest) {
       tax: taxAmount,
       discount: discountAmount,
       totalAmount,
+      currency: auth.tenant.currency || '$',
       paymentStatus,
       whatsappStatus: 'GENERATED',
       notes: notes ? notes.trim() : '',
     });
+
+    // Decrement inventory for tracked items
+    for (const item of sanitizedItems) {
+      if ((item as any).productId) {
+        await Product.findOneAndUpdate(
+          { _id: (item as any).productId, tenantId: auth.tenant._id, trackStock: true },
+          { $inc: { stockQuantity: -item.quantity } }
+        );
+      }
+    }
 
     return NextResponse.json(
       {

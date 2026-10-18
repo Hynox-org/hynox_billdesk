@@ -745,3 +745,52 @@ button, input, select, textarea, optgroup {
   /* Badge text truncation */
   .badge { font-size: 0.68rem !important; }
 }
+
+/* Country dropdown responsive text */
+@media (max-width: 640px) {
+  .country-dropdown-name {
+    display: none !important;
+  }
+}
+
+/* Fixed WhatsApp country code prefix input group */
+.phone-fixed-input-group {
+  display: flex;
+  align-items: stretch;
+  position: relative;
+  width: 100%;
+}
+
+.phone-fixed-prefix {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-medium);
+  border-right: none;
+  border-radius: 8px 0 0 8px;
+  color: var(--whatsapp);
+  font-weight: 700;
+  font-size: 0.88rem;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.phone-fixed-prefix-code {
+  font-size: 0.72rem;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgba(37, 211, 102, 0.15);
+  letter-spacing: 0.03em;
+  font-weight: 800;
+}
+
+.phone-fixed-input {
+  border-radius: 0 8px 8px 0 !important;
+  flex: 1;
+}
+
+.phone-fixed-input:focus {
+  z-index: 2;
+}

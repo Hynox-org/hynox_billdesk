@@ -51,6 +51,7 @@ export async function GET(req: NextRequest) {
         todayCount,
         avgOrder: Number(avgOrder.toFixed(2)),
       },
+      currency: auth.tenant.currency || '$',
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Error fetching orders' }, { status: 500 });

@@ -28,12 +28,15 @@ interface Product {
   price: number;
   sku: string;
   isAvailable: boolean;
+  trackStock?: boolean;
+  stockQuantity?: number;
 }
 
 export default function CatalogPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currency, setCurrency] = useState('$');
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Modals state
@@ -49,13 +52,16 @@ export default function CatalogPage() {
     description: '',
     sku: '',
     isAvailable: true,
+    trackStock: false,
+    stockQuantity: '0',
   });
 
   const loadData = async () => {
     try {
-      const [catRes, prodRes] = await Promise.all([
+      const [catRes, prodRes, authRes] = await Promise.all([
         fetch('/api/catalog/categories'),
         fetch('/api/catalog/products'),
+        fetch('/api/auth/me'),
       ]);
 
       if (catRes.ok && prodRes.ok) {
@@ -63,6 +69,12 @@ export default function CatalogPage() {
         const prodData = await prodRes.json();
         setCategories(catData.categories || []);
         setProducts(prodData.products || []);
+        if (prodData.currency) setCurrency(prodData.currency);
+      }
+
+      if (authRes.ok) {
+        const authData = await authRes.json();
+        if (authData.tenant?.currency) setCurrency(authData.tenant.currency);
       }
     } catch (err) {
       console.error(err);
@@ -126,7 +138,9 @@ export default function CatalogPage() {
         price: product.price.toString(),
         description: product.description || '',
         sku: product.sku || '',
-        isAvailable: product.isAvailable,
+        isAvailable: product.isAvailable ?? true,
+        trackStock: Boolean(product.trackStock),
+        stockQuantity: (product.stockQuantity ?? 0).toString(),
       });
     } else {
       setEditingProduct(null);
@@ -137,6 +151,8 @@ export default function CatalogPage() {
         description: '',
         sku: '',
         isAvailable: true,
+        trackStock: false,
+        stockQuantity: '10',
       });
     }
     setShowProductModal(true);
@@ -156,6 +172,8 @@ export default function CatalogPage() {
         ...(editingProduct && { id: editingProduct._id }),
         ...productForm,
         price: parseFloat(productForm.price),
+        trackStock: productForm.trackStock,
+        stockQuantity: productForm.trackStock ? Math.max(0, parseInt(productForm.stockQuantity, 10) || 0) : 0,
       };
 
       const res = await fetch(url, {
@@ -227,7 +245,7 @@ export default function CatalogPage() {
             Catalog & Menu Management
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Configure your item categories, pricing, descriptions, and POS availability
+            Configure your item categories, pricing, descriptions, and order availability
           </p>
         </div>
 
@@ -335,6 +353,7 @@ export default function CatalogPage() {
                   <th style={{ padding: '12px 20px', color: 'var(--text-muted)', fontWeight: 600 }}>SKU</th>
                   <th style={{ padding: '12px 20px', color: 'var(--text-muted)', fontWeight: 600 }}>Price</th>
                   <th style={{ padding: '12px 20px', color: 'var(--text-muted)', fontWeight: 600 }}>Status</th>
+                  <th style={{ padding: '12px 20px', color: 'var(--text-muted)', fontWeight: 600 }}>Stock</th>
                   <th style={{ padding: '12px 20px', color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
@@ -359,7 +378,7 @@ export default function CatalogPage() {
                       {prod.sku || '—'}
                     </td>
                     <td style={{ padding: '14px 20px', fontWeight: 700, color: 'var(--emerald)' }}>
-                      ${prod.price.toFixed(2)}
+                      {currency}{prod.price.toFixed(2)}
                     </td>
                     <td style={{ padding: '14px 20px' }}>
                       <button
@@ -367,9 +386,26 @@ export default function CatalogPage() {
                         onClick={() => handleToggleAvailability(prod)}
                         className={`badge ${prod.isAvailable ? 'badge-pro' : 'badge-expired'}`}
                         style={{ cursor: 'pointer', border: 'none' }}
+                        title="Click to toggle availability"
                       >
-                        {prod.isAvailable ? 'In Stock (Live)' : 'Out of Stock'}
+                        {prod.isAvailable ? 'Available' : 'Unavailable'}
                       </button>
+                    </td>
+                    <td style={{ padding: '14px 20px' }}>
+                      {prod.trackStock ? (
+                        <span
+                          className={`badge ${(prod.stockQuantity ?? 0) > 0 ? 'badge-pro' : 'badge-expired'}`}
+                          style={{ fontWeight: 600 }}
+                        >
+                          {(prod.stockQuantity ?? 0) > 0
+                            ? `${prod.stockQuantity} in stock`
+                            : 'Out of stock'}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                          Live Counter
+                        </span>
+                      )}
                     </td>
                     <td style={{ padding: '14px 20px', textAlign: 'right' }}>
                       <div style={{ display: 'inline-flex', gap: '8px' }}>
@@ -473,7 +509,7 @@ export default function CatalogPage() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Price ($)</label>
+                  <label className="form-label">Price ({currency})</label>
                   <input
                     type="number"
                     step="0.01"
@@ -507,6 +543,164 @@ export default function CatalogPage() {
                   value={productForm.description}
                   onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
                 />
+              </div>
+
+              {/* Order Availability & Stock Settings */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px', marginBottom: '8px' }}>
+                {/* Available to order toggle card */}
+                <div
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: '12px',
+                    padding: '14px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-main)' }}>
+                      Available to order
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '0.8rem',
+                        color: productForm.isAvailable ? '#10b981' : 'var(--text-muted)',
+                        marginTop: '2px',
+                        fontWeight: productForm.isAvailable ? 500 : 400,
+                      }}
+                    >
+                      {productForm.isAvailable
+                        ? 'Live counter preparation active'
+                        : 'Item marked unavailable to customers'}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={productForm.isAvailable}
+                    onClick={() => setProductForm({ ...productForm, isAvailable: !productForm.isAvailable })}
+                    style={{
+                      width: '52px',
+                      height: '30px',
+                      borderRadius: '15px',
+                      background: productForm.isAvailable ? '#1e7e5a' : '#64748b',
+                      border: 'none',
+                      position: 'relative',
+                      cursor: 'pointer',
+                      padding: '2px',
+                      transition: 'background-color 0.2s ease',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '26px',
+                        height: '26px',
+                        borderRadius: '50%',
+                        background: '#ffffff',
+                        transform: productForm.isAvailable ? 'translateX(22px)' : 'translateX(0px)',
+                        transition: 'transform 0.2s ease',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.25)',
+                      }}
+                    />
+                  </button>
+                </div>
+
+                {/* Available stock toggle card */}
+                <div
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: '12px',
+                    padding: '14px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-main)' }}>
+                      Available stock
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '0.8rem',
+                        color: productForm.trackStock ? '#10b981' : 'var(--text-muted)',
+                        marginTop: '2px',
+                        fontWeight: productForm.trackStock ? 500 : 400,
+                      }}
+                    >
+                      {productForm.trackStock
+                        ? 'Inventory quantity tracking active'
+                        : 'Disabled (Available to order active)'}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={productForm.trackStock}
+                    onClick={() => setProductForm({ ...productForm, trackStock: !productForm.trackStock })}
+                    style={{
+                      width: '52px',
+                      height: '30px',
+                      borderRadius: '15px',
+                      background: productForm.trackStock ? '#1e7e5a' : '#64748b',
+                      border: 'none',
+                      position: 'relative',
+                      cursor: 'pointer',
+                      padding: '2px',
+                      transition: 'background-color 0.2s ease',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '26px',
+                        height: '26px',
+                        borderRadius: '50%',
+                        background: '#ffffff',
+                        transform: productForm.trackStock ? 'translateX(22px)' : 'translateX(0px)',
+                        transition: 'transform 0.2s ease',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.25)',
+                      }}
+                    />
+                  </button>
+                </div>
+
+                {/* Define stock quantity input when Available stock is enabled */}
+                {productForm.trackStock && (
+                  <div
+                    style={{
+                      background: 'rgba(37, 211, 102, 0.06)',
+                      border: '1px solid rgba(37, 211, 102, 0.25)',
+                      borderRadius: '12px',
+                      padding: '14px 16px',
+                    }}
+                  >
+                    <label className="form-label" style={{ fontWeight: 600, marginBottom: '6px' }}>
+                      Stock Quantity (Available units)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      className="form-input"
+                      placeholder="e.g. 50"
+                      value={productForm.stockQuantity}
+                      onChange={(e) => setProductForm({ ...productForm, stockQuantity: e.target.value })}
+                      required={productForm.trackStock}
+                    />
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
+                      The stock quantity will automatically decrease as items are added to bills and checked out.
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '24px' }}>

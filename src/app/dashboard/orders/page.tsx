@@ -30,6 +30,7 @@ interface Order {
   subtotal: number;
   tax: number;
   totalAmount: number;
+  currency?: string;
   paymentStatus: string;
   createdAt: string;
 }
@@ -37,6 +38,7 @@ interface Order {
 export default function OrdersHistoryPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [stats, setStats] = useState({ todayRevenue: 0, todayCount: 0, avgOrder: 0 });
+  const [currency, setCurrency] = useState('$');
   const [loading, setLoading] = useState(true);
   const [resendingId, setResendingId] = useState<string | null>(null);
 
@@ -47,6 +49,7 @@ export default function OrdersHistoryPage() {
         const data = await res.json();
         setOrders(data.orders || []);
         if (data.stats) setStats(data.stats);
+        if (data.currency) setCurrency(data.currency);
       }
     } catch (err) {
       console.error(err);
@@ -105,7 +108,7 @@ export default function OrdersHistoryPage() {
             <DollarSign size={18} style={{ color: 'var(--emerald)' }} />
           </div>
           <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-main)' }}>
-            ${stats.todayRevenue.toFixed(2)}
+            {currency}{stats.todayRevenue.toFixed(2)}
           </div>
         </div>
 
@@ -125,7 +128,7 @@ export default function OrdersHistoryPage() {
             <TrendingUp size={18} style={{ color: 'var(--whatsapp)' }} />
           </div>
           <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-main)' }}>
-            ${stats.avgOrder.toFixed(2)}
+            {currency}{stats.avgOrder.toFixed(2)}
           </div>
         </div>
       </div>
@@ -142,7 +145,7 @@ export default function OrdersHistoryPage() {
           </div>
         ) : orders.length === 0 ? (
           <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-            No orders recorded yet. Make your first sale in the POS Terminal!
+            No orders recorded yet. Create your first order in the New Order page!
           </div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
@@ -182,7 +185,7 @@ export default function OrdersHistoryPage() {
                       {o.items.map((i) => `${i.productName} (x${i.quantity})`).join(', ')}
                     </td>
                     <td style={{ padding: '14px 20px', fontWeight: 800, color: 'var(--emerald)' }}>
-                      ${o.totalAmount.toFixed(2)}
+                      {o.currency || currency}{o.totalAmount.toFixed(2)}
                     </td>
                     <td style={{ padding: '14px 20px' }}>
                       <span className="badge badge-pro" style={{ fontSize: '0.7rem' }}>

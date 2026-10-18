@@ -8,6 +8,7 @@ import {
   ShoppingBag,
   Layers,
   History,
+  Settings,
   LogOut,
   AlertTriangle,
   Sparkles,
@@ -16,6 +17,7 @@ import {
   LockKeyhole,
 } from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
+import CountryDropdown from '@/components/CountryDropdown';
 
 interface AuthState {
   user: {
@@ -95,6 +97,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const isPOS = pathname === '/dashboard/pos' || pathname === '/dashboard';
   const isCatalog = pathname === '/dashboard/catalog';
   const isOrders = pathname === '/dashboard/orders';
+  const isSettings = pathname === '/dashboard/settings';
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -121,7 +124,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <div style={{ fontWeight: 800, fontSize: '1.05rem', lineHeight: 1.2, color: 'var(--text-main)' }}>
                 {tenant?.businessName || 'My Business'}
               </div>
-              <div className="dashboard-brand-subtitle" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Vendor Workspace</div>
+              <div className="dashboard-brand-subtitle" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                Store Workspace • {tenant?.currency || '$'}
+              </div>
             </div>
           </Link>
 
@@ -143,19 +148,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {!tenant?.isExpired && (
           <nav className="dashboard-nav" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <Link href="/dashboard/pos" className={`btn btn-sm ${isPOS ? 'btn-primary' : 'btn-secondary'}`}>
-              <ShoppingBag size={16} /> POS Terminal
+              <ShoppingBag size={16} /> New Order
             </Link>
             <Link href="/dashboard/catalog" className={`btn btn-sm ${isCatalog ? 'btn-primary' : 'btn-secondary'}`}>
-              <Layers size={16} /> Catalog & Menu
+              <Layers size={16} /> Products & Menu
             </Link>
             <Link href="/dashboard/orders" className={`btn btn-sm ${isOrders ? 'btn-primary' : 'btn-secondary'}`}>
-              <History size={16} /> Order Receipts
+              <History size={16} /> Order History
+            </Link>
+            <Link href="/dashboard/settings" className={`btn btn-sm ${isSettings ? 'btn-primary' : 'btn-secondary'}`}>
+              <Settings size={16} /> Settings
             </Link>
           </nav>
         )}
 
-        {/* Right: Theme + Logout */}
+        {/* Right: Country + Theme + Logout */}
         <div className="dashboard-right-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <CountryDropdown />
           <ThemeToggle />
           <button onClick={handleLogout} className="btn btn-secondary btn-sm" title="Log out" style={{ padding: '8px 12px' }}>
             <LogOut size={16} />
@@ -169,20 +178,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {children}
       </main>
 
-      {/* Floating Bottom Nav � tablet & mobile only, active vendor */}
+      {/* Floating Bottom Nav - tablet & mobile only, active vendor */}
       {!tenant?.isExpired && (
         <nav className="bottom-nav" aria-label="Mobile navigation">
           <Link href="/dashboard/pos" className={`bottom-nav-item${isPOS ? ' active' : ''}`}>
             <div className="bottom-nav-icon"><ShoppingBag size={22} /></div>
-            <span className="bottom-nav-label">POS</span>
+            <span className="bottom-nav-label">New Order</span>
           </Link>
           <Link href="/dashboard/catalog" className={`bottom-nav-item${isCatalog ? ' active' : ''}`}>
             <div className="bottom-nav-icon"><Layers size={22} /></div>
-            <span className="bottom-nav-label">Catalog</span>
+            <span className="bottom-nav-label">Products</span>
           </Link>
           <Link href="/dashboard/orders" className={`bottom-nav-item${isOrders ? ' active' : ''}`}>
             <div className="bottom-nav-icon"><History size={22} /></div>
-            <span className="bottom-nav-label">Orders</span>
+            <span className="bottom-nav-label">History</span>
+          </Link>
+          <Link href="/dashboard/settings" className={`bottom-nav-item${isSettings ? ' active' : ''}`}>
+            <div className="bottom-nav-icon"><Settings size={22} /></div>
+            <span className="bottom-nav-label">Settings</span>
           </Link>
           <button onClick={handleLogout} className="bottom-nav-item bottom-nav-btn" aria-label="Logout">
             <div className="bottom-nav-icon"><LogOut size={22} /></div>

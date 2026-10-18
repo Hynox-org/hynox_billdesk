@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
       .populate('categoryId', 'name')
       .sort({ createdAt: -1 });
 
-    return NextResponse.json({ success: true, products });
+    return NextResponse.json({ success: true, products, currency: auth.tenant.currency || '$' });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Error fetching products' }, { status: 500 });
   }
@@ -46,7 +46,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { categoryId, name, description, price, sku, isAvailable = true, imageUrl } = await req.json();
+    const {
+      categoryId,
+      name,
+      description,
+      price,
+      sku,
+      isAvailable = true,
+      trackStock = false,
+      stockQuantity = 0,
+      imageUrl,
+    } = await req.json();
 
     if (!categoryId || !name || price === undefined) {
       return NextResponse.json(
@@ -69,6 +79,8 @@ export async function POST(req: NextRequest) {
       price: Math.max(0, Number(price)),
       sku: sku ? sku.trim() : '',
       isAvailable: Boolean(isAvailable),
+      trackStock: Boolean(trackStock),
+      stockQuantity: trackStock ? Math.max(0, parseInt(stockQuantity, 10) || 0) : 0,
       imageUrl: imageUrl ? imageUrl.trim() : '',
     });
 
@@ -92,7 +104,18 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const { id, categoryId, name, description, price, sku, isAvailable, imageUrl } = await req.json();
+    const {
+      id,
+      categoryId,
+      name,
+      description,
+      price,
+      sku,
+      isAvailable,
+      trackStock,
+      stockQuantity,
+      imageUrl,
+    } = await req.json();
 
     if (!id) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
@@ -104,6 +127,8 @@ export async function PUT(req: NextRequest) {
     if (price !== undefined) updateData.price = Math.max(0, Number(price));
     if (sku !== undefined) updateData.sku = sku.trim();
     if (isAvailable !== undefined) updateData.isAvailable = Boolean(isAvailable);
+    if (trackStock !== undefined) updateData.trackStock = Boolean(trackStock);
+    if (stockQuantity !== undefined) updateData.stockQuantity = Math.max(0, parseInt(stockQuantity, 10) || 0);
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl.trim();
     if (categoryId) {
       const category = await Category.findOne({ _id: categoryId, tenantId: auth.tenant._id });

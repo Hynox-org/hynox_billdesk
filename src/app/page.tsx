@@ -53,7 +53,7 @@ export default function LandingPage() {
               Bill<span style={{ color: 'var(--whatsapp)' }}>Desk</span>
             </div>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Multi-Tenant POS & WhatsApp Receipts
+              Multi-Tenant Orders & WhatsApp Receipts
             </div>
           </div>
         </div>
@@ -191,7 +191,7 @@ export default function LandingPage() {
               <Zap size={26} />
             </div>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '10px', color: 'var(--text-main)' }}>
-              Rapid POS Order Terminal
+              Instant Order Billing & Checkout
             </h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
               High-speed grid interface tailored for touchscreens and quick checkout. Add items to cart with single taps,

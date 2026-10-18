@@ -10,8 +10,8 @@ export function middleware(request: NextRequest) {
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon') ||
-    pathname.startsWith('/api/auth/login') ||
-    pathname.startsWith('/api/auth/register') ||
+    pathname.startsWith('/api/auth/') ||
+    pathname.startsWith('/api/test-email') ||
     pathname.startsWith('/api/seed') ||
     pathname === '/' ||
     pathname === '/login' ||

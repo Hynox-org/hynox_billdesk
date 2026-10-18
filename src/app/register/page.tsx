@@ -1,13 +1,32 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Zap, Store, User, Mail, Lock, Phone, MapPin, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
+import {
+  Zap,
+  Store,
+  User,
+  Mail,
+  Lock,
+  MapPin,
+  ArrowRight,
+  Sparkles,
+  AlertCircle,
+  KeyRound,
+  RefreshCw,
+  ArrowLeft,
+  CheckCircle2,
+} from 'lucide-react';
 import ThemeToggle from '@/components/ThemeToggle';
+import CountryDropdown from '@/components/CountryDropdown';
+import { useCountry } from '@/context/CountryContext';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { country } = useCountry();
+  const [step, setStep] = useState<'form' | 'otp'>('form');
+
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -17,19 +36,141 @@ export default function RegisterPage() {
     address: '',
     currency: '$',
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const [otp, setOtp] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Timer countdown effect for OTP resend
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (resendCooldown > 0) {
+      interval = setInterval(() => {
+        setResendCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [resendCooldown]);
+
+  // Request OTP from server
+  const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    if (!formData.fullName.trim()) {
+      setError('Please enter your full name');
+      return;
+    }
+
+    if (!formData.email.trim()) {
+      setError('Please enter your business email address');
+      return;
+    }
+
+    if (!formData.password || formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+
+    if (!formData.businessName.trim()) {
+      setError('Please enter your business / store name');
+      return;
+    }
+
+    if (!formData.phone.trim()) {
+      setError('Please enter your WhatsApp business phone number');
+      return;
+    }
+
     setLoading(true);
+
+    try {
+      const res = await fetch('/api/auth/otp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          type: 'REGISTER',
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to send verification code');
+      }
+
+      setStep('otp');
+      setResendCooldown(60);
+      setOtp('');
+    } catch (err: any) {
+      setError(err.message || 'Error sending verification code');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Resend OTP
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0 || resending) return;
+    setError(null);
+    setResending(true);
+
+    try {
+      const res = await fetch('/api/auth/otp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          type: 'REGISTER',
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to resend code');
+      }
+
+      setResendCooldown(60);
+    } catch (err: any) {
+      setError(err.message || 'Error resending code');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  // Submit OTP & Complete Registration
+  const handleVerifyAndRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    const cleanOtp = otp.trim();
+    if (!cleanOtp || cleanOtp.length !== 6) {
+      setError('Please enter the 6-digit verification code sent to your email');
+      return;
+    }
+
+    setLoading(true);
+
+    const dialDigits = country.dialCode.replace(/\D/g, '');
+    let subscriberDigits = formData.phone.replace(/\D/g, '');
+    if (subscriberDigits.startsWith(dialDigits) && subscriberDigits.length > dialDigits.length) {
+      subscriberDigits = subscriberDigits.slice(dialDigits.length);
+    }
+    const fullPhone = subscriberDigits ? `${dialDigits}${subscriberDigits}` : formData.phone;
 
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          phone: fullPhone,
+          otp: cleanOtp,
+        }),
       });
 
       const data = await res.json();
@@ -57,8 +198,9 @@ export default function RegisterPage() {
         position: 'relative',
       }}
     >
-      {/* Floating Theme Toggle in Top Right */}
-      <div style={{ position: 'absolute', top: '24px', right: '24px' }}>
+      {/* Floating Country & Theme in Top Right */}
+      <div style={{ position: 'absolute', top: '24px', right: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <CountryDropdown />
         <ThemeToggle />
       </div>
 
@@ -100,14 +242,16 @@ export default function RegisterPage() {
             <Sparkles size={12} /> Instant 15-Day Free Trial Provisioned
           </div>
           <h1 style={{ fontSize: '1.6rem', fontWeight: 700, marginBottom: '6px', color: 'var(--text-main)' }}>
-            Register Your Business
+            {step === 'form' ? 'Register Your Business' : 'Verify Your Email'}
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            Set up your store catalog and start dispatching WhatsApp receipts in minutes
+            {step === 'form'
+              ? 'Set up your store catalog and start dispatching WhatsApp receipts in minutes'
+              : `Enter the 6-digit verification code dispatched to ${formData.email}`}
           </p>
         </div>
 
-        {/* Form Card */}
+        {/* Card */}
         <div className="glass-panel" style={{ padding: '32px' }}>
           {error && (
             <div
@@ -129,10 +273,11 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit}>
-            <div className="register-name-email-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          {step === 'form' ? (
+            <form onSubmit={handleRequestOtp}>
+              {/* Full Name */}
               <div className="form-group">
-                <label className="form-label">Your Name</label>
+                <label className="form-label">Full Name *</label>
                 <div style={{ position: 'relative' }}>
                   <User
                     size={16}
@@ -148,7 +293,7 @@ export default function RegisterPage() {
                     type="text"
                     className="form-input"
                     style={{ paddingLeft: '36px' }}
-                    placeholder="Alex Morgan"
+                    placeholder="e.g. John Doe"
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                     required
@@ -156,8 +301,9 @@ export default function RegisterPage() {
                 </div>
               </div>
 
+              {/* Email Address */}
               <div className="form-group">
-                <label className="form-label">Email Address</label>
+                <label className="form-label">Business Email Address *</label>
                 <div style={{ position: 'relative' }}>
                   <Mail
                     size={16}
@@ -173,43 +319,46 @@ export default function RegisterPage() {
                     type="email"
                     className="form-input"
                     style={{ paddingLeft: '36px' }}
-                    placeholder="alex@store.com"
+                    placeholder="john@yourstore.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
                   />
                 </div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  A 6-digit verification code will be sent to this email before activating your account.
+                </div>
               </div>
-            </div>
 
-            <div className="form-group">
-              <label className="form-label">Password</label>
-              <div style={{ position: 'relative' }}>
-                <Lock
-                  size={16}
-                  style={{
-                    position: 'absolute',
-                    left: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: 'var(--text-muted)',
-                  }}
-                />
-                <input
-                  type="password"
-                  className="form-input"
-                  style={{ paddingLeft: '36px' }}
-                  placeholder="Min 6 characters"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="register-biz-currency-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px' }}>
+              {/* Password */}
               <div className="form-group">
-                <label className="form-label">Business / Shop Name</label>
+                <label className="form-label">Password *</label>
+                <div style={{ position: 'relative' }}>
+                  <Lock
+                    size={16}
+                    style={{
+                      position: 'absolute',
+                      left: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'var(--text-muted)',
+                    }}
+                  />
+                  <input
+                    type="password"
+                    className="form-input"
+                    style={{ paddingLeft: '36px' }}
+                    placeholder="At least 6 characters"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Business Name */}
+              <div className="form-group">
+                <label className="form-label">Store / Company Name *</label>
                 <div style={{ position: 'relative' }}>
                   <Store
                     size={16}
@@ -225,7 +374,7 @@ export default function RegisterPage() {
                     type="text"
                     className="form-input"
                     style={{ paddingLeft: '36px' }}
-                    placeholder="Artisan Bakery & Cafe"
+                    placeholder="e.g. Acme Artisan Bakery"
                     value={formData.businessName}
                     onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
                     required
@@ -233,81 +382,237 @@ export default function RegisterPage() {
                 </div>
               </div>
 
+              {/* Currency Preference */}
               <div className="form-group">
-                <label className="form-label">Currency</label>
+                <label className="form-label">Store Currency *</label>
                 <select
                   className="form-select"
                   value={formData.currency}
                   onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                  required
                 >
-                  <option value="$">$ USD</option>
-                  <option value="₹">₹ INR</option>
-                  <option value="€">€ EUR</option>
-                  <option value="£">£ GBP</option>
-                  <option value="AED">AED</option>
+                  <option value="$">$ (USD / CAD / AUD)</option>
+                  <option value="₹">₹ (INR - India)</option>
+                  <option value="£">£ (GBP - United Kingdom)</option>
+                  <option value="€">€ (EUR - European Union)</option>
+                  <option value="AED">AED (United Arab Emirates)</option>
+                  <option value="SAR">SAR (Saudi Arabia)</option>
+                  <option value="S$">S$ (SGD - Singapore)</option>
+                  <option value="RM">RM (MYR - Malaysia)</option>
+                  <option value="Rp">Rp (IDR - Indonesia)</option>
+                  <option value="₱">₱ (PHP - Philippines)</option>
+                  <option value="฿">฿ (THB - Thailand)</option>
+                  <option value="PKR">PKR (Pakistan)</option>
+                  <option value="৳">৳ (BDT - Bangladesh)</option>
+                  <option value="LKR">LKR (Sri Lanka)</option>
+                  <option value="NPR">NPR (Nepal)</option>
+                  <option value="R">R (ZAR - South Africa)</option>
+                  <option value="₦">₦ (NGN - Nigeria)</option>
+                  <option value="KSh">KSh (KES - Kenya)</option>
                 </select>
               </div>
-            </div>
 
-            <div className="form-group">
-              <label className="form-label">Business WhatsApp Phone</label>
-              <div style={{ position: 'relative' }}>
-                <Phone
-                  size={16}
+              {/* Business WhatsApp Phone with Fixed Country Code */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>Business WhatsApp Phone *</span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    Country: {country.name} ({country.dialCode})
+                  </span>
+                </label>
+                <div className="phone-fixed-input-group">
+                  <div
+                    className="phone-fixed-prefix"
+                    title={`Fixed Country Dial Code: ${country.name} (${country.dialCode})`}
+                  >
+                    <span className="phone-fixed-prefix-code">{country.code}</span>
+                    <span>{country.dialCode}</span>
+                  </div>
+                  <input
+                    type="tel"
+                    className="form-input phone-fixed-input"
+                    placeholder="e.g. 98765 43210"
+                    value={formData.phone}
+                    onChange={(e) => {
+                      let val = e.target.value.replace(/\D/g, '');
+                      const cleanDial = country.dialCode.replace(/\D/g, '');
+                      if (val.startsWith(cleanDial) && val.length > cleanDial.length) {
+                        val = val.slice(cleanDial.length);
+                      }
+                      setFormData({ ...formData, phone: val });
+                    }}
+                    required
+                  />
+                </div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  Dial code {country.dialCode} is fixed from header selection. Stored as: {country.dialCode} {formData.phone || '...'}
+                </div>
+              </div>
+
+              {/* Store Address */}
+              <div className="form-group">
+                <label className="form-label">Store Address (Optional)</label>
+                <div style={{ position: 'relative' }}>
+                  <MapPin
+                    size={16}
+                    style={{
+                      position: 'absolute',
+                      left: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'var(--text-muted)',
+                    }}
+                  />
+                  <input
+                    type="text"
+                    className="form-input"
+                    style={{ paddingLeft: '36px' }}
+                    placeholder="Street, City, State"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="btn btn-whatsapp"
+                style={{ width: '100%', marginTop: '12px', padding: '12px', fontSize: '0.95rem', fontWeight: 700 }}
+                disabled={loading}
+              >
+                {loading ? 'Sending Verification Code...' : 'Verify Email & Create Workspace'}
+                <ArrowRight size={18} />
+              </button>
+            </form>
+          ) : (
+            /* OTP Verification Screen */
+            <form onSubmit={handleVerifyAndRegister}>
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '16px 0 24px 0',
+                }}
+              >
+                <div
                   style={{
-                    position: 'absolute',
-                    left: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
+                    width: '56px',
+                    height: '56px',
+                    borderRadius: '50%',
+                    background: 'rgba(37, 211, 102, 0.12)',
+                    border: '1px solid rgba(37, 211, 102, 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 16px auto',
                     color: 'var(--whatsapp)',
                   }}
-                />
-                <input
-                  type="tel"
-                  className="form-input"
-                  style={{ paddingLeft: '36px' }}
-                  placeholder="+1 555-0199 or 9876543210"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  required
-                />
+                >
+                  <Mail size={28} />
+                </div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 6px 0', color: 'var(--text-main)' }}>
+                  Enter Verification Code
+                </h3>
+                <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', margin: 0 }}>
+                  We sent a 6-digit confirmation code to:
+                </p>
+                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--whatsapp)', marginTop: '4px' }}>
+                  {formData.email}
+                </div>
               </div>
-            </div>
 
-            <div className="form-group">
-              <label className="form-label">Store Address (Optional)</label>
-              <div style={{ position: 'relative' }}>
-                <MapPin
-                  size={16}
-                  style={{
-                    position: 'absolute',
-                    left: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: 'var(--text-muted)',
+              {/* 6-Digit OTP Input */}
+              <div className="form-group">
+                <label className="form-label" style={{ textAlign: 'center', display: 'block', marginBottom: '8px' }}>
+                  6-Digit Email Code
+                </label>
+                <div style={{ position: 'relative', maxWidth: '280px', margin: '0 auto' }}>
+                  <KeyRound
+                    size={18}
+                    style={{
+                      position: 'absolute',
+                      left: '14px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'var(--whatsapp)',
+                    }}
+                  />
+                  <input
+                    type="text"
+                    maxLength={6}
+                    autoFocus
+                    className="form-input"
+                    style={{
+                      paddingLeft: '42px',
+                      textAlign: 'center',
+                      fontSize: '1.4rem',
+                      letterSpacing: '8px',
+                      fontWeight: 800,
+                      fontFamily: 'monospace',
+                    }}
+                    placeholder="123456"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                    required
+                  />
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '6px' }}>
+                  Code valid for 10 minutes. Check your inbox or spam folder.
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                className="btn btn-whatsapp"
+                style={{ width: '100%', marginTop: '16px', padding: '12px', fontSize: '0.95rem', fontWeight: 700 }}
+                disabled={loading || otp.length !== 6}
+              >
+                {loading ? 'Verifying & Provisioning Workspace...' : 'Verify & Launch Store Workspace'}
+                <CheckCircle2 size={18} />
+              </button>
+
+              {/* Actions row: Resend & Edit Details */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginTop: '20px',
+                  paddingTop: '16px',
+                  borderTop: '1px solid var(--border-subtle)',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep('form');
+                    setError(null);
                   }}
-                />
-                <input
-                  type="text"
-                  className="form-input"
-                  style={{ paddingLeft: '36px' }}
-                  placeholder="Street, City, State"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                />
-              </div>
-            </div>
+                  className="btn btn-secondary btn-sm"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <ArrowLeft size={14} /> Edit Details
+                </button>
 
-            <button
-              type="submit"
-              className="btn btn-whatsapp"
-              style={{ width: '100%', marginTop: '12px', padding: '12px' }}
-              disabled={loading}
-            >
-              {loading ? 'Creating Business & 15-Day Trial...' : 'Create Store & Launch POS'}
-              <ArrowRight size={18} />
-            </button>
-          </form>
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={resendCooldown > 0 || resending}
+                  className="btn btn-secondary btn-sm"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    opacity: resendCooldown > 0 ? 0.6 : 1,
+                    cursor: resendCooldown > 0 ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  <RefreshCw size={14} className={resending ? 'spin' : ''} />
+                  {resendCooldown > 0 ? `Resend code (${resendCooldown}s)` : 'Resend Code'}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
 
         <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>

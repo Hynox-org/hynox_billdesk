@@ -8,6 +8,8 @@ export interface IProduct extends Document {
   price: number;
   sku: string;
   isAvailable: boolean;
+  trackStock: boolean;
+  stockQuantity: number;
   imageUrl?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -32,6 +34,8 @@ const ProductSchema: Schema<IProduct> = new Schema(
     price: { type: Number, required: true, min: 0 },
     sku: { type: String, default: '', trim: true },
     isAvailable: { type: Boolean, default: true },
+    trackStock: { type: Boolean, default: false },
+    stockQuantity: { type: Number, default: 0, min: 0 },
     imageUrl: { type: String, default: '' },
   },
   { timestamps: true }

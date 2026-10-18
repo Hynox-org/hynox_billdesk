@@ -18,6 +18,7 @@ export interface IOrder extends Document {
   tax: number;
   discount: number;
   totalAmount: number;
+  currency: string;
   paymentStatus: 'PAID_CASH' | 'PAID_ONLINE' | 'PENDING' | 'COD';
   whatsappStatus: 'GENERATED' | 'SENT';
   notes?: string;
@@ -52,6 +53,7 @@ const OrderSchema: Schema<IOrder> = new Schema(
     tax: { type: Number, default: 0 },
     discount: { type: Number, default: 0 },
     totalAmount: { type: Number, required: true },
+    currency: { type: String, default: '$' },
     paymentStatus: {
       type: String,
       enum: ['PAID_CASH', 'PAID_ONLINE', 'PENDING', 'COD'],

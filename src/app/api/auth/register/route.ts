@@ -3,7 +3,9 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { User } from '@/models/User';
 import { Tenant } from '@/models/Tenant';
 import { Category } from '@/models/Category';
+import { Otp } from '@/models/Otp';
 import { hashPassword, signAuthToken, COOKIE_NAME } from '@/lib/auth';
+import { sendEmail, buildBrandedEmailHtml } from '@/lib/email';
 
 function generateSlug(name: string): string {
   const base = name
@@ -16,11 +18,18 @@ function generateSlug(name: string): string {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { fullName, email, password, businessName, phone, address, currency = '$' } = body;
+    const { fullName, email, password, businessName, phone, address, currency = '$', otp } = body;
 
     if (!fullName || !email || !password || !businessName || !phone) {
       return NextResponse.json(
         { error: 'All required fields (Name, Email, Password, Business Name, Phone) must be provided' },
+        { status: 400 }
+      );
+    }
+
+    if (!otp || !otp.trim()) {
+      return NextResponse.json(
+        { error: 'Email verification code is required. Please verify your email.' },
         { status: 400 }
       );
     }
@@ -34,15 +43,41 @@ export async function POST(req: NextRequest) {
 
     await connectToDatabase();
 
-    // Check if user already exists
     const normalizedEmail = email.toLowerCase().trim();
+
+    // Verify Email OTP
+    const otpDoc = await Otp.findOne({
+      email: normalizedEmail,
+      type: 'REGISTER',
+    });
+
+    if (!otpDoc) {
+      return NextResponse.json(
+        { error: 'Verification code expired or not found. Please request a new code.' },
+        { status: 400 }
+      );
+    }
+
+    if (otpDoc.otp !== otp.trim()) {
+      otpDoc.attempts += 1;
+      await otpDoc.save();
+      return NextResponse.json(
+        { error: 'Invalid verification code. Please check your inbox and enter the 6-digit code.' },
+        { status: 400 }
+      );
+    }
+
+    // Check if user already exists
     const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return NextResponse.json(
-        { error: 'An account with this email address already exists' },
+        { error: 'An account with this email address already exists. Please log in.' },
         { status: 409 }
       );
     }
+
+    // Delete verified OTP
+    await Otp.deleteOne({ _id: otpDoc._id });
 
     // 15-Day Free Trial timestamps
     const now = new Date();
@@ -89,6 +124,33 @@ export async function POST(req: NextRequest) {
       businessName: tenant.businessName,
     });
 
+    // Send welcome email asynchronously
+    const welcomeHtml = buildBrandedEmailHtml({
+      title: 'Welcome to BillDesk',
+      preheader: `Your store workspace "${tenant.businessName}" is ready.`,
+      contentHtml: `
+        <h2 style="color: #25D366; margin-top: 0;">Welcome aboard, ${user.fullName}!</h2>
+        <p>Your store workspace <strong>${tenant.businessName}</strong> has been created on BillDesk.</p>
+        <p>You have full access to create orders, manage your catalog, and dispatch instant WhatsApp receipts during your <strong>15-day free trial</strong>.</p>
+        <div style="background: rgba(37, 211, 102, 0.08); border-left: 4px solid #25D366; padding: 12px 16px; margin: 20px 0; border-radius: 4px;">
+          <strong style="color: #ffffff;">Store Slug:</strong> ${tenant.slug}<br/>
+          <strong style="color: #ffffff;">Selected Currency:</strong> ${tenant.currency}<br/>
+          <strong style="color: #ffffff;">Free Trial Period:</strong> 15 Days
+        </div>
+      `,
+      actionButton: {
+        text: 'Open Store Workspace',
+        url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/pos`,
+      },
+    });
+
+    sendEmail({
+      to: { email: user.email, name: user.fullName },
+      subject: `Welcome to BillDesk, ${user.fullName}!`,
+      htmlContent: welcomeHtml,
+      textContent: `Welcome to BillDesk! Your store workspace "${tenant.businessName}" is now ready.`,
+    }).catch((e) => console.error('[Welcome Email Failed]:', e));
+
     const response = NextResponse.json({
       success: true,
       user: {
@@ -101,6 +163,7 @@ export async function POST(req: NextRequest) {
         id: tenant._id,
         businessName: tenant.businessName,
         phone: tenant.phone,
+        currency: tenant.currency,
         trialEndsAt: tenant.trialEndsAt,
         plan: tenant.plan,
         daysRemaining: 15,

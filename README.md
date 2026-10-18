@@ -115,3 +115,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the application:
 ## License
 
 Private repository owned by [Hynox-org](https://github.com/Hynox-org).
+
+
+
+<!-- npm run db:fresh -->

@@ -18,7 +18,6 @@ import {
   ArrowLeft,
   CheckCircle2,
 } from 'lucide-react';
-import ThemeToggle from '@/components/ThemeToggle';
 import CountryDropdown from '@/components/CountryDropdown';
 import { useCountry } from '@/context/CountryContext';
 
@@ -67,7 +66,13 @@ export default function RegisterPage() {
     }
 
     if (!formData.email.trim()) {
-      setError('Please enter your business email address');
+      setError('Please enter your email address');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email.trim())) {
+      setError('Please enter a valid email address (e.g. name@gmail.com, you@yahoo.com, you@business.com)');
       return;
     }
 
@@ -93,7 +98,7 @@ export default function RegisterPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: formData.email.trim(),
+          email: formData.email.trim().toLowerCase(),
           type: 'REGISTER',
         }),
       });
@@ -124,7 +129,7 @@ export default function RegisterPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: formData.email.trim(),
+          email: formData.email.trim().toLowerCase(),
           type: 'REGISTER',
         }),
       });
@@ -168,6 +173,7 @@ export default function RegisterPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
+          email: formData.email.trim().toLowerCase(),
           phone: fullPhone,
           otp: cleanOtp,
         }),
@@ -189,10 +195,9 @@ export default function RegisterPage() {
 
   return (
     <div className="auth-page-container">
-      {/* Country Dropdown & Theme Toggle */}
+      {/* Country Dropdown */}
       <div className="auth-top-controls">
         <CountryDropdown />
-        <ThemeToggle />
       </div>
 
       <div className="auth-wrapper auth-wrapper-register">
@@ -261,9 +266,14 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Email Address */}
+              {/* Email Address - All Domains Allowed */}
               <div className="form-group">
-                <label className="form-label">Business Email Address *</label>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
+                  <span>Email Address *</span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                    All email domains accepted
+                  </span>
+                </label>
                 <div style={{ position: 'relative' }}>
                   <Mail
                     size={16}
@@ -279,14 +289,14 @@ export default function RegisterPage() {
                     type="email"
                     className="form-input"
                     style={{ paddingLeft: '36px' }}
-                    placeholder="john@yourstore.com"
+                    placeholder="e.g. yourname@gmail.com, you@yahoo.com, or your domain"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
                   />
                 </div>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                  A 6-digit verification code will be sent to this email before activating your account.
+                  Use any email provider (Gmail, Yahoo, Outlook, iCloud, company domain, etc.). A 6-digit verification code will be sent here.
                 </div>
               </div>
 

@@ -13,7 +13,6 @@ import {
   Menu,
   X,
 } from 'lucide-react';
-import ThemeToggle from '@/components/ThemeToggle';
 import CountryDropdown from '@/components/CountryDropdown';
 import { useCountry } from '@/context/CountryContext';
 
@@ -85,7 +84,6 @@ export default function LandingPage() {
         {/* Desktop Navigation */}
         <nav className="landing-nav-btns landing-nav-desktop">
           <CountryDropdown />
-          <ThemeToggle />
           <Link href="/login" className="btn btn-secondary btn-sm landing-signin-btn">
             Sign In
           </Link>
@@ -112,11 +110,8 @@ export default function LandingPage() {
             <div className="landing-mobile-menu-section">
               <div className="landing-mobile-menu-section-title">Preferences</div>
               <div className="landing-mobile-prefs-row">
-                <div className="landing-mobile-pref-item">
+                <div className="landing-mobile-pref-item" style={{ flex: 1 }}>
                   <CountryDropdown />
-                </div>
-                <div className="landing-mobile-pref-item">
-                  <ThemeToggle />
                 </div>
               </div>
             </div>

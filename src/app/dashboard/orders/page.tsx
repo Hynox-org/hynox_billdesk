@@ -151,7 +151,7 @@ export default function OrdersHistoryPage() {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
               <thead>
-                <tr style={{ background: 'rgba(255, 255, 255, 0.02)', borderBottom: '1px solid var(--border-subtle)' }}>
+                <tr style={{ background: 'var(--emerald-deep)', borderBottom: '1px solid var(--border-subtle)' }}>
                   <th style={{ padding: '12px 20px', color: 'var(--text-muted)', fontWeight: 600 }}>Order ID</th>
                   <th style={{ padding: '12px 20px', color: 'var(--text-muted)', fontWeight: 600 }}>Date & Time</th>
                   <th style={{ padding: '12px 20px', color: 'var(--text-muted)', fontWeight: 600 }}>Customer</th>

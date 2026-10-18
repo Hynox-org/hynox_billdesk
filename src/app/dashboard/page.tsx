@@ -713,7 +713,7 @@ export default function VendorDashboardPage() {
                           {pm.total.toFixed(2)} ({pm.percentage}%)
                         </span>
                       </div>
-                      <div style={{ width: '100%', height: '5px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div style={{ width: '100%', height: '5px', background: 'var(--border-subtle)', borderRadius: '3px', overflow: 'hidden' }}>
                         <div
                           style={{
                             width: `${pm.percentage}%`,
@@ -853,7 +853,7 @@ export default function VendorDashboardPage() {
           <div className="dashboard-table-container">
             <table>
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-subtle)', background: 'rgba(255, 255, 255, 0.02)' }}>
+                <tr style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--emerald-deep)' }}>
                   <th style={{ padding: '10px 16px', color: 'var(--text-muted)', fontWeight: 600 }}>Order #</th>
                   <th style={{ padding: '10px 16px', color: 'var(--text-muted)', fontWeight: 600 }}>Customer</th>
                   <th style={{ padding: '10px 16px', color: 'var(--text-muted)', fontWeight: 600 }}>Items</th>

@@ -21,6 +21,11 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{document.documentElement.setAttribute('data-theme','light');localStorage.setItem('billdesk_theme','light');}catch(e){}})();`,
+          }}
+        />
       </head>
       <body>
         <CountryProvider>{children}</CountryProvider>

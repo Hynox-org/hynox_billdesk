@@ -540,7 +540,7 @@ export default function SettingsPage() {
           {/* Restricted Business Details Card */}
           <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid var(--border-subtle)' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--emerald-deep)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
                 <Lock size={18} />
               </div>
               <div>

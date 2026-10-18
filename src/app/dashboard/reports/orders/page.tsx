@@ -96,7 +96,7 @@ export default function OrdersReportPage() {
           <div
             style={{
               display: 'flex',
-              background: 'rgba(255, 255, 255, 0.05)',
+              background: 'var(--bg-input)',
               padding: '4px',
               borderRadius: '12px',
               border: '1px solid var(--border-subtle)',
@@ -220,7 +220,7 @@ export default function OrdersReportPage() {
                       ? 'linear-gradient(180deg, #25D366 0%, #059669 100%)'
                       : h.orders > 0
                       ? 'rgba(37, 211, 102, 0.35)'
-                      : 'rgba(255, 255, 255, 0.05)',
+                      : 'var(--border-subtle)',
                     boxShadow: isPeak ? '0 0 10px var(--whatsapp-glow)' : 'none',
                     transition: 'height 0.2s ease',
                   }}
@@ -243,7 +243,7 @@ export default function OrdersReportPage() {
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-subtle)', background: 'rgba(255, 255, 255, 0.02)' }}>
+              <tr style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--emerald-deep)' }}>
                 <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600 }}>Order ID</th>
                 <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600 }}>Customer Name</th>
                 <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600 }}>WhatsApp Phone</th>

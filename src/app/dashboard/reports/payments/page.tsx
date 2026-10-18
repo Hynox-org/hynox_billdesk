@@ -92,7 +92,7 @@ export default function PaymentsReportPage() {
           <div
             style={{
               display: 'flex',
-              background: 'rgba(255, 255, 255, 0.05)',
+              background: 'var(--bg-input)',
               padding: '4px',
               borderRadius: '12px',
               border: '1px solid var(--border-subtle)',
@@ -211,7 +211,7 @@ export default function PaymentsReportPage() {
             </div>
 
             <div>
-              <div style={{ width: '100%', height: '8px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '4px', overflow: 'hidden' }}>
+              <div style={{ width: '100%', height: '8px', background: 'var(--border-subtle)', borderRadius: '4px', overflow: 'hidden' }}>
                 <div
                   style={{
                     width: `${pm.percentage}%`,
@@ -239,7 +239,7 @@ export default function PaymentsReportPage() {
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-subtle)', background: 'rgba(255, 255, 255, 0.02)' }}>
+              <tr style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--emerald-deep)' }}>
                 <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600 }}>Payment Method</th>
                 <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600 }}>Total Transactions</th>
                 <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600 }}>Total Collected</th>

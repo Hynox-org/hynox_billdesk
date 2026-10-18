@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
 
-/* Default Theme: Pure White Background with Green System (Light Theme) */
-:root, [data-theme="light"] {
+/* Default Theme: Pure White Background with Green System (Light Theme Strictly Enforced) */
+:root, [data-theme="light"], [data-theme="dark"] {
   --font-sans: 'Outfit', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
@@ -56,51 +56,10 @@
   --shadow-glow: 0 0 24px rgba(37, 211, 102, 0.25);
 }
 
-/* Dark Theme */
-[data-theme="dark"] {
-  --bg-dark: #000000;
-  --bg-card: #07150c;
-  --bg-card-hover: #0c2114;
-  --bg-surface: #040e08;
-  --bg-input: #030a05;
-  --bg-header: rgba(0, 0, 0, 0.92);
-
-  --border-subtle: rgba(74, 222, 128, 0.16);
-  --border-medium: rgba(74, 222, 128, 0.32);
-  --border-glow: rgba(37, 211, 102, 0.45);
-
-  --text-main: #ffffff;
-  --text-secondary: #a7f3d0;
-  --text-muted: #6ee7b7;
-
-  --primary: #10b981;
-  --primary-glow: rgba(16, 185, 129, 0.35);
-  --primary-hover: #059669;
-
-  --whatsapp: #25D366;
-  --whatsapp-glow: rgba(37, 211, 102, 0.4);
-  --whatsapp-hover: #1ebd5a;
-
-  --emerald: #34d399;
-  --emerald-deep: #064e3b;
-  --emerald-dark: #022c16;
-
-  --green-badge-bg: rgba(37, 211, 102, 0.15);
-  --green-badge-border: rgba(37, 211, 102, 0.35);
-  --green-badge-text: #86efac;
-
-  --moss-badge-bg: rgba(6, 78, 59, 0.6);
-  --moss-badge-border: rgba(52, 211, 153, 0.35);
-  --moss-badge-text: #a7f3d0;
-
-  --deep-badge-bg: rgba(4, 120, 87, 0.25);
-  --deep-badge-border: rgba(16, 185, 129, 0.4);
-  --deep-badge-text: #ecfdf5;
-
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.8);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.85);
-  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.95);
-  --shadow-glow: 0 0 30px var(--whatsapp-glow);
+/* Hide theme toggles and containers completely */
+.theme-toggle-btn,
+.auth-theme-toggle {
+  display: none !important;
 }
 
 *, *::before, *::after {
@@ -736,8 +695,9 @@ div[data-nextjs-route-announcer] {
 }
 
 .pos-card-add-btn.disabled {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-input);
   color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
 }
 
 /* Cart Panel */
@@ -760,7 +720,7 @@ div[data-nextjs-route-announcer] {
 }
 
 .pos-cart-item-row {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--emerald-deep);
   border: 1px solid var(--border-subtle);
   border-radius: 10px;
   padding: 9px 12px;

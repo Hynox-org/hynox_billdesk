@@ -22,7 +22,6 @@ import {
   Ban,
   Check,
 } from 'lucide-react';
-import ThemeToggle from '@/components/ThemeToggle';
 
 interface TenantItem {
   id: string;
@@ -175,7 +174,6 @@ export default function SuperAdminPage() {
         </div>
 
         <div className="admin-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <ThemeToggle />
           <button
             type="button"
             onClick={fetchAdminData}
@@ -324,7 +322,7 @@ export default function SuperAdminPage() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
                 <thead>
-                  <tr style={{ background: 'rgba(255, 255, 255, 0.02)', borderBottom: '1px solid var(--border-subtle)' }}>
+                  <tr style={{ background: 'var(--emerald-deep)', borderBottom: '1px solid var(--border-subtle)' }}>
                     <th style={{ padding: '12px 18px', color: 'var(--text-muted)' }}>Business & Owner</th>
                     <th style={{ padding: '12px 18px', color: 'var(--text-muted)' }}>WhatsApp Contact</th>
                     <th style={{ padding: '12px 18px', color: 'var(--text-muted)' }}>Plan & Status</th>

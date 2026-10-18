@@ -14,7 +14,6 @@ import {
   ArrowLeft,
   CheckCircle2,
 } from 'lucide-react';
-import ThemeToggle from '@/components/ThemeToggle';
 
 type AuthMode = 'LOGIN' | 'FORGOT_EMAIL' | 'FORGOT_VERIFY';
 
@@ -210,11 +209,6 @@ export default function LoginPage() {
 
   return (
     <div className="auth-page-container">
-      {/* Theme Toggle */}
-      <div className="auth-theme-toggle">
-        <ThemeToggle />
-      </div>
-
       <div className="auth-wrapper">
         {/* Brand Header */}
         <div className="auth-header">

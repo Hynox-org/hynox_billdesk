@@ -17,7 +17,6 @@ import {
   ChevronRight,
   LockKeyhole,
 } from 'lucide-react';
-import ThemeToggle from '@/components/ThemeToggle';
 import CountryDropdown from '@/components/CountryDropdown';
 
 interface AuthState {

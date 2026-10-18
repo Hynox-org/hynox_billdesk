@@ -93,7 +93,7 @@ export default function ProductsReportPage() {
           <div
             style={{
               display: 'flex',
-              background: 'rgba(255, 255, 255, 0.05)',
+              background: 'var(--bg-input)',
               padding: '4px',
               borderRadius: '12px',
               border: '1px solid var(--border-subtle)',
@@ -188,7 +188,7 @@ export default function ProductsReportPage() {
             <div
               key={c.categoryId}
               style={{
-                background: 'rgba(255, 255, 255, 0.03)',
+                background: 'var(--emerald-deep)',
                 border: '1px solid var(--border-subtle)',
                 borderRadius: '12px',
                 padding: '16px',
@@ -203,7 +203,7 @@ export default function ProductsReportPage() {
               <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--emerald)', marginBottom: '8px' }}>
                 {currency}{c.revenue.toFixed(2)}
               </div>
-              <div style={{ width: '100%', height: '6px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '3px', overflow: 'hidden' }}>
+              <div style={{ width: '100%', height: '6px', background: 'var(--border-subtle)', borderRadius: '3px', overflow: 'hidden' }}>
                 <div
                   style={{
                     width: `${c.percentage}%`,
@@ -229,7 +229,7 @@ export default function ProductsReportPage() {
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-subtle)', background: 'rgba(255, 255, 255, 0.02)' }}>
+              <tr style={{ borderBottom: '1px solid var(--border-subtle)', background: 'var(--emerald-deep)' }}>
                 <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600, width: '60px' }}>Rank</th>
                 <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600 }}>Product Name</th>
                 <th style={{ padding: '12px 16px', color: 'var(--text-muted)', fontWeight: 600 }}>Units Sold</th>
@@ -254,7 +254,7 @@ export default function ProductsReportPage() {
                     {currency}{p.totalRevenue.toFixed(2)}
                   </td>
                   <td style={{ padding: '12px 16px', width: '180px' }}>
-                    <div style={{ width: '100%', height: '6px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ width: '100%', height: '6px', background: 'var(--border-subtle)', borderRadius: '3px', overflow: 'hidden' }}>
                       <div
                         style={{
                           width: `${p.percentage}%`,

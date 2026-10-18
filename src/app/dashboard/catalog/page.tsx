@@ -12,6 +12,7 @@ import {
   AlertCircle,
   Tag,
   DollarSign,
+  Search,
 } from 'lucide-react';
 
 interface Category {
@@ -38,6 +39,8 @@ export default function CatalogPage() {
   const [loading, setLoading] = useState(true);
   const [currency, setCurrency] = useState('$');
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
 
   // Modals state
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -91,6 +94,24 @@ export default function CatalogPage() {
     setFeedback({ type, text });
     setTimeout(() => setFeedback(null), 3500);
   };
+
+  // Filter products by category and search
+  const filteredProducts = products.filter((p) => {
+    const matchesCategory =
+      selectedCategory === 'ALL' ||
+      (typeof p.categoryId === 'string'
+        ? p.categoryId === selectedCategory
+        : p.categoryId?._id === selectedCategory);
+
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch =
+      !q ||
+      p.name.toLowerCase().includes(q) ||
+      (p.sku && p.sku.toLowerCase().includes(q)) ||
+      (p.description && p.description.toLowerCase().includes(q));
+
+    return matchesCategory && matchesSearch;
+  });
 
   // Category Actions
   const handleCreateCategory = async (e: React.FormEvent) => {
@@ -229,27 +250,17 @@ export default function CatalogPage() {
   return (
     <div>
       {/* Top Header */}
-      <div
-        className="catalog-header"
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '24px',
-          flexWrap: 'wrap',
-          gap: '16px',
-        }}
-      >
+      <div className="catalog-header">
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
-            Catalog & Menu Management
+          <h1 className="catalog-title">
+            Catalog &amp; Menu Management
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          <p className="catalog-subtitle">
             Configure your item categories, pricing, descriptions, and order availability
           </p>
         </div>
 
-        <div className="catalog-actions" style={{ display: 'flex', gap: '12px' }}>
+        <div className="catalog-actions">
           <button
             type="button"
             onClick={() => setShowCategoryModal(true)}
@@ -270,168 +281,309 @@ export default function CatalogPage() {
       {feedback && (
         <div
           style={{
-            background: feedback.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(6, 78, 59, 0.5)',
-            border: `1px solid ${feedback.type === 'success' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(52, 211, 153, 0.4)'}`,
-            color: feedback.type === 'success' ? '#34d399' : '#a7f3d0',
+            background: feedback.type === 'success' ? 'var(--green-badge-bg)' : 'var(--moss-badge-bg)',
+            border: `1px solid ${feedback.type === 'success' ? 'var(--green-badge-border)' : 'var(--moss-badge-border)'}`,
+            color: 'var(--text-main)',
             padding: '12px 16px',
             borderRadius: '10px',
             marginBottom: '20px',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
+            fontSize: '0.88rem',
+            fontWeight: 500,
           }}
         >
-          {feedback.type === 'success' ? <Check size={18} /> : <AlertCircle size={18} />}
+          {feedback.type === 'success' ? <Check size={18} style={{ color: 'var(--primary)' }} /> : <AlertCircle size={18} style={{ color: '#ef4444' }} />}
           <span>{feedback.text}</span>
         </div>
       )}
 
-      {/* Categories Overview Bar */}
-      <div className="glass-panel" style={{ padding: '16px 20px', marginBottom: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-          <Layers size={18} style={{ color: 'var(--primary)' }} />
-          <h2 style={{ fontSize: '1rem', fontWeight: 700 }}>Catalog Categories ({categories.length})</h2>
+      {/* Search and Category Filter Bar */}
+      <div className="glass-panel catalog-filter-bar">
+        <div className="catalog-search-wrapper">
+          <Search size={16} className="catalog-search-icon" />
+          <input
+            type="text"
+            className="form-input catalog-search-input"
+            placeholder="Search items by name, SKU, or description..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="catalog-search-clear"
+              title="Clear search"
+            >
+              <X size={14} />
+            </button>
+          )}
         </div>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-          {categories.map((cat) => (
-            <div
-              key={cat._id}
-              style={{
-                background: 'var(--bg-input)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: '8px',
-                padding: '6px 12px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontSize: '0.85rem',
-              }}
-            >
-              <Tag size={13} style={{ color: 'var(--text-muted)' }} />
-              <span>{cat.name}</span>
+        <div className="catalog-category-filter-pills">
+          <button
+            type="button"
+            className={`btn btn-sm ${selectedCategory === 'ALL' ? 'btn-primary' : 'btn-secondary'} catalog-pill-btn`}
+            onClick={() => setSelectedCategory('ALL')}
+          >
+            All Items ({products.length})
+          </button>
+          {categories.map((c) => {
+            const count = products.filter((p) =>
+              typeof p.categoryId === 'string' ? p.categoryId === c._id : p.categoryId?._id === c._id
+            ).length;
+            return (
               <button
+                key={c._id}
                 type="button"
-                onClick={() => handleDeleteCategory(cat._id)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--text-muted)',
-                  cursor: 'pointer',
-                  padding: '2px',
-                }}
-                title="Delete category"
+                className={`btn btn-sm ${selectedCategory === c._id ? 'btn-primary' : 'btn-secondary'} catalog-pill-btn`}
+                onClick={() => setSelectedCategory(c._id)}
               >
-                <X size={13} />
+                {c.name} ({count})
               </button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      {/* Products Table */}
-      <div className="glass-panel" style={{ padding: '0px', overflow: 'hidden' }}>
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)' }}>
-          <h3 style={{ fontSize: '1.05rem', fontWeight: 700 }}>All Menu & Catalog Items ({products.length})</h3>
+      {/* Categories Overview Bar */}
+      <div className="glass-panel catalog-categories-panel">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+          <Layers size={18} style={{ color: 'var(--primary)' }} />
+          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>
+            Catalog Categories ({categories.length})
+          </h2>
+        </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+          {categories.length === 0 ? (
+            <span style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>
+              No categories created yet. Click &quot;New Category&quot; above to organize your catalog.
+            </span>
+          ) : (
+            categories.map((cat) => (
+              <div key={cat._id} className="catalog-category-tag">
+                <Tag size={13} style={{ color: 'var(--primary)' }} />
+                <span>{cat.name}</span>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteCategory(cat._id)}
+                  className="catalog-category-del-btn"
+                  title="Delete category"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Products Panel */}
+      <div className="glass-panel catalog-products-panel">
+        <div className="catalog-panel-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <ShoppingBag size={18} style={{ color: 'var(--primary)' }} />
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)' }}>
+              All Menu &amp; Catalog Items ({filteredProducts.length}{filteredProducts.length !== products.length ? ` of ${products.length}` : ''})
+            </h3>
+          </div>
+          {filteredProducts.length !== products.length && (
+            <button
+              type="button"
+              onClick={() => { setSearchQuery(''); setSelectedCategory('ALL'); }}
+              className="btn btn-secondary btn-sm"
+              style={{ fontSize: '0.78rem', padding: '4px 10px' }}
+            >
+              Reset Filters
+            </button>
+          )}
         </div>
 
         {loading ? (
           <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
             Loading products...
           </div>
-        ) : products.length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-            No products in catalog yet. Click &quot;Add Product Item&quot; to create your first item!
+        ) : filteredProducts.length === 0 ? (
+          <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+            {products.length === 0
+              ? 'No products in catalog yet. Click "Add Product Item" to create your first item!'
+              : 'No products match your current search or category filter.'}
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
-              <thead>
-                <tr style={{ background: 'rgba(255, 255, 255, 0.02)', borderBottom: '1px solid var(--border-subtle)' }}>
-                  <th style={{ padding: '12px 20px', color: 'var(--text-muted)', fontWeight: 600 }}>Item</th>
-                  <th style={{ padding: '12px 20px', color: 'var(--text-muted)', fontWeight: 600 }}>Category</th>
-                  <th style={{ padding: '12px 20px', color: 'var(--text-muted)', fontWeight: 600 }}>SKU</th>
-                  <th style={{ padding: '12px 20px', color: 'var(--text-muted)', fontWeight: 600 }}>Price</th>
-                  <th style={{ padding: '12px 20px', color: 'var(--text-muted)', fontWeight: 600 }}>Status</th>
-                  <th style={{ padding: '12px 20px', color: 'var(--text-muted)', fontWeight: 600 }}>Stock</th>
-                  <th style={{ padding: '12px 20px', color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((prod) => (
-                  <tr
-                    key={prod._id}
-                    style={{ borderBottom: '1px solid var(--border-subtle)' }}
-                  >
-                    <td style={{ padding: '14px 20px' }}>
-                      <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{prod.name}</div>
-                      {prod.description && (
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', maxWidth: '300px' }}>
-                          {prod.description}
-                        </div>
-                      )}
-                    </td>
-                    <td style={{ padding: '14px 20px', color: 'var(--text-secondary)' }}>
-                      {typeof prod.categoryId === 'object' ? prod.categoryId?.name : 'General'}
-                    </td>
-                    <td style={{ padding: '14px 20px', fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>
-                      {prod.sku || '—'}
-                    </td>
-                    <td style={{ padding: '14px 20px', fontWeight: 700, color: 'var(--emerald)' }}>
-                      {currency}{prod.price.toFixed(2)}
-                    </td>
-                    <td style={{ padding: '14px 20px' }}>
-                      <button
-                        type="button"
-                        onClick={() => handleToggleAvailability(prod)}
-                        className={`badge ${prod.isAvailable ? 'badge-pro' : 'badge-expired'}`}
-                        style={{ cursor: 'pointer', border: 'none' }}
-                        title="Click to toggle availability"
-                      >
-                        {prod.isAvailable ? 'Available' : 'Unavailable'}
-                      </button>
-                    </td>
-                    <td style={{ padding: '14px 20px' }}>
-                      {prod.trackStock ? (
-                        <span
-                          className={`badge ${(prod.stockQuantity ?? 0) > 0 ? 'badge-pro' : 'badge-expired'}`}
-                          style={{ fontWeight: 600 }}
+          <>
+            {/* 1. Desktop Table (> 768px) */}
+            <div className="catalog-desktop-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Category</th>
+                    <th>SKU</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Stock</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredProducts.map((prod) => (
+                    <tr key={prod._id}>
+                      <td>
+                        <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>{prod.name}</div>
+                        {prod.description && (
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', maxWidth: '300px' }}>
+                            {prod.description}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ color: 'var(--text-secondary)' }}>
+                        {typeof prod.categoryId === 'object' ? prod.categoryId?.name : 'General'}
+                      </td>
+                      <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem' }}>
+                        {prod.sku || '—'}
+                      </td>
+                      <td style={{ fontWeight: 700, color: 'var(--emerald)' }}>
+                        {currency}{prod.price.toFixed(2)}
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleAvailability(prod)}
+                          className={`badge ${prod.isAvailable ? 'badge-pro' : 'badge-expired'}`}
+                          style={{ cursor: 'pointer', border: 'none' }}
+                          title="Click to toggle availability"
                         >
-                          {(prod.stockQuantity ?? 0) > 0
-                            ? `${prod.stockQuantity} in stock`
-                            : 'Out of stock'}
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                          Live Counter
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ padding: '14px 20px', textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: '8px' }}>
+                          {prod.isAvailable ? 'Available' : 'Unavailable'}
+                        </button>
+                      </td>
+                      <td>
+                        {prod.trackStock ? (
+                          <span
+                            className={`badge ${(prod.stockQuantity ?? 0) > 0 ? 'badge-pro' : 'badge-expired'}`}
+                            style={{ fontWeight: 600 }}
+                          >
+                            {(prod.stockQuantity ?? 0) > 0
+                              ? `${prod.stockQuantity} in stock`
+                              : 'Out of stock'}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                            Live Counter
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', gap: '8px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenProductModal(prod)}
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '6px 10px' }}
+                            title="Edit Product"
+                            aria-label={`Edit ${prod.name}`}
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteProduct(prod._id)}
+                            className="btn btn-danger btn-sm"
+                            style={{ padding: '6px 10px' }}
+                            title="Delete Product"
+                            aria-label={`Delete ${prod.name}`}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* 2. Tablet & Mobile Cards (<= 768px) */}
+            <div className="catalog-mobile-cards">
+              {filteredProducts.map((prod) => {
+                const categoryName = typeof prod.categoryId === 'object' ? prod.categoryId?.name : 'General';
+                return (
+                  <div key={prod._id} className="catalog-mobile-card">
+                    <div className="catalog-card-header">
+                      <div>
+                        <h4 className="catalog-card-title">{prod.name}</h4>
+                        <div className="catalog-card-category-badge">
+                          <Tag size={11} /> {categoryName}
+                        </div>
+                      </div>
+                      <div className="catalog-card-price">
+                        {currency}{prod.price.toFixed(2)}
+                      </div>
+                    </div>
+
+                    {(prod.description || prod.sku) && (
+                      <div className="catalog-card-meta">
+                        {prod.sku && (
+                          <span className="catalog-card-sku">SKU: {prod.sku}</span>
+                        )}
+                        {prod.description && (
+                          <p className="catalog-card-desc">{prod.description}</p>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="catalog-card-footer">
+                      <div className="catalog-card-status-badges">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleAvailability(prod)}
+                          className={`badge ${prod.isAvailable ? 'badge-pro' : 'badge-expired'}`}
+                          style={{ cursor: 'pointer', border: 'none' }}
+                          title="Tap to toggle live counter availability"
+                        >
+                          {prod.isAvailable ? 'Available' : 'Unavailable'}
+                        </button>
+
+                        {prod.trackStock ? (
+                          <span className={`badge ${(prod.stockQuantity ?? 0) > 0 ? 'badge-pro' : 'badge-expired'}`}>
+                            {(prod.stockQuantity ?? 0) > 0 ? `${prod.stockQuantity} in stock` : 'Out of stock'}
+                          </span>
+                        ) : (
+                          <span className="catalog-card-counter-tag">
+                            Live Counter
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="catalog-card-actions">
                         <button
                           type="button"
                           onClick={() => handleOpenProductModal(prod)}
-                          className="btn btn-secondary btn-sm"
-                          style={{ padding: '6px 10px' }}
+                          className="btn btn-secondary btn-sm catalog-action-btn"
+                          title="Edit Product"
+                          aria-label={`Edit ${prod.name}`}
                         >
                           <Edit2 size={14} />
+                          <span>Edit</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteProduct(prod._id)}
-                          className="btn btn-danger btn-sm"
-                          style={{ padding: '6px 10px' }}
+                          className="btn btn-danger btn-sm catalog-action-btn"
+                          title="Delete Product"
+                          aria-label={`Delete ${prod.name}`}
                         >
                           <Trash2 size={14} />
                         </button>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
 
@@ -490,7 +642,7 @@ export default function CatalogPage() {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div className="catalog-modal-grid">
                 <div className="form-group">
                   <label className="form-label">Category</label>
                   <select
@@ -550,10 +702,10 @@ export default function CatalogPage() {
                 {/* Available to order toggle card */}
                 <div
                   style={{
-                    background: 'rgba(255, 255, 255, 0.04)',
+                    background: 'var(--bg-input)',
                     border: '1px solid var(--border-subtle)',
                     borderRadius: '12px',
-                    padding: '14px 16px',
+                    padding: '12px 14px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -561,15 +713,15 @@ export default function CatalogPage() {
                   }}
                 >
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-main)' }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.92rem', color: 'var(--text-main)' }}>
                       Available to order
                     </div>
                     <div
                       style={{
-                        fontSize: '0.8rem',
-                        color: productForm.isAvailable ? '#10b981' : 'var(--text-muted)',
+                        fontSize: '0.78rem',
+                        color: productForm.isAvailable ? 'var(--primary)' : 'var(--text-muted)',
                         marginTop: '2px',
-                        fontWeight: productForm.isAvailable ? 500 : 400,
+                        fontWeight: productForm.isAvailable ? 600 : 400,
                       }}
                     >
                       {productForm.isAvailable
@@ -584,10 +736,10 @@ export default function CatalogPage() {
                     aria-checked={productForm.isAvailable}
                     onClick={() => setProductForm({ ...productForm, isAvailable: !productForm.isAvailable })}
                     style={{
-                      width: '52px',
-                      height: '30px',
-                      borderRadius: '15px',
-                      background: productForm.isAvailable ? '#1e7e5a' : '#64748b',
+                      width: '50px',
+                      height: '28px',
+                      borderRadius: '14px',
+                      background: productForm.isAvailable ? 'var(--primary)' : 'var(--border-medium)',
                       border: 'none',
                       position: 'relative',
                       cursor: 'pointer',
@@ -598,8 +750,8 @@ export default function CatalogPage() {
                   >
                     <div
                       style={{
-                        width: '26px',
-                        height: '26px',
+                        width: '24px',
+                        height: '24px',
                         borderRadius: '50%',
                         background: '#ffffff',
                         transform: productForm.isAvailable ? 'translateX(22px)' : 'translateX(0px)',
@@ -613,10 +765,10 @@ export default function CatalogPage() {
                 {/* Available stock toggle card */}
                 <div
                   style={{
-                    background: 'rgba(255, 255, 255, 0.04)',
+                    background: 'var(--bg-input)',
                     border: '1px solid var(--border-subtle)',
                     borderRadius: '12px',
-                    padding: '14px 16px',
+                    padding: '12px 14px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -624,20 +776,20 @@ export default function CatalogPage() {
                   }}
                 >
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-main)' }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.92rem', color: 'var(--text-main)' }}>
                       Available stock
                     </div>
                     <div
                       style={{
-                        fontSize: '0.8rem',
-                        color: productForm.trackStock ? '#10b981' : 'var(--text-muted)',
+                        fontSize: '0.78rem',
+                        color: productForm.trackStock ? 'var(--primary)' : 'var(--text-muted)',
                         marginTop: '2px',
-                        fontWeight: productForm.trackStock ? 500 : 400,
+                        fontWeight: productForm.trackStock ? 600 : 400,
                       }}
                     >
                       {productForm.trackStock
                         ? 'Inventory quantity tracking active'
-                        : 'Disabled (Available to order active)'}
+                        : 'Disabled (Live counter active)'}
                     </div>
                   </div>
 
@@ -647,10 +799,10 @@ export default function CatalogPage() {
                     aria-checked={productForm.trackStock}
                     onClick={() => setProductForm({ ...productForm, trackStock: !productForm.trackStock })}
                     style={{
-                      width: '52px',
-                      height: '30px',
-                      borderRadius: '15px',
-                      background: productForm.trackStock ? '#1e7e5a' : '#64748b',
+                      width: '50px',
+                      height: '28px',
+                      borderRadius: '14px',
+                      background: productForm.trackStock ? 'var(--primary)' : 'var(--border-medium)',
                       border: 'none',
                       position: 'relative',
                       cursor: 'pointer',
@@ -661,8 +813,8 @@ export default function CatalogPage() {
                   >
                     <div
                       style={{
-                        width: '26px',
-                        height: '26px',
+                        width: '24px',
+                        height: '24px',
                         borderRadius: '50%',
                         background: '#ffffff',
                         transform: productForm.trackStock ? 'translateX(22px)' : 'translateX(0px)',
@@ -677,13 +829,13 @@ export default function CatalogPage() {
                 {productForm.trackStock && (
                   <div
                     style={{
-                      background: 'rgba(37, 211, 102, 0.06)',
-                      border: '1px solid rgba(37, 211, 102, 0.25)',
+                      background: 'var(--green-badge-bg)',
+                      border: '1px solid var(--green-badge-border)',
                       borderRadius: '12px',
                       padding: '14px 16px',
                     }}
                   >
-                    <label className="form-label" style={{ fontWeight: 600, marginBottom: '6px' }}>
+                    <label className="form-label" style={{ fontWeight: 600, marginBottom: '6px', color: 'var(--text-main)' }}>
                       Stock Quantity (Available units)
                     </label>
                     <input

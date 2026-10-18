@@ -55,7 +55,7 @@ export default function CountryDropdown() {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="btn btn-secondary btn-sm"
+        className="btn btn-secondary btn-sm country-dropdown-trigger"
         style={{
           display: 'inline-flex',
           alignItems: 'center',
@@ -136,6 +136,7 @@ export default function CountryDropdown() {
       {/* Dropdown Menu */}
       {isOpen && (
         <div
+          className="country-dropdown-menu"
           style={{
             position: 'absolute',
             top: 'calc(100% + 6px)',

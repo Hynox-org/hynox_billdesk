@@ -22,6 +22,7 @@ import {
   CreditCard,
   X,
   Check,
+  ArrowLeft,
 } from 'lucide-react';
 import { useCountry } from '@/context/CountryContext';
 
@@ -58,6 +59,7 @@ export default function OrderCreationPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [currency, setCurrency] = useState('$');
+  const [activeStep, setActiveStep] = useState<1 | 2>(1);
 
   // Cart & Customer State
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -208,6 +210,7 @@ export default function OrderCreationPage() {
     setCustomerPhone('');
     setCustomerName('');
     setOrderError(null);
+    setActiveStep(1);
   };
 
   // Get item count in cart
@@ -258,7 +261,7 @@ export default function OrderCreationPage() {
           taxRate: 0,
           discountAmount: 0,
           paymentMethod: paymentStatus === 'PAID_CASH' ? 'CASH' : paymentStatus === 'PAID_ONLINE' ? 'ONLINE' : 'UPI',
-          paymentStatus: paymentStatus === 'PENDING' ? 'PENDING' : 'PAID',
+          paymentStatus: paymentStatus || 'PAID_CASH',
         }),
       });
 
@@ -317,67 +320,88 @@ export default function OrderCreationPage() {
   return (
     <div>
       {/* Top Header Banner */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '20px',
-          flexWrap: 'wrap',
-          gap: '12px',
-        }}
-      >
+      <div className="pos-header-banner">
         <div>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)', marginBottom: '4px' }}>
+          <h1 className="pos-header-title">
             New Order
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          <p className="pos-header-subtitle">
             Select items, review your bill, and send receipts instantly via WhatsApp.
           </p>
         </div>
 
-        {/* Live Bill Status Pill */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div
-            className="glass-panel"
-            style={{
-              padding: '6px 14px',
-              borderRadius: '10px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '0.85rem',
+        {/* Live Bill Status Pill & Quick Jump */}
+        <div className="pos-header-bill-status">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveStep((prev) => (prev === 1 ? 2 : 1));
+              window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
+            className="glass-panel pos-bill-pill-btn"
+            title={activeStep === 1 ? 'Switch to order bill' : 'Back to menu catalog'}
           >
-            <span style={{ color: 'var(--text-muted)' }}>Current Bill:</span>
-            <span style={{ fontWeight: 800, color: 'var(--emerald)', fontSize: '1rem' }}>
+            <span className="pos-bill-pill-label">Bill:</span>
+            <span className="pos-bill-pill-amount">
               {currency}{totalAmount.toFixed(2)}
             </span>
-            <span style={{ color: 'var(--border-medium)' }}>|</span>
-            <span style={{ color: 'var(--text-secondary)' }}>
+            <span className="pos-bill-pill-divider">|</span>
+            <span className="pos-bill-pill-count">
               {totalItemsCount} item{totalItemsCount === 1 ? '' : 's'}
             </span>
-          </div>
+            <span className="pos-bill-pill-toggle">
+              {activeStep === 1 ? 'Review \u2192' : '\u2190 Menu'}
+            </span>
+          </button>
         </div>
       </div>
 
+      {/* Sequential Step Tabs (Visible only on mobile & tablet <= 1080px) */}
+      <div className="pos-mobile-step-tabs" role="tablist" aria-label="Order Creation Steps">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeStep === 1}
+          className={`pos-step-tab ${activeStep === 1 ? 'active' : ''}`}
+          onClick={() => {
+            setActiveStep(1);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        >
+          <span className="pos-step-num">1</span>
+          <span className="pos-step-title">Select Items</span>
+          {totalItemsCount > 0 && (
+            <span className="pos-step-badge">{totalItemsCount}</span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeStep === 2}
+          className={`pos-step-tab ${activeStep === 2 ? 'active' : ''}`}
+          onClick={() => {
+            setActiveStep(2);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        >
+          <span className="pos-step-num">2</span>
+          <span className="pos-step-title">Review &amp; Bill</span>
+          <span className="pos-step-price">
+            {currency}{totalAmount.toFixed(2)}
+          </span>
+        </button>
+      </div>
+
       {/* Main 2-Column Grid */}
-      <div
-        className="pos-main-grid"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1.8fr) minmax(340px, 1.2fr)',
-          gap: '24px',
-          alignItems: 'start',
-        }}
-      >
+      <div className="pos-main-grid">
         {/* ========================================================= */}
         {/* LEFT COLUMN: STEP 1 - SELECT ITEMS                        */}
         {/* ========================================================= */}
-        <div>
+        <div className={`pos-step-1-col ${activeStep !== 1 ? 'pos-step-hidden-mobile' : ''}`}>
           {/* Step 1 Header & Filters */}
-          <div className="glass-panel" style={{ padding: '16px 20px', marginBottom: '18px', borderRadius: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <div className="glass-panel pos-filter-card">
+            <div className="pos-filter-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span
                   style={{
@@ -447,12 +471,11 @@ export default function OrderCreationPage() {
             </div>
 
             {/* Category Pills */}
-            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+            <div className="pos-category-pills">
               <button
                 type="button"
                 onClick={() => setSelectedCategory('ALL')}
-                className={`btn btn-sm ${selectedCategory === 'ALL' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ whiteSpace: 'nowrap', borderRadius: '10px' }}
+                className={`btn btn-sm pos-cat-btn ${selectedCategory === 'ALL' ? 'btn-primary' : 'btn-secondary'}`}
               >
                 All Items ({products.length})
               </button>
@@ -465,8 +488,7 @@ export default function OrderCreationPage() {
                     key={cat._id}
                     type="button"
                     onClick={() => setSelectedCategory(cat._id)}
-                    className={`btn btn-sm ${selectedCategory === cat._id ? 'btn-primary' : 'btn-secondary'}`}
-                    style={{ whiteSpace: 'nowrap', borderRadius: '10px' }}
+                    className={`btn btn-sm pos-cat-btn ${selectedCategory === cat._id ? 'btn-primary' : 'btn-secondary'}`}
                   >
                     {cat.name} ({count})
                   </button>
@@ -508,134 +530,40 @@ export default function OrderCreationPage() {
                 return (
                   <div
                     key={prod._id}
-                    className="pos-item-card"
+                    className={`pos-item-card ${isInCart ? 'is-in-cart' : ''} ${isOutOfStock ? 'is-out-of-stock' : ''}`}
                     onClick={() => {
                       if (!isOutOfStock) addToCart(prod);
                     }}
-                    style={{
-                      borderColor: isInCart ? 'var(--whatsapp)' : undefined,
-                      background: isInCart ? 'var(--bg-card-hover)' : undefined,
-                      position: 'relative',
-                      opacity: isOutOfStock ? 0.6 : 1,
-                      cursor: isOutOfStock ? 'not-allowed' : 'pointer',
-                    }}
                   >
-                    {/* In-Cart Count Badge */}
-                    {isInCart && (
-                      <span
-                        style={{
-                          position: 'absolute',
-                          top: '10px',
-                          right: '10px',
-                          background: 'var(--whatsapp)',
-                          color: '#000',
-                          fontSize: '0.7rem',
-                          fontWeight: 800,
-                          borderRadius: '12px',
-                          padding: '2px 8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '3px',
-                        }}
-                      >
-                        <Check size={11} /> {qtyInCart} in bill
-                      </span>
-                    )}
+                    {/* Top status line: SKU on left, badge on right */}
+                    <div className="pos-card-header">
+                      <span className="pos-card-sku">{prod.sku || 'ITEM'}</span>
+                      {isInCart ? (
+                        <span className="pos-badge-incart">
+                          <Check size={11} /> {qtyInCart} in bill
+                        </span>
+                      ) : isOutOfStock ? (
+                        <span className="pos-badge-out">Out of stock</span>
+                      ) : prod.trackStock && remainingStock !== null ? (
+                        <span className="pos-badge-stock">{remainingStock} left</span>
+                      ) : null}
+                    </div>
 
-                    {/* Stock Status Badge */}
-                    {isOutOfStock ? (
-                      <span
-                        style={{
-                          position: 'absolute',
-                          top: '10px',
-                          right: '10px',
-                          background: 'rgba(239, 68, 68, 0.2)',
-                          color: '#f87171',
-                          border: '1px solid rgba(239, 68, 68, 0.4)',
-                          fontSize: '0.68rem',
-                          fontWeight: 700,
-                          borderRadius: '10px',
-                          padding: '2px 7px',
-                        }}
-                      >
-                        Out of stock
-                      </span>
-                    ) : prod.trackStock && remainingStock !== null && !isInCart ? (
-                      <span
-                        style={{
-                          position: 'absolute',
-                          top: '10px',
-                          right: '10px',
-                          background: 'rgba(37, 211, 102, 0.12)',
-                          color: 'var(--whatsapp)',
-                          fontSize: '0.68rem',
-                          fontWeight: 700,
-                          borderRadius: '10px',
-                          padding: '2px 7px',
-                        }}
-                      >
-                        {remainingStock} in stock
-                      </span>
-                    ) : null}
-
-                    <div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                        {prod.sku || 'ITEM'}
-                      </div>
-                      <div style={{ fontWeight: 700, fontSize: '0.95rem', lineHeight: 1.3, marginBottom: '6px', color: 'var(--text-main)', paddingRight: isInCart || isOutOfStock || prod.trackStock ? '70px' : '0' }}>
-                        {prod.name}
-                      </div>
+                    <div className="pos-card-body">
+                      <div className="pos-card-title">{prod.name}</div>
                       {prod.description && (
-                        <div
-                          style={{
-                            fontSize: '0.78rem',
-                            color: 'var(--text-secondary)',
-                            lineHeight: 1.3,
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                          }}
-                        >
-                          {prod.description}
-                        </div>
+                        <div className="pos-card-desc">{prod.description}</div>
                       )}
                     </div>
 
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        marginTop: '12px',
-                        paddingTop: '8px',
-                        borderTop: '1px solid var(--border-subtle)',
-                      }}
-                    >
-                      <span style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--emerald)' }}>
+                    <div className="pos-card-footer">
+                      <span className="pos-card-price">
                         {currency}{prod.price.toFixed(2)}
                       </span>
                       <span
-                        style={{
-                          borderRadius: '8px',
-                          background: isOutOfStock
-                            ? 'rgba(255, 255, 255, 0.05)'
-                            : isInCart
-                            ? 'var(--whatsapp)'
-                            : 'rgba(37, 211, 102, 0.15)',
-                          color: isOutOfStock
-                            ? 'var(--text-muted)'
-                            : isInCart
-                            ? '#000'
-                            : 'var(--whatsapp)',
-                          padding: '4px 10px',
-                          fontSize: '0.78rem',
-                          fontWeight: 700,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          transition: 'all 0.15s ease',
-                        }}
+                        className={`pos-card-add-btn ${
+                          isOutOfStock ? 'disabled' : isInCart ? 'active' : ''
+                        }`}
                       >
                         {isOutOfStock ? (
                           'Unavailable'
@@ -657,17 +585,28 @@ export default function OrderCreationPage() {
         {/* RIGHT COLUMN: STEP 2 - ORDER BILL & CUSTOMER              */}
         {/* ========================================================= */}
         <div
-          className="glass-panel pos-cart-panel"
-          style={{
-            padding: '22px',
-            borderRadius: '16px',
-            position: 'sticky',
-            top: '80px',
-            maxHeight: 'calc(100vh - 100px)',
-            display: 'flex',
-            flexDirection: 'column',
-          }}
+          id="pos-cart-panel"
+          className={`glass-panel pos-cart-panel pos-step-2-col ${
+            activeStep !== 2 ? 'pos-step-hidden-mobile' : ''
+          }`}
         >
+          {/* Mobile Back-to-Step-1 Navigation Bar */}
+          <div className="pos-mobile-back-row">
+            <button
+              type="button"
+              className="pos-mobile-back-btn"
+              onClick={() => {
+                setActiveStep(1);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            >
+              <ArrowLeft size={14} /> Add More Items
+            </button>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              Step 2 of 2
+            </span>
+          </div>
+
           {/* Step 2 Header */}
           <div
             style={{
@@ -729,9 +668,9 @@ export default function OrderCreationPage() {
           {orderError && (
             <div
               style={{
-                background: 'rgba(6, 78, 59, 0.5)',
-                border: '1px solid rgba(52, 211, 153, 0.4)',
-                color: '#a7f3d0',
+                background: 'var(--moss-badge-bg)',
+                border: '1px solid var(--moss-badge-border)',
+                color: 'var(--text-main)',
                 padding: '10px 12px',
                 borderRadius: '8px',
                 fontSize: '0.82rem',
@@ -747,7 +686,7 @@ export default function OrderCreationPage() {
           )}
 
           {/* Cart Item Rows */}
-          <div style={{ flex: 1, overflowY: 'auto', marginBottom: '14px', maxHeight: '220px', paddingRight: '4px' }}>
+          <div className="pos-cart-items-scroll">
             {cart.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '36px 12px', color: 'var(--text-muted)' }}>
                 <ShoppingBag size={32} style={{ margin: '0 auto 8px', opacity: 0.5 }} />
@@ -761,28 +700,10 @@ export default function OrderCreationPage() {
                 {cart.map((item) => (
                   <div
                     key={item.productId}
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.03)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: '10px',
-                      padding: '10px 12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: '8px',
-                    }}
+                    className="pos-cart-item-row"
                   >
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontWeight: 600,
-                          fontSize: '0.88rem',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          color: 'var(--text-main)',
-                        }}
-                      >
+                      <div className="pos-cart-item-name">
                         {item.productName}
                       </div>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -790,7 +711,7 @@ export default function OrderCreationPage() {
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                       {/* Qty increment / decrement controls */}
                       <div
                         style={{
@@ -934,7 +855,7 @@ export default function OrderCreationPage() {
                 />
               </div>
 
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
                 <span>Code {country.dialCode} is fixed from header selection</span>
                 {customerPhone && (
                   <span style={{ color: 'var(--whatsapp)', fontWeight: 600 }}>
@@ -944,7 +865,7 @@ export default function OrderCreationPage() {
               </div>
             </div>
 
-            <div className="pos-checkout-row" style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '8px' }}>
+            <div className="pos-checkout-row">
               <div>
                 <label className="form-label" style={{ fontSize: '0.78rem' }}>
                   Customer Name (Optional)
@@ -990,12 +911,37 @@ export default function OrderCreationPage() {
         </div>
       </div>
 
+      {/* Mobile Floating Cart Summary Pill (shown only on mobile/tablet during Step 1 when cart has items) */}
+      {cart.length > 0 && activeStep === 1 && (
+        <button
+          type="button"
+          onClick={() => {
+            setActiveStep(2);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className="pos-mobile-cart-float"
+          aria-label="Proceed to review bill and checkout"
+        >
+          <div className="pos-mobile-cart-float-info">
+            <span className="pos-mobile-cart-float-badge">
+              <ShoppingBag size={14} /> {totalItemsCount}
+            </span>
+            <span className="pos-mobile-cart-float-total">
+              {currency}{totalAmount.toFixed(2)}
+            </span>
+          </div>
+          <span className="pos-mobile-cart-float-btn">
+            Review Bill &amp; Pay &rarr;
+          </span>
+        </button>
+      )}
+
       {/* ========================================================= */}
       {/* POST-ORDER SHARE FLOW (MODAL)                             */}
       {/* ========================================================= */}
       {completedOrder && (
         <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '520px', borderRadius: '18px' }}>
+          <div className="modal-content pos-receipt-modal">
             {/* Success Header */}
             <div style={{ textAlign: 'center', marginBottom: '16px' }}>
               <div
@@ -1056,7 +1002,7 @@ export default function OrderCreationPage() {
               </button>
 
               {/* Option 2 & 3: Copy Receipt & System Share */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div className="pos-receipt-actions-row">
                 <button
                   type="button"
                   onClick={handleCopyReceipt}
@@ -1082,7 +1028,10 @@ export default function OrderCreationPage() {
               {/* Option 4: Next Customer Order */}
               <button
                 type="button"
-                onClick={() => setCompletedOrder(null)}
+                onClick={() => {
+                  setCompletedOrder(null);
+                  setActiveStep(1);
+                }}
                 className="btn btn-primary"
                 style={{ width: '100%', justifyContent: 'center', marginTop: '4px' }}
               >

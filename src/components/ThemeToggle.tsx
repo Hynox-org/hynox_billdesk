@@ -4,12 +4,12 @@ import React, { useEffect, useState } from 'react';
 import { Sun, Moon } from 'lucide-react';
 
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = useState<'dark' | 'light'>('light');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('billdesk_theme') as 'dark' | 'light' | null;
-    const initialTheme = saved || 'dark';
+    const initialTheme = saved || 'light';
     setTheme(initialTheme);
     document.documentElement.setAttribute('data-theme', initialTheme);
     setMounted(true);
@@ -40,7 +40,7 @@ export default function ThemeToggle() {
     <button
       type="button"
       onClick={toggleTheme}
-      className="btn btn-secondary btn-sm"
+      className="btn btn-secondary btn-sm theme-toggle-btn"
       style={{
         padding: '7px 10px',
         display: 'inline-flex',
@@ -54,7 +54,7 @@ export default function ThemeToggle() {
       aria-label="Toggle Theme"
     >
       {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-      <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+      <span className="theme-toggle-label" style={{ fontSize: '0.8rem', fontWeight: 600 }}>
         {theme === 'dark' ? 'Light' : 'Dark'}
       </span>
     </button>

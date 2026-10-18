@@ -19,7 +19,7 @@ export interface IOrder extends Document {
   discount: number;
   totalAmount: number;
   currency: string;
-  paymentStatus: 'PAID_CASH' | 'PAID_ONLINE' | 'PENDING' | 'COD';
+  paymentStatus: 'PAID_CASH' | 'PAID_ONLINE' | 'PENDING' | 'COD' | 'PAID';
   whatsappStatus: 'GENERATED' | 'SENT';
   notes?: string;
   createdAt: Date;
@@ -56,7 +56,7 @@ const OrderSchema: Schema<IOrder> = new Schema(
     currency: { type: String, default: '$' },
     paymentStatus: {
       type: String,
-      enum: ['PAID_CASH', 'PAID_ONLINE', 'PENDING', 'COD'],
+      enum: ['PAID_CASH', 'PAID_ONLINE', 'PENDING', 'COD', 'PAID'],
       default: 'PAID_CASH',
     },
     whatsappStatus: {

@@ -188,63 +188,36 @@ export default function RegisterPage() {
   };
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '32px 20px',
-        position: 'relative',
-      }}
-    >
-      {/* Floating Country & Theme in Top Right */}
-      <div style={{ position: 'absolute', top: '24px', right: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+    <div className="auth-page-container">
+      {/* Country Dropdown & Theme Toggle */}
+      <div className="auth-top-controls">
         <CountryDropdown />
         <ThemeToggle />
       </div>
 
-      <div style={{ width: '100%', maxWidth: '520px' }}>
+      <div className="auth-wrapper auth-wrapper-register">
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          <Link
-            href="/"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '10px',
-              marginBottom: '16px',
-            }}
-          >
-            <div
-              style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #25D366 0%, #059669 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                boxShadow: '0 4px 12px var(--whatsapp-glow)',
-              }}
-            >
+        <div className="auth-header">
+          <Link href="/" className="auth-brand-link">
+            <div className="auth-brand-icon">
               <Zap size={20} />
             </div>
-            <span style={{ fontWeight: 800, fontSize: '1.35rem', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+            <span className="auth-brand-title">
               Bill<span style={{ color: 'var(--whatsapp)' }}>Desk</span>
             </span>
           </Link>
-          <div
-            className="badge badge-trial"
-            style={{ marginBottom: '12px', padding: '4px 12px' }}
-          >
-            <Sparkles size={12} /> Instant 15-Day Free Trial Provisioned
+          <div>
+            <div
+              className="badge badge-trial"
+              style={{ marginBottom: '12px', padding: '4px 12px' }}
+            >
+              <Sparkles size={12} /> Instant 15-Day Free Trial Provisioned
+            </div>
           </div>
-          <h1 style={{ fontSize: '1.6rem', fontWeight: 700, marginBottom: '6px', color: 'var(--text-main)' }}>
+          <h1 className="auth-title">
             {step === 'form' ? 'Register Your Business' : 'Verify Your Email'}
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          <p className="auth-subtitle">
             {step === 'form'
               ? 'Set up your store catalog and start dispatching WhatsApp receipts in minutes'
               : `Enter the 6-digit verification code dispatched to ${formData.email}`}
@@ -252,23 +225,10 @@ export default function RegisterPage() {
         </div>
 
         {/* Card */}
-        <div className="glass-panel" style={{ padding: '32px' }}>
+        <div className="glass-panel auth-card">
           {error && (
-            <div
-              style={{
-                background: 'rgba(6, 78, 59, 0.5)',
-                border: '1px solid rgba(52, 211, 153, 0.4)',
-                color: '#a7f3d0',
-                padding: '12px 14px',
-                borderRadius: '10px',
-                fontSize: '0.875rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                marginBottom: '20px',
-              }}
-            >
-              <AlertCircle size={18} />
+            <div className="auth-banner-error">
+              <AlertCircle size={18} style={{ flexShrink: 0 }} />
               <span>{error}</span>
             </div>
           )}
@@ -414,7 +374,7 @@ export default function RegisterPage() {
 
               {/* Business WhatsApp Phone with Fixed Country Code */}
               <div className="form-group">
-                <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
                   <span>Business WhatsApp Phone *</span>
                   <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                     Country: {country.name} ({country.dialCode})
@@ -476,8 +436,7 @@ export default function RegisterPage() {
 
               <button
                 type="submit"
-                className="btn btn-whatsapp"
-                style={{ width: '100%', marginTop: '12px', padding: '12px', fontSize: '0.95rem', fontWeight: 700 }}
+                className="btn btn-whatsapp auth-submit-btn"
                 disabled={loading}
               >
                 {loading ? 'Sending Verification Code...' : 'Verify Email & Create Workspace'}
@@ -490,24 +449,24 @@ export default function RegisterPage() {
               <div
                 style={{
                   textAlign: 'center',
-                  padding: '16px 0 24px 0',
+                  padding: '8px 0 20px 0',
                 }}
               >
                 <div
                   style={{
-                    width: '56px',
-                    height: '56px',
+                    width: '52px',
+                    height: '52px',
                     borderRadius: '50%',
                     background: 'rgba(37, 211, 102, 0.12)',
                     border: '1px solid rgba(37, 211, 102, 0.3)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    margin: '0 auto 16px auto',
+                    margin: '0 auto 12px auto',
                     color: 'var(--whatsapp)',
                   }}
                 >
-                  <Mail size={28} />
+                  <Mail size={26} />
                 </div>
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 6px 0', color: 'var(--text-main)' }}>
                   Enter Verification Code
@@ -515,7 +474,7 @@ export default function RegisterPage() {
                 <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', margin: 0 }}>
                   We sent a 6-digit confirmation code to:
                 </p>
-                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--whatsapp)', marginTop: '4px' }}>
+                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--whatsapp)', marginTop: '4px', wordBreak: 'break-all' }}>
                   {formData.email}
                 </div>
               </div>
@@ -525,30 +484,23 @@ export default function RegisterPage() {
                 <label className="form-label" style={{ textAlign: 'center', display: 'block', marginBottom: '8px' }}>
                   6-Digit Email Code
                 </label>
-                <div style={{ position: 'relative', maxWidth: '280px', margin: '0 auto' }}>
+                <div className="auth-otp-wrapper">
                   <KeyRound
                     size={18}
                     style={{
                       position: 'absolute',
-                      left: '14px',
+                      left: '12px',
                       top: '50%',
                       transform: 'translateY(-50%)',
                       color: 'var(--whatsapp)',
+                      zIndex: 1,
                     }}
                   />
                   <input
                     type="text"
                     maxLength={6}
                     autoFocus
-                    className="form-input"
-                    style={{
-                      paddingLeft: '42px',
-                      textAlign: 'center',
-                      fontSize: '1.4rem',
-                      letterSpacing: '8px',
-                      fontWeight: 800,
-                      fontFamily: 'monospace',
-                    }}
+                    className="form-input auth-otp-input"
                     placeholder="123456"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
@@ -563,8 +515,7 @@ export default function RegisterPage() {
               {/* Submit Button */}
               <button
                 type="submit"
-                className="btn btn-whatsapp"
-                style={{ width: '100%', marginTop: '16px', padding: '12px', fontSize: '0.95rem', fontWeight: 700 }}
+                className="btn btn-whatsapp auth-submit-btn"
                 disabled={loading || otp.length !== 6}
               >
                 {loading ? 'Verifying & Provisioning Workspace...' : 'Verify & Launch Store Workspace'}
@@ -572,16 +523,7 @@ export default function RegisterPage() {
               </button>
 
               {/* Actions row: Resend & Edit Details */}
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginTop: '20px',
-                  paddingTop: '16px',
-                  borderTop: '1px solid var(--border-subtle)',
-                }}
-              >
+              <div className="auth-otp-actions-row">
                 <button
                   type="button"
                   onClick={() => {
@@ -615,7 +557,7 @@ export default function RegisterPage() {
           )}
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+        <div className="auth-footer">
           Already registered?{' '}
           <Link href="/login" style={{ color: 'var(--whatsapp)', fontWeight: 600 }}>
             Sign In here

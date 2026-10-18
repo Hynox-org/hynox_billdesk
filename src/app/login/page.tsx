@@ -209,59 +209,30 @@ export default function LoginPage() {
   };
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '24px',
-        position: 'relative',
-      }}
-    >
-      {/* Floating Theme Toggle in Top Right */}
-      <div style={{ position: 'absolute', top: '24px', right: '24px' }}>
+    <div className="auth-page-container">
+      {/* Theme Toggle */}
+      <div className="auth-theme-toggle">
         <ThemeToggle />
       </div>
 
-      <div style={{ width: '100%', maxWidth: '440px' }}>
+      <div className="auth-wrapper">
         {/* Brand Header */}
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          <Link
-            href="/"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '10px',
-              marginBottom: '16px',
-            }}
-          >
-            <div
-              style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, #25D366 0%, #059669 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#fff',
-                boxShadow: '0 4px 12px var(--whatsapp-glow)',
-              }}
-            >
+        <div className="auth-header">
+          <Link href="/" className="auth-brand-link">
+            <div className="auth-brand-icon">
               <Zap size={20} />
             </div>
-            <span style={{ fontWeight: 800, fontSize: '1.35rem', letterSpacing: '-0.02em', color: 'var(--text-main)' }}>
+            <span className="auth-brand-title">
               Bill<span style={{ color: 'var(--whatsapp)' }}>Desk</span>
             </span>
           </Link>
 
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '6px', color: 'var(--text-main)' }}>
+          <h1 className="auth-title">
             {mode === 'LOGIN' && 'Welcome back'}
             {mode === 'FORGOT_EMAIL' && 'Reset your password'}
             {mode === 'FORGOT_VERIFY' && 'Enter Verification Code'}
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+          <p className="auth-subtitle">
             {mode === 'LOGIN' && 'Sign in to manage your Point of Sale catalog and orders'}
             {mode === 'FORGOT_EMAIL' && 'Enter your account email to receive a password reset verification code'}
             {mode === 'FORGOT_VERIFY' && `Enter the 6-digit code dispatched to ${forgotEmail}`}
@@ -269,45 +240,19 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className="glass-panel" style={{ padding: '32px' }}>
+        <div className="glass-panel auth-card">
           {/* Error Banner */}
           {error && (
-            <div
-              style={{
-                background: 'rgba(6, 78, 59, 0.5)',
-                border: '1px solid rgba(52, 211, 153, 0.4)',
-                color: '#a7f3d0',
-                padding: '12px 14px',
-                borderRadius: '10px',
-                fontSize: '0.875rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                marginBottom: '20px',
-              }}
-            >
-              <AlertCircle size={18} />
+            <div className="auth-banner-error">
+              <AlertCircle size={18} style={{ flexShrink: 0 }} />
               <span>{error}</span>
             </div>
           )}
 
           {/* Success Banner */}
           {successMsg && (
-            <div
-              style={{
-                background: 'rgba(37, 211, 102, 0.1)',
-                border: '1px solid rgba(37, 211, 102, 0.35)',
-                color: '#a7f3d0',
-                padding: '12px 14px',
-                borderRadius: '10px',
-                fontSize: '0.875rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                marginBottom: '20px',
-              }}
-            >
-              <CheckCircle2 size={18} style={{ color: 'var(--whatsapp)' }} />
+            <div className="auth-banner-success">
+              <CheckCircle2 size={18} style={{ color: 'var(--whatsapp)', flexShrink: 0 }} />
               <span>{successMsg}</span>
             </div>
           )}
@@ -341,7 +286,7 @@ export default function LoginPage() {
               </div>
 
               <div className="form-group">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <div className="auth-password-header">
                   <label className="form-label" style={{ margin: 0 }}>Password</label>
                   <button
                     type="button"
@@ -351,16 +296,7 @@ export default function LoginPage() {
                       setError(null);
                       setSuccessMsg(null);
                     }}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      padding: 0,
-                      color: 'var(--whatsapp)',
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                    }}
+                    className="auth-forgot-link"
                   >
                     Forgot password?
                   </button>
@@ -390,8 +326,7 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                className="btn btn-primary"
-                style={{ width: '100%', marginTop: '10px', padding: '12px', fontWeight: 700 }}
+                className="btn btn-primary auth-submit-btn"
                 disabled={loading}
               >
                 {loading ? 'Authenticating...' : 'Sign In'} <ArrowRight size={16} />
@@ -433,8 +368,7 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                className="btn btn-whatsapp"
-                style={{ width: '100%', marginTop: '10px', padding: '12px', fontWeight: 700 }}
+                className="btn btn-whatsapp auth-submit-btn"
                 disabled={loading}
               >
                 {loading ? 'Dispatching Verification Code...' : 'Send Verification Code'} <ArrowRight size={16} />
@@ -465,7 +399,7 @@ export default function LoginPage() {
                 <label className="form-label" style={{ textAlign: 'center', display: 'block' }}>
                   6-Digit Verification Code
                 </label>
-                <div style={{ position: 'relative', maxWidth: '240px', margin: '0 auto' }}>
+                <div className="auth-otp-wrapper">
                   <KeyRound
                     size={18}
                     style={{
@@ -474,21 +408,14 @@ export default function LoginPage() {
                       top: '50%',
                       transform: 'translateY(-50%)',
                       color: 'var(--whatsapp)',
+                      zIndex: 1,
                     }}
                   />
                   <input
                     type="text"
                     maxLength={6}
                     autoFocus
-                    className="form-input"
-                    style={{
-                      paddingLeft: '38px',
-                      textAlign: 'center',
-                      fontSize: '1.3rem',
-                      letterSpacing: '6px',
-                      fontWeight: 800,
-                      fontFamily: 'monospace',
-                    }}
+                    className="form-input auth-otp-input"
                     placeholder="123456"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
@@ -554,24 +481,14 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                className="btn btn-whatsapp"
-                style={{ width: '100%', marginTop: '12px', padding: '12px', fontWeight: 700 }}
+                className="btn btn-whatsapp auth-submit-btn"
                 disabled={loading || otp.length !== 6}
               >
                 {loading ? 'Updating Password...' : 'Reset Password & Sign In'} <CheckCircle2 size={16} />
               </button>
 
               {/* Actions row: Resend & Cancel */}
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginTop: '18px',
-                  paddingTop: '14px',
-                  borderTop: '1px solid var(--border-subtle)',
-                }}
-              >
+              <div className="auth-otp-actions-row">
                 <button
                   type="button"
                   onClick={() => {
@@ -606,7 +523,7 @@ export default function LoginPage() {
         </div>
 
         {/* Footer Link */}
-        <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+        <div className="auth-footer">
           Don&apos;t have a business account yet?{' '}
           <Link href="/register" style={{ color: 'var(--whatsapp)', fontWeight: 600 }}>
             Start 15-Day Free Trial

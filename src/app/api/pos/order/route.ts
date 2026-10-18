@@ -53,6 +53,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Cart must contain at least one item' }, { status: 400 });
     }
 
+    // Normalize payment status against allowed schema values
+    const validStatuses = ['PAID_CASH', 'PAID_ONLINE', 'PENDING', 'COD', 'PAID'];
+    const normalizedPaymentStatus = validStatuses.includes(paymentStatus)
+      ? paymentStatus
+      : 'PAID_CASH';
+
     // Calculate line totals and subtotal
     const sanitizedItems = items.map((item: any) => {
       const unitPrice = Math.max(0, Number(item.unitPrice) || 0);
@@ -88,7 +94,7 @@ export async function POST(req: NextRequest) {
       tax: taxAmount,
       discount: discountAmount,
       totalAmount,
-      paymentStatus,
+      paymentStatus: normalizedPaymentStatus,
       defaultCountryCode: auth.tenant.countryCode || '1',
     });
 
@@ -104,7 +110,7 @@ export async function POST(req: NextRequest) {
       discount: discountAmount,
       totalAmount,
       currency: auth.tenant.currency || '$',
-      paymentStatus,
+      paymentStatus: normalizedPaymentStatus,
       whatsappStatus: 'GENERATED',
       notes: notes ? notes.trim() : '',
     });

@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10)));
+    const limit = Math.min(1000, Math.max(1, parseInt(searchParams.get('limit') || '500', 10)));
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const skip = (page - 1) * limit;
 
@@ -119,3 +119,43 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message || 'Error generating link' }, { status: 500 });
   }
 }
+
+/**
+ * Delete one or multiple orders securely for the authenticated tenant
+ */
+export async function DELETE(req: NextRequest) {
+  try {
+    const auth = await getAuthenticatedUserAndTenant();
+    if (!auth || !auth.tenant) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const orderIds: string[] = Array.isArray(body.orderIds)
+      ? body.orderIds
+      : body.orderId
+      ? [body.orderId]
+      : [];
+
+    if (orderIds.length === 0) {
+      return NextResponse.json({ error: 'No order IDs provided for deletion' }, { status: 400 });
+    }
+
+    const result = await Order.deleteMany({
+      _id: { $in: orderIds },
+      tenantId: auth.tenant._id,
+    });
+
+    return NextResponse.json({
+      success: true,
+      deletedCount: result.deletedCount,
+      message: `Successfully deleted ${result.deletedCount} order(s)`,
+    });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message || 'Failed to delete order(s)' },
+      { status: 500 }
+    );
+  }
+}
+

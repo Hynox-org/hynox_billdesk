@@ -9,6 +9,7 @@ import {
   ShoppingBag,
   Layers,
   History,
+  Receipt,
   Settings,
   LogOut,
   AlertTriangle,
@@ -174,8 +175,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span>Products &amp; Menu</span>
             </Link>
             <Link href="/dashboard/orders" className={`btn btn-sm ${isOrders ? 'btn-primary' : 'btn-secondary'}`}>
-              <History size={15} />
-              <span>Order History</span>
+              <Receipt size={15} />
+              <span>Orders</span>
             </Link>
             <Link href="/dashboard/settings" className={`btn btn-sm ${isSettings ? 'btn-primary' : 'btn-secondary'}`}>
               <Settings size={15} />
@@ -220,8 +221,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span className="bottom-nav-label">Products</span>
           </Link>
           <Link href="/dashboard/orders" className={`bottom-nav-item${isOrders ? ' active' : ''}`}>
-            <div className="bottom-nav-icon"><History size={20} /></div>
-            <span className="bottom-nav-label">History</span>
+            <div className="bottom-nav-icon"><Receipt size={20} /></div>
+            <span className="bottom-nav-label">Orders</span>
           </Link>
           <Link href="/dashboard/settings" className={`bottom-nav-item${isSettings ? ' active' : ''}`}>
             <div className="bottom-nav-icon"><Settings size={20} /></div>

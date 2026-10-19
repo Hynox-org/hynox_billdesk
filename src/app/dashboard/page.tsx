@@ -257,7 +257,7 @@ export default function VendorDashboardPage() {
               <History size={20} />
             </div>
             <div>
-              <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-main)' }}>Order History</div>
+              <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-main)' }}>Orders</div>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Browse receipts & bills</div>
             </div>
           </div>
@@ -844,7 +844,7 @@ export default function VendorDashboardPage() {
             </p>
           </div>
           <Link href="/dashboard/orders" className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span>View All in History</span>
+            <span>View All Orders</span>
             <ArrowRight size={14} />
           </Link>
         </div>

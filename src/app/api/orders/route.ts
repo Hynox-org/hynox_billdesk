@@ -78,6 +78,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
+    const envAppUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL;
+    const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || 'localhost:3000';
+    const proto = req.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+    const baseUrl = envAppUrl ? envAppUrl.replace(/\/+$/, '') : `${proto}://${host}`;
+    const receiptUrl = `${baseUrl}/receipt/${order.orderNumber}`;
+    const pdfUrl = `${baseUrl}/api/receipts/${order.orderNumber}/pdf`;
+
     const { cleanPhone, url, rawText } = generateWhatsAppUrl({
       businessName: auth.tenant.businessName,
       businessPhone: auth.tenant.phone,
@@ -97,6 +104,7 @@ export async function POST(req: NextRequest) {
       showGstOnReceipt: Boolean(auth.tenant.showGstOnReceipt),
       googleProfileUrl: auth.tenant.googleProfileUrl,
       showGoogleReviewOnReceipt: Boolean(auth.tenant.showGoogleReviewOnReceipt),
+      receiptUrl,
     });
 
     return NextResponse.json({
@@ -104,6 +112,8 @@ export async function POST(req: NextRequest) {
       whatsappUrl: url,
       cleanPhone,
       rawReceiptText: rawText,
+      receiptUrl,
+      pdfUrl,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Error generating link' }, { status: 500 });

@@ -42,6 +42,7 @@ export interface ReceiptOptions {
   showGstOnReceipt?: boolean;
   googleProfileUrl?: string;
   showGoogleReviewOnReceipt?: boolean;
+  receiptUrl?: string;
 }
 
 /**
@@ -67,6 +68,7 @@ export function buildWhatsAppReceiptText(options: ReceiptOptions): string {
     showGstOnReceipt,
     googleProfileUrl,
     showGoogleReviewOnReceipt,
+    receiptUrl,
   } = options;
 
   const dateStr = new Date().toLocaleString('en-US', {
@@ -112,6 +114,7 @@ export function buildWhatsAppReceiptText(options: ReceiptOptions): string {
   const gstLine = showGstOnReceipt && gstNumber && gstNumber.trim() ? `GST: ${gstNumber.trim()}\n` : '';
   const addressLine = businessAddress && businessAddress.trim() ? `Address: ${businessAddress.trim()}\n` : '';
   const phoneLine = businessPhone && businessPhone.trim() ? `Contact: ${businessPhone.trim()}\n` : '';
+  const pdfLine = receiptUrl && receiptUrl.trim() ? `\nView / Download PDF Invoice:\n${receiptUrl.trim()}\n` : '';
   const reviewLine =
     showGoogleReviewOnReceipt && googleProfileUrl && googleProfileUrl.trim()
       ? `\n*Review us on Google:*\n${googleProfileUrl.trim()}\n`
@@ -127,7 +130,7 @@ ${itemLines}
 ${breakdown}
 *TOTAL: ${currency}${totalAmount.toFixed(2)}*
 ━━━━━━━━━━━━━━━━━━━━
-Payment: ${paymentStr}${reviewLine}
+Payment: ${paymentStr}${pdfLine}${reviewLine}
 _Thank you for your order!_`;
 
   return receipt;

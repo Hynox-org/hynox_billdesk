@@ -28,6 +28,8 @@ import {
   Banknote,
   QrCode,
   Clock,
+  FileText,
+  Download,
 } from 'lucide-react';
 import { useCountry } from '@/context/CountryContext';
 
@@ -93,9 +95,13 @@ export default function OrderCreationPage() {
     rawReceipt: string;
     totalAmount: number;
     phone: string;
+    pdfUrl?: string;
+    receiptUrl?: string;
     gstNumber?: string | null;
     googleProfileUrl?: string | null;
   } | null>(null);
+
+  const [sharingPdf, setSharingPdf] = useState(false);
 
   const [tenantInfo, setTenantInfo] = useState<{
     businessName?: string;
@@ -325,6 +331,8 @@ export default function OrderCreationPage() {
         rawReceipt: data.rawReceiptText,
         totalAmount: data.order.totalAmount,
         phone: `${country.dialCode} ${subscriberDigits}`,
+        pdfUrl: data.pdfUrl || `/api/receipts/${data.order.orderNumber}/pdf`,
+        receiptUrl: data.receiptUrl || `/receipt/${data.order.orderNumber}`,
         gstNumber: data.gstNumber,
         googleProfileUrl: data.googleProfileUrl,
       });
@@ -335,6 +343,43 @@ export default function OrderCreationPage() {
       setOrderError(err.message || 'Error creating order');
     } finally {
       setCreatingOrder(false);
+    }
+  };
+
+  const handleSharePdf = async () => {
+    if (!completedOrder) return;
+    setSharingPdf(true);
+    try {
+      const pdfEndpoint = completedOrder.pdfUrl || `/api/receipts/${completedOrder.orderNumber}/pdf`;
+      const res = await fetch(pdfEndpoint);
+      if (!res.ok) throw new Error('Failed to load PDF');
+      const blob = await res.blob();
+      const file = new File([blob], `Receipt-${completedOrder.orderNumber}.pdf`, {
+        type: 'application/pdf',
+      });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `Receipt #${completedOrder.orderNumber}`,
+          text: `Invoice #${completedOrder.orderNumber} from ${tenantInfo?.businessName || 'our shop'}.`,
+        });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Receipt-${completedOrder.orderNumber}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        console.error('Error sharing PDF:', err);
+      }
+    } finally {
+      setSharingPdf(false);
     }
   };
 
@@ -1278,7 +1323,34 @@ export default function OrderCreationPage() {
                 <ExternalLink size={16} />
               </button>
 
-              {/* Option 2 & 3: Copy Receipt & System Share */}
+              {/* Option 2 & 3: PDF Actions (Native Share & Download) */}
+              <div className="pos-receipt-actions-row">
+                <button
+                  type="button"
+                  onClick={handleSharePdf}
+                  disabled={sharingPdf}
+                  className="btn btn-secondary"
+                  style={{ justifyContent: 'center' }}
+                  title="Share actual PDF file to WhatsApp or device apps"
+                >
+                  <FileText size={16} style={{ color: 'var(--whatsapp)' }} />
+                  <span>{sharingPdf ? 'Sharing PDF...' : 'Share PDF File'}</span>
+                </button>
+
+                <a
+                  href={completedOrder.pdfUrl || `/api/receipts/${completedOrder.orderNumber}/pdf`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-secondary"
+                  style={{ justifyContent: 'center', textDecoration: 'none' }}
+                  title="Download PDF invoice directly"
+                >
+                  <Download size={16} />
+                  <span>Download PDF</span>
+                </a>
+              </div>
+
+              {/* Option 4 & 5: Copy Receipt & System Share */}
               <div className="pos-receipt-actions-row">
                 <button
                   type="button"
@@ -1298,7 +1370,7 @@ export default function OrderCreationPage() {
                   title="Share via device apps"
                 >
                   <Share2 size={16} />
-                  <span>Share Receipt</span>
+                  <span>Share Text</span>
                 </button>
               </div>
 

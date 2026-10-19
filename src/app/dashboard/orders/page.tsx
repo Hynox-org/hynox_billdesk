@@ -15,6 +15,8 @@ import {
   Receipt,
   X,
   Check,
+  FileText,
+  Download,
 } from 'lucide-react';
 
 interface OrderItem {
@@ -46,12 +48,14 @@ export default function OrdersHistoryPage() {
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [viewingId, setViewingId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [sharingPdf, setSharingPdf] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<{
     orderNumber: string;
     rawText: string;
     whatsappUrl: string;
     phone: string;
     totalAmount: number;
+    pdfUrl?: string;
   } | null>(null);
 
   const fetchOrders = async () => {
@@ -110,12 +114,50 @@ export default function OrdersHistoryPage() {
           whatsappUrl: data.whatsappUrl,
           phone: order?.customerPhone || '',
           totalAmount: order?.totalAmount || 0,
+          pdfUrl: data.pdfUrl || `/api/receipts/${order?.orderNumber}/pdf`,
         });
       }
     } catch (err) {
       console.error(err);
     } finally {
       setViewingId(null);
+    }
+  };
+
+  const handleSharePdf = async () => {
+    if (!selectedReceipt) return;
+    setSharingPdf(true);
+    try {
+      const pdfEndpoint = selectedReceipt.pdfUrl || `/api/receipts/${selectedReceipt.orderNumber}/pdf`;
+      const res = await fetch(pdfEndpoint);
+      if (!res.ok) throw new Error('Failed to load PDF');
+      const blob = await res.blob();
+      const file = new File([blob], `Receipt-${selectedReceipt.orderNumber}.pdf`, {
+        type: 'application/pdf',
+      });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `Receipt #${selectedReceipt.orderNumber}`,
+          text: `Invoice #${selectedReceipt.orderNumber}`,
+        });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Receipt-${selectedReceipt.orderNumber}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        console.error('Error sharing PDF:', err);
+      }
+    } finally {
+      setSharingPdf(false);
     }
   };
 
@@ -343,6 +385,32 @@ export default function OrdersHistoryPage() {
                 <span>Open in WhatsApp</span>
                 <ExternalLink size={14} />
               </button>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={handleSharePdf}
+                  disabled={sharingPdf}
+                  className="btn btn-secondary"
+                  style={{ flex: 1, justifyContent: 'center', gap: '5px' }}
+                  title="Share PDF file to WhatsApp or device apps"
+                >
+                  <FileText size={15} style={{ color: 'var(--whatsapp)' }} />
+                  <span>{sharingPdf ? 'Sharing...' : 'Share PDF'}</span>
+                </button>
+
+                <a
+                  href={selectedReceipt.pdfUrl || `/api/receipts/${selectedReceipt.orderNumber}/pdf`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-secondary"
+                  style={{ flex: 1, justifyContent: 'center', gap: '5px', textDecoration: 'none' }}
+                  title="Download PDF invoice directly"
+                >
+                  <Download size={15} />
+                  <span>Download PDF</span>
+                </a>
+              </div>
 
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button

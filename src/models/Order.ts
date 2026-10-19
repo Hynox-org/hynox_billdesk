@@ -20,6 +20,7 @@ export interface IOrder extends Document {
   totalAmount: number;
   currency: string;
   paymentStatus: 'PAID_CASH' | 'PAID_ONLINE' | 'PENDING' | 'COD' | 'PAID';
+  paymentMethod?: string;
   whatsappStatus: 'GENERATED' | 'SENT';
   notes?: string;
   gstNumber?: string;
@@ -61,6 +62,7 @@ const OrderSchema: Schema<IOrder> = new Schema(
       enum: ['PAID_CASH', 'PAID_ONLINE', 'PENDING', 'COD', 'PAID'],
       default: 'PAID_CASH',
     },
+    paymentMethod: { type: String, default: 'CASH' },
     whatsappStatus: {
       type: String,
       enum: ['GENERATED', 'SENT'],

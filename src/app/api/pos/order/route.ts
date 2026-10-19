@@ -83,6 +83,13 @@ export async function POST(req: NextRequest) {
 
     const orderNumber = generateOrderNumber();
 
+    const envAppUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL;
+    const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || 'localhost:3000';
+    const proto = req.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+    const baseUrl = envAppUrl ? envAppUrl.replace(/\/+$/, '') : `${proto}://${host}`;
+    const receiptUrl = `${baseUrl}/receipt/${orderNumber}`;
+    const pdfUrl = `${baseUrl}/api/receipts/${orderNumber}/pdf`;
+
     // Generate WhatsApp Receipt & deep link
     const { cleanPhone, url, rawText } = generateWhatsAppUrl({
       businessName: auth.tenant.businessName,
@@ -104,6 +111,7 @@ export async function POST(req: NextRequest) {
       showGstOnReceipt: Boolean(auth.tenant.showGstOnReceipt),
       googleProfileUrl: auth.tenant.googleProfileUrl,
       showGoogleReviewOnReceipt: Boolean(auth.tenant.showGoogleReviewOnReceipt),
+      receiptUrl,
     });
 
     // Save Order into Database
@@ -142,6 +150,8 @@ export async function POST(req: NextRequest) {
         whatsappUrl: url,
         cleanPhone,
         rawReceiptText: rawText,
+        pdfUrl,
+        receiptUrl,
         gstNumber: auth.tenant.showGstOnReceipt && auth.tenant.gstNumber ? auth.tenant.gstNumber.trim() : null,
         googleProfileUrl: auth.tenant.showGoogleReviewOnReceipt && auth.tenant.googleProfileUrl ? auth.tenant.googleProfileUrl.trim() : null,
       },

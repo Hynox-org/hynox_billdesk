@@ -75,8 +75,8 @@ export default function RevenueReportPage() {
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                background: 'rgba(37, 211, 102, 0.15)',
-                color: 'var(--whatsapp)',
+                background: 'var(--color-light-green)',
+                color: 'var(--primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -149,7 +149,7 @@ export default function RevenueReportPage() {
           <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--emerald)' }}>
             {currency}{(rev.totalRevenue || 0).toFixed(2)}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', marginTop: '6px', color: (rev.revenueGrowth || 0) >= 0 ? '#10b981' : '#f87171' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', marginTop: '6px', color: (rev.revenueGrowth || 0) >= 0 ? 'var(--primary)' : '#f87171' }}>
             <ArrowUpRight size={14} />
             <span>{(rev.revenueGrowth || 0) >= 0 ? '+' : ''}{rev.revenueGrowth || 0}% vs previous</span>
           </div>
@@ -204,7 +204,7 @@ export default function RevenueReportPage() {
                     style={{
                       width: `${barWidth}%`,
                       height: '100%',
-                      background: 'linear-gradient(90deg, #10b981 0%, #25D366 100%)',
+                      background: 'var(--primary)',
                       borderRadius: '7px',
                       transition: 'width 0.3s ease',
                     }}

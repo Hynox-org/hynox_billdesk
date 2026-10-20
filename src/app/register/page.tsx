@@ -72,7 +72,7 @@ export default function RegisterPage() {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email.trim())) {
-      setError('Please enter a valid email address (e.g. name@gmail.com, you@yahoo.com, you@business.com)');
+      setError('Please enter a valid email address');
       return;
     }
 
@@ -258,7 +258,7 @@ export default function RegisterPage() {
                     type="text"
                     className="form-input"
                     style={{ paddingLeft: '36px' }}
-                    placeholder="e.g. John Doe"
+                    placeholder="Full name"
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                     required
@@ -266,13 +266,10 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              {/* Email Address - All Domains Allowed */}
+              {/* Email Address */}
               <div className="form-group">
-                <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
-                  <span>Email Address *</span>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                    All email domains accepted
-                  </span>
+                <label className="form-label">
+                  Email Address *
                 </label>
                 <div style={{ position: 'relative' }}>
                   <Mail
@@ -289,14 +286,11 @@ export default function RegisterPage() {
                     type="email"
                     className="form-input"
                     style={{ paddingLeft: '36px' }}
-                    placeholder="e.g. yourname@gmail.com, you@yahoo.com, or your domain"
+                    placeholder="Email address"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     required
                   />
-                </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                  Use any email provider (Gmail, Yahoo, Outlook, iCloud, company domain, etc.). A 6-digit verification code will be sent here.
                 </div>
               </div>
 
@@ -344,7 +338,7 @@ export default function RegisterPage() {
                     type="text"
                     className="form-input"
                     style={{ paddingLeft: '36px' }}
-                    placeholder="e.g. Acme Artisan Bakery"
+                    placeholder="Business / Store name"
                     value={formData.businessName}
                     onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
                     required
@@ -384,16 +378,13 @@ export default function RegisterPage() {
 
               {/* Business WhatsApp Phone with Fixed Country Code */}
               <div className="form-group">
-                <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
-                  <span>Business WhatsApp Phone *</span>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                    Country: {country.name} ({country.dialCode})
-                  </span>
+                <label className="form-label">
+                  Business WhatsApp Phone *
                 </label>
                 <div className="phone-fixed-input-group">
                   <div
                     className="phone-fixed-prefix"
-                    title={`Fixed Country Dial Code: ${country.name} (${country.dialCode})`}
+                    title={`${country.name} (${country.dialCode})`}
                   >
                     <span className="phone-fixed-prefix-code">{country.code}</span>
                     <span>{country.dialCode}</span>
@@ -401,7 +392,7 @@ export default function RegisterPage() {
                   <input
                     type="tel"
                     className="form-input phone-fixed-input"
-                    placeholder="e.g. 98765 43210"
+                    placeholder="Phone number"
                     value={formData.phone}
                     onChange={(e) => {
                       let val = e.target.value.replace(/\D/g, '');
@@ -413,9 +404,6 @@ export default function RegisterPage() {
                     }}
                     required
                   />
-                </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                  Dial code {country.dialCode} is fixed from header selection. Stored as: {country.dialCode} {formData.phone || '...'}
                 </div>
               </div>
 
@@ -467,13 +455,13 @@ export default function RegisterPage() {
                     width: '52px',
                     height: '52px',
                     borderRadius: '50%',
-                    background: 'rgba(37, 211, 102, 0.12)',
-                    border: '1px solid rgba(37, 211, 102, 0.3)',
+                    background: 'var(--color-light-green)',
+                    border: '1px solid var(--border-medium)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     margin: '0 auto 12px auto',
-                    color: 'var(--whatsapp)',
+                    color: 'var(--primary)',
                   }}
                 >
                   <Mail size={26} />

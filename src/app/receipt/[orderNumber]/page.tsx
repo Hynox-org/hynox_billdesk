@@ -86,12 +86,12 @@ export default async function PublicReceiptPage(props: ReceiptPageProps) {
                 alignItems: 'center',
                 gap: '5px',
                 fontSize: '0.8rem',
-                color: 'var(--whatsapp)',
+                color: 'var(--primary)',
                 fontWeight: 700,
-                background: 'rgba(37, 211, 102, 0.1)',
+                background: 'var(--color-light-green)',
                 padding: '4px 10px',
                 borderRadius: '9999px',
-                border: '1px solid rgba(37, 211, 102, 0.3)',
+                border: '1px solid var(--border-medium)',
               }}
             >
               <ShieldCheck size={14} /> Verified Digital Receipt
@@ -124,7 +124,7 @@ export default async function PublicReceiptPage(props: ReceiptPageProps) {
           }}
         >
           {/* Top Green Accent Bar */}
-          <div style={{ height: '6px', background: 'linear-gradient(90deg, #10b981 0%, #25D366 100%)' }} />
+          <div style={{ height: '6px', background: 'var(--primary)' }} />
 
           <div style={{ padding: '24px 24px 16px' }}>
             {/* Header: Store Identity */}

@@ -253,11 +253,8 @@ export default function CatalogPage() {
       <div className="catalog-header">
         <div>
           <h1 className="catalog-title">
-            Catalog &amp; Menu Management
+            Products &amp; Menu
           </h1>
-          <p className="catalog-subtitle">
-            Configure your item categories, pricing, descriptions, and order availability
-          </p>
         </div>
 
         <div className="catalog-actions">
@@ -273,7 +270,7 @@ export default function CatalogPage() {
             onClick={() => handleOpenProductModal()}
             className="btn btn-primary btn-sm"
           >
-            <Plus size={16} /> Add Product Item
+            <Plus size={16} /> Add Product
           </button>
         </div>
       </div>
@@ -306,7 +303,7 @@ export default function CatalogPage() {
           <input
             type="text"
             className="form-input catalog-search-input"
-            placeholder="Search items by name, SKU, or description..."
+            placeholder="Search products or SKU..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -598,7 +595,7 @@ export default function CatalogPage() {
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="e.g. Desserts, Hot Drinks, Services"
+                  placeholder="Category name"
                   value={newCategoryName}
                   onChange={(e) => setNewCategoryName(e.target.value)}
                   required
@@ -627,7 +624,7 @@ export default function CatalogPage() {
         <div className="modal-overlay">
           <div className="modal-content">
             <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '16px' }}>
-              {editingProduct ? 'Edit Product Item' : 'New Product Item'}
+              {editingProduct ? 'Edit Product' : 'New Product'}
             </h3>
             <form onSubmit={handleSaveProduct}>
               <div className="form-group">
@@ -635,7 +632,7 @@ export default function CatalogPage() {
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="e.g. Double Espresso, Silk Scarf"
+                  placeholder="Item name"
                   value={productForm.name}
                   onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
                   required
@@ -680,7 +677,7 @@ export default function CatalogPage() {
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="e.g. COF-01"
+                  placeholder="SKU or product code"
                   value={productForm.sku}
                   onChange={(e) => setProductForm({ ...productForm, sku: e.target.value })}
                 />
@@ -691,7 +688,7 @@ export default function CatalogPage() {
                 <textarea
                   className="form-textarea"
                   rows={2}
-                  placeholder="Ingredients, size, or special instructions"
+                  placeholder="Product description"
                   value={productForm.description}
                   onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
                 />
@@ -787,9 +784,7 @@ export default function CatalogPage() {
                         fontWeight: productForm.trackStock ? 600 : 400,
                       }}
                     >
-                      {productForm.trackStock
-                        ? 'Inventory quantity tracking active'
-                        : 'Disabled (Live counter active)'}
+                      {productForm.trackStock ? 'Enabled' : 'Disabled'}
                     </div>
                   </div>
 
@@ -836,21 +831,18 @@ export default function CatalogPage() {
                     }}
                   >
                     <label className="form-label" style={{ fontWeight: 600, marginBottom: '6px', color: 'var(--text-main)' }}>
-                      Stock Quantity (Available units)
+                      Stock Quantity
                     </label>
                     <input
                       type="number"
                       min="0"
                       step="1"
                       className="form-input"
-                      placeholder="e.g. 50"
+                      placeholder="0"
                       value={productForm.stockQuantity}
                       onChange={(e) => setProductForm({ ...productForm, stockQuantity: e.target.value })}
                       required={productForm.trackStock}
                     />
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
-                      The stock quantity will automatically decrease as items are added to bills and checked out.
-                    </div>
                   </div>
                 )}
               </div>

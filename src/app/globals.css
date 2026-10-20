@@ -1,59 +1,88 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
 
-/* Default Theme: Pure White Background with Green System (Light Theme Strictly Enforced) */
+/* ========================================================================= */
+/* GLOBAL DYNAMIC COLORING SYSTEM                                            */
+/* Core Color Tokens:                                                        */
+/*   Primary Green: #087F5B                                                  */
+/*   Black:         #111111                                                  */
+/*   Soft White:    #F6F9F7                                                  */
+/*   Light Green:   #DDF3E8                                                  */
+/* Changing these core variables dynamically re-themes the entire app.       */
+/* ========================================================================= */
 :root, [data-theme="light"], [data-theme="dark"] {
   --font-sans: 'Outfit', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Backgrounds: Pure White */
-  --bg-dark: #ffffff;
+  /* ------------------------------------------------------------------------- */
+  /* 1. Core Color Tokens                                                      */
+  /* ------------------------------------------------------------------------- */
+  --color-primary: #087F5B;       /* Primary Green */
+  --color-primary-hover: #066649; /* Darker Primary Green for hover states */
+  --color-primary-active: #05523a;/* Deep Primary Green for active states */
+  --color-black: #111111;         /* Black */
+  --color-soft-white: #F6F9F7;    /* Soft White */
+  --color-light-green: #DDF3E8;   /* Light Green */
+
+  /* ------------------------------------------------------------------------- */
+  /* 2. Global Semantic Variables (Derived from Core Tokens)                   */
+  /* ------------------------------------------------------------------------- */
+  /* Primary & Brand */
+  --primary: var(--color-primary);
+  --primary-hover: var(--color-primary-hover);
+  --primary-active: var(--color-primary-active);
+  --primary-light: var(--color-light-green);
+  --primary-glow: rgba(8, 127, 91, 0.25);
+
+  /* WhatsApp & Action System (Unified to Global Primary) */
+  --whatsapp: var(--color-primary);
+  --whatsapp-hover: var(--color-primary-hover);
+  --whatsapp-glow: rgba(8, 127, 91, 0.25);
+
+  /* Emerald & Accents */
+  --emerald: var(--color-primary);
+  --emerald-deep: var(--color-light-green);
+  --emerald-dark: var(--color-black);
+
+  /* Backgrounds */
+  --bg-dark: var(--color-soft-white);
+  --bg-base: var(--color-soft-white);
   --bg-card: #ffffff;
-  --bg-card-hover: #f0fdf4;
+  --bg-card-hover: var(--color-light-green);
   --bg-surface: #ffffff;
-  --bg-input: #f2fcf5;
-  --bg-header: rgba(255, 255, 255, 0.94);
+  --bg-input: var(--color-soft-white);
+  --bg-header: rgba(246, 249, 247, 0.95);
+  --bg-subtle: var(--color-light-green);
 
-  /* Borders: Rich Jade Green Lines */
-  --border-subtle: rgba(22, 101, 52, 0.18);
-  --border-medium: rgba(22, 101, 52, 0.35);
-  --border-glow: rgba(37, 211, 102, 0.5);
+  /* Typography */
+  --text-main: var(--color-black);
+  --text-secondary: rgba(17, 17, 17, 0.72);
+  --text-muted: rgba(17, 17, 17, 0.52);
+  --text-inverse: var(--color-soft-white);
+  --text-on-primary: #ffffff;
 
-  /* Typography: Deep Forest Greens & Dark Charcoal/Black */
-  --text-main: #022c16;
-  --text-secondary: #064e3b;
-  --text-muted: #14532d;
+  /* Borders */
+  --border-subtle: rgba(8, 127, 91, 0.14);
+  --border-medium: rgba(8, 127, 91, 0.28);
+  --border-glow: rgba(8, 127, 91, 0.45);
 
-  /* Primary Brand: Pure Emerald & WhatsApp Greens */
-  --primary: #059669;
-  --primary-glow: rgba(5, 150, 105, 0.3);
-  --primary-hover: #047857;
+  /* Status Badges & Chips */
+  --green-badge-bg: var(--color-light-green);
+  --green-badge-border: rgba(8, 127, 91, 0.32);
+  --green-badge-text: var(--color-primary);
 
-  --whatsapp: #25D366;
-  --whatsapp-glow: rgba(37, 211, 102, 0.3);
-  --whatsapp-hover: #1ebd5a;
+  --moss-badge-bg: var(--color-light-green);
+  --moss-badge-border: rgba(8, 127, 91, 0.25);
+  --moss-badge-text: var(--color-primary);
 
-  --emerald: #059669;
-  --emerald-deep: #ecfdf5;
-  --emerald-dark: #022c16;
-
-  /* Status Greens for Light Mode */
-  --green-badge-bg: #dcfce7;
-  --green-badge-border: #86efac;
-  --green-badge-text: #14532d;
-
-  --moss-badge-bg: #e2fbe8;
-  --moss-badge-border: #6ee7b7;
-  --moss-badge-text: #064e3b;
-
-  --deep-badge-bg: #bbf7d0;
-  --deep-badge-border: #34d399;
-  --deep-badge-text: #022c16;
+  --deep-badge-bg: var(--color-light-green);
+  --deep-badge-border: rgba(8, 127, 91, 0.45);
+  --deep-badge-text: var(--color-black);
 
   /* Shadows */
-  --shadow-sm: 0 2px 8px rgba(5, 40, 20, 0.06);
-  --shadow-md: 0 8px 24px rgba(5, 40, 20, 0.1);
-  --shadow-lg: 0 16px 40px rgba(5, 40, 20, 0.15);
-  --shadow-glow: 0 0 24px rgba(37, 211, 102, 0.25);
+  --shadow-sm: 0 2px 8px rgba(17, 17, 17, 0.04);
+  --shadow-md: 0 8px 24px rgba(17, 17, 17, 0.06);
+  --shadow-lg: 0 16px 40px rgba(17, 17, 17, 0.09);
+  --shadow-glow: 0 0 24px rgba(8, 127, 91, 0.25);
 }
 
 /* Hide theme toggles and containers completely */
@@ -122,28 +151,28 @@ button, input, select, textarea, optgroup {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: #ffffff;
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35);
+  background: var(--primary);
+  color: var(--text-on-primary);
+  box-shadow: 0 4px 15px var(--primary-glow);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  background: var(--primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+  box-shadow: 0 6px 20px var(--primary-glow);
 }
 
 .btn-whatsapp {
-  background: linear-gradient(135deg, #25D366 0%, #1ebd5a 100%);
+  background: var(--whatsapp);
   color: #ffffff;
   box-shadow: 0 4px 18px var(--whatsapp-glow);
   font-weight: 700;
 }
 
 .btn-whatsapp:hover {
-  background: linear-gradient(135deg, #22bf5b 0%, #18a94e 100%);
+  background: var(--whatsapp-hover);
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(37, 211, 102, 0.5);
+  box-shadow: 0 8px 25px var(--whatsapp-glow);
 }
 
 .btn-secondary {
@@ -171,14 +200,14 @@ div[data-nextjs-route-announcer] {
 }
 
 .btn-danger {
-  background: rgba(6, 78, 59, 0.4);
-  color: #a7f3d0;
-  border: 1px solid rgba(52, 211, 153, 0.4);
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .btn-danger:hover {
-  background: rgba(6, 78, 59, 0.7);
-  border-color: var(--whatsapp);
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
 }
 
 .btn-sm {
@@ -219,7 +248,7 @@ div[data-nextjs-route-announcer] {
 }
 
 .badge-pro {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: var(--primary);
   color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
@@ -604,8 +633,8 @@ div[data-nextjs-route-announcer] {
 }
 
 .pos-badge-incart {
-  background: var(--whatsapp);
-  color: #000;
+  background: var(--primary);
+  color: #ffffff;
   font-size: 0.68rem;
   font-weight: 800;
   border-radius: 10px;
@@ -617,9 +646,9 @@ div[data-nextjs-route-announcer] {
 }
 
 .pos-badge-out {
-  background: rgba(239, 68, 68, 0.2);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.35);
   font-size: 0.66rem;
   font-weight: 700;
   border-radius: 10px;
@@ -628,8 +657,8 @@ div[data-nextjs-route-announcer] {
 }
 
 .pos-badge-stock {
-  background: rgba(37, 211, 102, 0.12);
-  color: var(--whatsapp);
+  background: var(--primary-light);
+  color: var(--primary);
   font-size: 0.66rem;
   font-weight: 700;
   border-radius: 10px;
@@ -677,8 +706,8 @@ div[data-nextjs-route-announcer] {
 
 .pos-card-add-btn {
   border-radius: 8px;
-  background: rgba(37, 211, 102, 0.15);
-  color: var(--whatsapp);
+  background: var(--primary-light);
+  color: var(--primary);
   padding: 4px 10px;
   font-size: 0.78rem;
   font-weight: 700;
@@ -692,14 +721,14 @@ div[data-nextjs-route-announcer] {
 }
 
 .pos-card-add-btn:hover:not(.disabled) {
-  background: var(--whatsapp);
-  color: #022c16;
-  border-color: var(--whatsapp);
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
 }
 
 .pos-card-add-btn.active {
-  background: var(--whatsapp);
-  color: #000;
+  background: var(--primary);
+  color: #ffffff;
 }
 
 .pos-card-add-btn.disabled {
@@ -713,12 +742,12 @@ div[data-nextjs-route-announcer] {
 .pos-card-qty-control {
   display: inline-flex;
   align-items: center;
-  background: var(--emerald-deep);
-  border: 1.5px solid var(--whatsapp);
+  background: var(--primary-light);
+  border: 1.5px solid var(--primary);
   border-radius: 8px;
   padding: 2px 4px;
   gap: 6px;
-  box-shadow: 0 2px 6px rgba(37, 211, 102, 0.18);
+  box-shadow: 0 2px 6px var(--primary-glow);
   transition: all 0.15s ease;
   user-select: none;
 }
@@ -728,8 +757,8 @@ div[data-nextjs-route-announcer] {
   height: 24px;
   border-radius: 6px;
   border: none;
-  background: var(--whatsapp);
-  color: #022c16;
+  background: var(--primary);
+  color: #ffffff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -740,7 +769,7 @@ div[data-nextjs-route-announcer] {
 }
 
 .pos-card-qty-btn:hover:not(:disabled) {
-  background: var(--whatsapp-hover);
+  background: var(--primary-hover);
   transform: scale(1.08);
 }
 
@@ -866,10 +895,10 @@ div[data-nextjs-route-announcer] {
 }
 
 .pos-pay-method-card.is-selected {
-  border-color: var(--whatsapp);
-  background: var(--emerald-deep);
+  border-color: var(--primary);
+  background: var(--primary-light);
   color: var(--text-main);
-  box-shadow: 0 0 0 1px var(--whatsapp), 0 2px 8px rgba(37, 211, 102, 0.2);
+  box-shadow: 0 0 0 1px var(--primary), 0 2px 8px var(--primary-glow);
 }
 
 .pos-pay-method-icon-wrap {
@@ -880,13 +909,13 @@ div[data-nextjs-route-announcer] {
   height: 28px;
   border-radius: 8px;
   background: var(--bg-input);
-  color: var(--emerald);
+  color: var(--primary);
   transition: all 0.18s ease;
 }
 
 .pos-pay-method-card.is-selected .pos-pay-method-icon-wrap {
-  background: var(--whatsapp);
-  color: #022c16;
+  background: var(--primary);
+  color: #ffffff;
 }
 
 .pos-pay-method-title {
@@ -904,8 +933,8 @@ div[data-nextjs-route-announcer] {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--whatsapp);
-  color: #022c16;
+  background: var(--primary);
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -959,13 +988,13 @@ div[data-nextjs-route-announcer] {
 }
 
 .pos-mobile-cart-float-btn {
-  background: var(--whatsapp);
-  color: #022c16;
+  background: var(--primary);
+  color: #ffffff;
   font-weight: 800;
   font-size: 0.84rem;
   padding: 7px 14px;
   border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3);
+  box-shadow: 0 2px 8px var(--primary-glow);
   display: inline-flex;
   align-items: center;
 }
@@ -1410,12 +1439,12 @@ div[data-nextjs-route-announcer] {
   width: 36px;
   height: 36px;
   border-radius: 9px;
-  background: linear-gradient(135deg, #25D366 0%, #059669 100%);
+  background: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  box-shadow: 0 4px 12px var(--whatsapp-glow);
+  color: #ffffff;
+  box-shadow: 0 4px 12px var(--primary-glow);
   flex-shrink: 0;
   transition: width 0.2s ease, height 0.2s ease;
 }
@@ -1555,8 +1584,8 @@ div[data-nextjs-route-announcer] {
 
 /* Active navigation item */
 .bottom-nav-item.active {
-  background: linear-gradient(135deg, rgba(37, 211, 102, 0.16) 0%, rgba(16, 185, 129, 0.1) 100%);
-  color: var(--whatsapp);
+  background: var(--primary-light);
+  color: var(--primary);
 }
 
 /* Active indicator dot */
@@ -2178,7 +2207,7 @@ div[data-nextjs-route-announcer] {
   font-size: 0.72rem;
   padding: 2px 5px;
   border-radius: 4px;
-  background: rgba(37, 211, 102, 0.15);
+  background: var(--primary-light);
   letter-spacing: 0.03em;
   font-weight: 800;
 }
@@ -2219,12 +2248,12 @@ div[data-nextjs-route-announcer] {
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #25D366 0%, #059669 100%);
+  background: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #ffffff;
-  box-shadow: 0 4px 14px var(--whatsapp-glow);
+  box-shadow: 0 4px 14px var(--primary-glow);
   flex-shrink: 0;
 }
 
@@ -2426,7 +2455,7 @@ div[data-nextjs-route-announcer] {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #25D366 0%, #34d399 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -2540,7 +2569,7 @@ div[data-nextjs-route-announcer] {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: #059669;
+  background: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2558,7 +2587,7 @@ div[data-nextjs-route-announcer] {
 }
 
 .landing-merchant-badge {
-  color: var(--whatsapp);
+  color: var(--primary);
   font-size: 0.75rem;
   font-weight: 600;
 }
@@ -2579,7 +2608,7 @@ div[data-nextjs-route-announcer] {
 }
 
 .landing-demo-banner {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(37, 211, 102, 0.18) 100%);
+  background: var(--primary-light);
   border: 1px solid var(--border-medium);
   border-radius: 16px;
   padding: 36px 28px;
@@ -2858,12 +2887,12 @@ div[data-nextjs-route-announcer] {
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #25D366 0%, #059669 100%);
+  background: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #ffffff;
-  box-shadow: 0 4px 12px var(--whatsapp-glow);
+  box-shadow: 0 4px 12px var(--primary-glow);
   flex-shrink: 0;
 }
 
@@ -2911,9 +2940,9 @@ div[data-nextjs-route-announcer] {
 }
 
 .auth-banner-success {
-  background: rgba(37, 211, 102, 0.12);
-  border: 1px solid rgba(37, 211, 102, 0.35);
-  color: #a7f3d0;
+  background: var(--primary-light);
+  border: 1px solid var(--border-medium);
+  color: var(--primary);
   padding: 12px 14px;
   border-radius: 10px;
   font-size: 0.875rem;
@@ -3414,6 +3443,9 @@ div[data-nextjs-route-announcer] {
 
 /* Dashboard Media Queries */
 @media (max-width: 768px) {
+  .dashboard-shortcuts-grid {
+    display: none !important;
+  }
   .dashboard-analytics-grid {
     grid-template-columns: 1fr !important;
     gap: 14px !important;
@@ -3426,16 +3458,6 @@ div[data-nextjs-route-announcer] {
   }
   .dashboard-exec-desc {
     font-size: 0.82rem !important;
-  }
-  .dashboard-shortcuts-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 10px !important;
-  }
-  .dashboard-shortcut-card {
-    padding: 12px 10px !important;
-  }
-  .dashboard-shortcut-card .arrow-icon {
-    display: none !important;
   }
   .dashboard-timeframe-btn {
     padding: 5px 10px !important;

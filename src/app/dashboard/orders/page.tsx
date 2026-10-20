@@ -544,9 +544,6 @@ export default function OrdersPage() {
             <Receipt size={28} style={{ color: 'var(--primary)' }} />
             <span>Orders</span>
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: '4px 0 0 0' }}>
-            Manage, filter, export and review all store orders and customer receipts
-          </p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
@@ -661,7 +658,7 @@ export default function OrdersPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by order #, customer, phone, item..."
+              placeholder="Search orders, customers, or items..."
               className="form-input"
               style={{ paddingLeft: '38px', height: '40px', fontSize: '0.88rem' }}
             />
@@ -737,7 +734,6 @@ export default function OrdersPage() {
               }}
             >
               <Calendar size={14} />
-              Date Filter:
             </span>
             <div className="orders-preset-group">
               {(
@@ -881,12 +877,12 @@ export default function OrdersPage() {
         {!isSelectionActive ? (
           <div className="longpress-hint-pill" style={{ margin: 0 }}>
             <CheckSquare size={13} style={{ color: '#60a5fa' }} />
-            <span>Long-press any order on mobile to start multi-select</span>
+            <span>Long-press any order to multi-select</span>
           </div>
         ) : (
           <div style={{ fontSize: '0.82rem', color: 'var(--emerald)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
             <CheckCircle2 size={14} />
-            <span>Multi-select active: Tap any order to toggle selection</span>
+            <span>Multi-select active</span>
           </div>
         )}
 

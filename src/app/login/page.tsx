@@ -227,7 +227,7 @@ export default function LoginPage() {
             {mode === 'FORGOT_VERIFY' && 'Enter Verification Code'}
           </h1>
           <p className="auth-subtitle">
-            {mode === 'LOGIN' && 'Sign in to manage your Point of Sale catalog and orders'}
+            {mode === 'LOGIN' && 'Sign in to your account'}
             {mode === 'FORGOT_EMAIL' && 'Enter your account email to receive a password reset verification code'}
             {mode === 'FORGOT_VERIFY' && `Enter the 6-digit code dispatched to ${forgotEmail}`}
           </p>
@@ -271,7 +271,7 @@ export default function LoginPage() {
                     type="email"
                     className="form-input"
                     style={{ paddingLeft: '38px' }}
-                    placeholder="name@business.com"
+                    placeholder="Email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required

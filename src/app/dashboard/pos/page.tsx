@@ -85,8 +85,9 @@ export default function OrderCreationPage() {
   const [creatingOrder, setCreatingOrder] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
 
-  // Discount State (Simple numeric percentage)
-  const [discountPercent, setDiscountPercent] = useState<string>('');
+  // Discount State (Toggle between percentage % and flat value)
+  const [discountType, setDiscountType] = useState<'PERCENT' | 'FLAT'>('PERCENT');
+  const [discountValue, setDiscountValue] = useState<string>('');
 
   // Post-Order Sharing Modal
   const [completedOrder, setCompletedOrder] = useState<{
@@ -251,7 +252,8 @@ export default function OrderCreationPage() {
     setCart([]);
     setCustomerPhone('');
     setCustomerName('');
-    setDiscountPercent('');
+    setDiscountValue('');
+    setDiscountType('PERCENT');
     setPaymentMethod('CASH');
     setOrderError(null);
     setActiveStep(1);
@@ -265,8 +267,16 @@ export default function OrderCreationPage() {
 
   // Calculations
   const subtotal = cart.reduce((acc, item) => acc + item.lineTotal, 0);
-  const parsedPercent = Math.min(100, Math.max(0, parseFloat(discountPercent) || 0));
-  const discountAmount = Number(((subtotal * parsedPercent) / 100).toFixed(2));
+  const parsedDiscountNum = Math.max(0, parseFloat(discountValue) || 0);
+  let discountAmount = 0;
+  let parsedPercent = 0;
+  if (discountType === 'PERCENT') {
+    parsedPercent = Math.min(100, parsedDiscountNum);
+    discountAmount = Number(((subtotal * parsedPercent) / 100).toFixed(2));
+  } else {
+    discountAmount = Number(Math.min(subtotal, parsedDiscountNum).toFixed(2));
+    parsedPercent = subtotal > 0 ? Number(((discountAmount / subtotal) * 100).toFixed(1)) : 0;
+  }
   const totalAmount = Number(Math.max(0, subtotal - discountAmount).toFixed(2));
   const totalItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -315,6 +325,7 @@ export default function OrderCreationPage() {
           discount: discountAmount,
           discountAmount: discountAmount,
           discountPercent: parsedPercent,
+          discountType,
           paymentMethod: paymentMethod,
           paymentStatus: paymentStatus,
         }),
@@ -421,9 +432,6 @@ export default function OrderCreationPage() {
           <h1 className="pos-header-title">
             New Order
           </h1>
-          <p className="pos-header-subtitle">
-            Select items, review your bill, and send receipts instantly via WhatsApp.
-          </p>
         </div>
 
         {/* Live Bill Status Pill & Quick Jump */}
@@ -540,7 +548,7 @@ export default function OrderCreationPage() {
                 type="text"
                 className="form-input"
                 style={{ paddingLeft: '40px', paddingRight: searchQuery ? '36px' : '14px' }}
-                placeholder="Search items by name or SKU..."
+                placeholder="Search items or SKU..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -735,11 +743,8 @@ export default function OrderCreationPage() {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             >
-              <ArrowLeft size={14} /> Add More Items
+              <ArrowLeft size={14} /> Add Items
             </button>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Step 2 of 2
-            </span>
           </div>
 
           {/* Step 2 Header */}
@@ -923,62 +928,138 @@ export default function OrderCreationPage() {
 
           {/* Simple Numeric Percentage Discount Field */}
           <div style={{ marginBottom: '12px' }}>
-            <label
-              className="form-label"
+            <div
               style={{
-                fontSize: '0.8rem',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                marginBottom: '4px',
+                marginBottom: '6px',
               }}
             >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <Percent size={13} style={{ color: 'var(--whatsapp)' }} />
-                <span>Discount (%)</span>
+                <span>Discount</span>
               </span>
-              {discountAmount > 0 && (
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--emerald)' }}>
-                  -{currency}{discountAmount.toFixed(2)} off
+              <div
+                style={{
+                  display: 'inline-flex',
+                  background: 'var(--bg-input)',
+                  border: '1px solid var(--border-medium)',
+                  borderRadius: '6px',
+                  padding: '2px',
+                  gap: '2px',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDiscountType('PERCENT');
+                    setDiscountValue('');
+                  }}
+                  style={{
+                    padding: '2px 8px',
+                    fontSize: '0.75rem',
+                    fontWeight: discountType === 'PERCENT' ? 700 : 500,
+                    borderRadius: '4px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: discountType === 'PERCENT' ? 'var(--emerald)' : 'transparent',
+                    color: discountType === 'PERCENT' ? '#fff' : 'var(--text-muted)',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  %
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDiscountType('FLAT');
+                    setDiscountValue('');
+                  }}
+                  style={{
+                    padding: '2px 8px',
+                    fontSize: '0.75rem',
+                    fontWeight: discountType === 'FLAT' ? 700 : 500,
+                    borderRadius: '4px',
+                    border: 'none',
+                    cursor: 'pointer',
+                    background: discountType === 'FLAT' ? 'var(--emerald)' : 'transparent',
+                    color: discountType === 'FLAT' ? '#fff' : 'var(--text-muted)',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {currency} Flat
+                </button>
+              </div>
+            </div>
+
+            <div style={{ position: 'relative' }}>
+              {discountType === 'FLAT' && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    color: 'var(--text-muted)',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  {currency}
                 </span>
               )}
-            </label>
-            <div style={{ position: 'relative' }}>
               <input
                 type="number"
                 min="0"
-                max="100"
+                max={discountType === 'PERCENT' ? '100' : undefined}
                 step="any"
-                placeholder="0"
-                value={discountPercent}
+                placeholder={discountType === 'PERCENT' ? '0' : '0.00'}
+                value={discountValue}
                 onChange={(e) => {
                   const val = e.target.value;
-                  if (val === '' || (!isNaN(Number(val)) && Number(val) >= 0 && Number(val) <= 100)) {
-                    setDiscountPercent(val);
+                  if (val === '') {
+                    setDiscountValue('');
+                    return;
+                  }
+                  const num = Number(val);
+                  if (!isNaN(num) && num >= 0) {
+                    if (discountType === 'PERCENT' && num > 100) return;
+                    setDiscountValue(val);
                   }
                 }}
                 className="form-input"
                 style={{
                   fontSize: '0.88rem',
-                  padding: '8px 32px 8px 12px',
+                  padding: discountType === 'FLAT' ? '8px 12px 8px 28px' : '8px 32px 8px 12px',
                   width: '100%',
                 }}
               />
-              <span
-                style={{
-                  position: 'absolute',
-                  right: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  fontSize: '0.85rem',
-                  fontWeight: 700,
-                  color: 'var(--text-muted)',
-                  pointerEvents: 'none',
-                }}
-              >
-                %
-              </span>
+              {discountType === 'PERCENT' && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    color: 'var(--text-muted)',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  %
+                </span>
+              )}
             </div>
+
+            {discountAmount > 0 && (
+              <div style={{ marginTop: '4px', fontSize: '0.75rem', fontWeight: 600, color: 'var(--emerald)', textAlign: 'right' }}>
+                Saved: {currency}{discountAmount.toFixed(2)}
+                {discountType === 'FLAT' && subtotal > 0 && ` (${parsedPercent}%)`}
+              </div>
+            )}
           </div>
 
           {/* Pricing Total Summary Box */}
@@ -992,7 +1073,7 @@ export default function OrderCreationPage() {
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              <span>Items Subtotal ({totalItemsCount}):</span>
+              <span>Subtotal ({totalItemsCount}):</span>
               <span>{currency}{subtotal.toFixed(2)}</span>
             </div>
 
@@ -1007,7 +1088,7 @@ export default function OrderCreationPage() {
                   fontWeight: 600,
                 }}
               >
-                <span>Discount ({parsedPercent}%):</span>
+                <span>Discount ({discountType === 'PERCENT' ? `${parsedPercent}%` : `${currency}${discountAmount.toFixed(2)}`}):</span>
                 <span>-{currency}{discountAmount.toFixed(2)}</span>
               </div>
             )}
@@ -1023,7 +1104,7 @@ export default function OrderCreationPage() {
                 borderTop: '1px solid var(--border-subtle)',
               }}
             >
-              <span>Total Bill:</span>
+              <span>Total:</span>
               <span style={{ color: 'var(--emerald)' }}>{currency}{totalAmount.toFixed(2)}</span>
             </div>
           </div>
@@ -1031,12 +1112,9 @@ export default function OrderCreationPage() {
           {/* Customer Phone & Checkout Form */}
           <form onSubmit={handleCreateOrder} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div>
-              <label className="form-label" style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+              <label className="form-label" style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px', marginBottom: '4px' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <Phone size={13} style={{ color: 'var(--whatsapp)' }} /> Customer WhatsApp Number <span style={{ color: 'var(--whatsapp)' }}>*</span>
-                </span>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-                  Country: {country.name}
+                  <Phone size={13} style={{ color: 'var(--whatsapp)' }} /> WhatsApp Number <span style={{ color: 'var(--whatsapp)' }}>*</span>
                 </span>
               </label>
 
@@ -1044,7 +1122,7 @@ export default function OrderCreationPage() {
               <div className="phone-fixed-input-group">
                 <div
                   className="phone-fixed-prefix"
-                  title={`Constant Country Code: ${country.name} (${country.dialCode})`}
+                  title={`${country.name} (${country.dialCode})`}
                 >
                   <span className="phone-fixed-prefix-code">{country.code}</span>
                   <span>{country.dialCode}</span>
@@ -1053,7 +1131,7 @@ export default function OrderCreationPage() {
                   type="tel"
                   className="form-input phone-fixed-input"
                   style={{ fontSize: '0.88rem', padding: '8px 12px' }}
-                  placeholder="e.g. 98765 43210"
+                  placeholder="Phone number"
                   value={customerPhone}
                   onChange={(e) => {
                     let val = e.target.value.replace(/\D/g, '');
@@ -1067,14 +1145,11 @@ export default function OrderCreationPage() {
                 />
               </div>
 
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '4px' }}>
-                <span>Code {country.dialCode} is fixed from header selection</span>
-                {customerPhone && (
-                  <span style={{ color: 'var(--whatsapp)', fontWeight: 600 }}>
-                    Target: {country.dialCode} {customerPhone}
-                  </span>
-                )}
-              </div>
+              {customerPhone && (
+                <div style={{ fontSize: '0.72rem', color: 'var(--whatsapp)', marginTop: '4px', fontWeight: 600 }}>
+                  Recipient: {country.dialCode} {customerPhone}
+                </div>
+              )}
             </div>
 
             {/* Customer Name */}
@@ -1086,7 +1161,7 @@ export default function OrderCreationPage() {
                 type="text"
                 className="form-input"
                 style={{ fontSize: '0.88rem', padding: '8px 12px' }}
-                placeholder="e.g. Rahul"
+                placeholder="Customer name"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
               />
@@ -1124,48 +1199,7 @@ export default function OrderCreationPage() {
               </div>
             </div>
 
-            {/* Live Receipt Details Notice (if enabled in settings) */}
-            {((tenantInfo?.showGstOnReceipt && tenantInfo?.gstNumber) ||
-              (tenantInfo?.showGoogleReviewOnReceipt && tenantInfo?.googleProfileUrl)) && (
-              <div
-                style={{
-                  background: 'rgba(37, 211, 102, 0.05)',
-                  border: '1px solid rgba(37, 211, 102, 0.22)',
-                  borderRadius: '10px',
-                  padding: '9px 12px',
-                  fontSize: '0.78rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '4px',
-                  marginTop: '4px',
-                }}
-              >
-                <div style={{ fontWeight: 700, color: 'var(--text-main)', fontSize: '0.78rem' }}>
-                  Enabled on Order Receipt:
-                </div>
-                {tenantInfo?.showGstOnReceipt && tenantInfo?.gstNumber && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontWeight: 600, color: 'var(--whatsapp)' }}>GST:</span>
-                    <span style={{ fontFamily: 'var(--font-mono)' }}>{tenantInfo.gstNumber}</span>
-                  </div>
-                )}
-                {tenantInfo?.showGoogleReviewOnReceipt && tenantInfo?.googleProfileUrl && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
-                    <span style={{ fontWeight: 600, color: '#2563eb', flexShrink: 0 }}>Google Review:</span>
-                    <span
-                      style={{
-                        color: 'var(--text-muted)',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {tenantInfo.googleProfileUrl}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
+
 
             {/* Primary Order Creation Button */}
             <button

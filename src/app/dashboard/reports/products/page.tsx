@@ -259,7 +259,7 @@ export default function ProductsReportPage() {
                         style={{
                           width: `${p.percentage}%`,
                           height: '100%',
-                          background: 'linear-gradient(90deg, #10b981 0%, #25D366 100%)',
+                          background: 'var(--primary)',
                           borderRadius: '3px',
                         }}
                       />

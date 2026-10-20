@@ -129,7 +129,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {tenant?.businessName || 'My Business'}
               </div>
               <div className="dashboard-brand-subtitle">
-                Store Workspace • {tenant?.currency || '$'}
+                {tenant?.businessName || 'Store'} • {tenant?.currency || '$'}
               </div>
             </div>
           </Link>

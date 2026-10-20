@@ -89,8 +89,8 @@ export default function CountryDropdown() {
             style={{
               padding: '2px 5px',
               borderRadius: '4px',
-              background: 'rgba(37, 211, 102, 0.12)',
-              color: 'var(--whatsapp)',
+              background: 'var(--color-light-green)',
+              color: 'var(--primary)',
               fontWeight: 800,
               fontSize: '0.72rem',
               letterSpacing: '0.04em',
@@ -179,8 +179,8 @@ export default function CountryDropdown() {
                   fontSize: '0.7rem',
                   padding: '2px 6px',
                   borderRadius: '4px',
-                  background: 'rgba(37, 211, 102, 0.15)',
-                  color: 'var(--whatsapp)',
+                  background: 'var(--color-light-green)',
+                  color: 'var(--primary)',
                   fontWeight: 600,
                 }}
               >
@@ -279,9 +279,9 @@ export default function CountryDropdown() {
                       borderRadius: '8px',
                       border: 'none',
                       background: isSelected
-                        ? 'linear-gradient(135deg, rgba(37, 211, 102, 0.16) 0%, rgba(16, 185, 129, 0.08) 100%)'
+                        ? 'var(--color-light-green)'
                         : 'transparent',
-                      color: isSelected ? 'var(--whatsapp)' : 'var(--text-main)',
+                      color: isSelected ? 'var(--primary)' : 'var(--text-main)',
                       cursor: 'pointer',
                       transition: 'background 0.15s ease',
                       textAlign: 'left',

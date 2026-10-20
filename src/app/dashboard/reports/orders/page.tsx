@@ -162,7 +162,7 @@ export default function OrdersReportPage() {
 
         <div className="glass-panel" style={{ padding: '20px', borderRadius: '14px' }}>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '6px' }}>Order Growth Rate</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: (rev.ordersGrowth || 0) >= 0 ? '#10b981' : '#f87171' }}>
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, color: (rev.ordersGrowth || 0) >= 0 ? 'var(--primary)' : '#f87171' }}>
             {(rev.ordersGrowth || 0) >= 0 ? '+' : ''}{rev.ordersGrowth || 0}%
           </div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
@@ -217,11 +217,11 @@ export default function OrdersReportPage() {
                     minHeight: '6px',
                     borderRadius: '4px',
                     background: isPeak
-                      ? 'linear-gradient(180deg, #25D366 0%, #059669 100%)'
+                      ? 'var(--primary)'
                       : h.orders > 0
-                      ? 'rgba(37, 211, 102, 0.35)'
+                      ? 'var(--primary-light)'
                       : 'var(--border-subtle)',
-                    boxShadow: isPeak ? '0 0 10px var(--whatsapp-glow)' : 'none',
+                    boxShadow: isPeak ? '0 0 10px var(--primary-glow)' : 'none',
                     transition: 'height 0.2s ease',
                   }}
                   title={`${h.hourLabel}: ${h.orders} orders (${currency}${h.revenue.toFixed(2)})`}

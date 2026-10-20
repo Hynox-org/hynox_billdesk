@@ -218,7 +218,7 @@ export default function PaymentsReportPage() {
                     height: '100%',
                     background:
                       pm.method === 'PAID_CASH'
-                        ? '#10b981'
+                        ? 'var(--primary)'
                         : pm.method === 'PAID_ONLINE'
                         ? '#3b82f6'
                         : '#eab308',

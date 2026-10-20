@@ -1,11 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
 import {
   Lock,
   MessageSquare,
-  ArrowRight,
   ExternalLink,
   Sparkles,
   RefreshCw,
@@ -42,9 +40,9 @@ export default function PaywallPage() {
           width: '76px',
           height: '76px',
           borderRadius: '50%',
-          background: 'rgba(6, 78, 59, 0.45)',
-          border: '2px solid rgba(52, 211, 153, 0.5)',
-          color: '#a7f3d0',
+          background: 'var(--color-light-green)',
+          border: '2px solid var(--border-medium)',
+          color: 'var(--primary)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -214,34 +212,6 @@ export default function PaywallPage() {
             <RefreshCw size={18} /> Check Activation Status
           </button>
         </div>
-      </div>
-
-      {/* Evaluator Quick Switch Tip */}
-      <div
-        style={{
-          background: 'rgba(16, 185, 129, 0.08)',
-          border: '1px solid rgba(16, 185, 129, 0.3)',
-          borderRadius: '14px',
-          padding: '20px',
-          textAlign: 'left',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '14px',
-        }}
-      >
-        <div>
-          <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--whatsapp)', marginBottom: '4px' }}>
-            Platform Reviewer Testing
-          </div>
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Log in as Super Admin (<code>admin@saas.com</code> / <code>admin123456</code>) to extend this trial or activate Pro with one click!
-          </div>
-        </div>
-        <Link href="/login" className="btn btn-primary btn-sm">
-          Switch to Super Admin <ArrowRight size={14} />
-        </Link>
       </div>
     </div>
   );

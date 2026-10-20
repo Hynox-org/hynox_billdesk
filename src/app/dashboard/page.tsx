@@ -127,18 +127,9 @@ export default function VendorDashboardPage() {
       {/* Top Banner / Welcome & Controls */}
       <div className="glass-panel dashboard-exec-header">
         <div className="dashboard-exec-title-group">
-          <div className="dashboard-exec-badge">
-            <span className="dashboard-exec-dot" />
-            <span className="dashboard-exec-badge-text">
-              EXECUTIVE ANALYTICS OVERVIEW
-            </span>
-          </div>
           <h1 className="dashboard-exec-title">
-            {data?.businessName ? `${data.businessName} Dashboard` : 'Vendor Store Dashboard'}
+            {data?.businessName ? data.businessName : 'Dashboard'}
           </h1>
-          <p className="dashboard-exec-desc">
-            Monitor real-time revenue, order flow, inventory health, and customer retention.
-          </p>
         </div>
 
         {/* Timeframe Filter Buttons & Refresh */}
@@ -190,8 +181,8 @@ export default function VendorDashboardPage() {
                 width: '38px',
                 height: '38px',
                 borderRadius: '10px',
-                background: 'rgba(37, 211, 102, 0.15)',
-                color: 'var(--whatsapp)',
+                background: 'var(--color-light-green)',
+                color: 'var(--primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -218,8 +209,8 @@ export default function VendorDashboardPage() {
                 width: '38px',
                 height: '38px',
                 borderRadius: '10px',
-                background: 'rgba(16, 185, 129, 0.15)',
-                color: 'var(--emerald)',
+                background: 'var(--color-light-green)',
+                color: 'var(--primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -297,11 +288,8 @@ export default function VendorDashboardPage() {
       <div>
         <div className="dashboard-section-header">
           <h2 className="dashboard-section-title">
-            Analytics Breakdown & Dedicated Reports
+            Performance Overview
           </h2>
-          <span className="dashboard-section-subtitle">
-            Click any card to open its full detailed report page
-          </span>
         </div>
 
         <div className="dashboard-analytics-grid">
@@ -318,8 +306,8 @@ export default function VendorDashboardPage() {
                       width: '42px',
                       height: '42px',
                       borderRadius: '12px',
-                      background: 'rgba(37, 211, 102, 0.15)',
-                      color: 'var(--whatsapp)',
+                      background: 'var(--color-light-green)',
+                      color: 'var(--primary)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -348,7 +336,7 @@ export default function VendorDashboardPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', fontSize: '0.82rem', flexWrap: 'wrap' }}>
                   <span
                     style={{
-                      color: (data?.revenueSummary?.revenueGrowth ?? 0) >= 0 ? '#10b981' : '#f87171',
+                      color: (data?.revenueSummary?.revenueGrowth ?? 0) >= 0 ? 'var(--primary)' : '#f87171',
                       fontWeight: 700,
                       display: 'flex',
                       alignItems: 'center',
@@ -442,7 +430,7 @@ export default function VendorDashboardPage() {
 
               <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '8px' }}>
                 Order Growth:{' '}
-                <strong style={{ color: (data?.revenueSummary?.ordersGrowth ?? 0) >= 0 ? '#10b981' : '#f87171' }}>
+                <strong style={{ color: (data?.revenueSummary?.ordersGrowth ?? 0) >= 0 ? 'var(--primary)' : '#f87171' }}>
                   {(data?.revenueSummary?.ordersGrowth ?? 0) >= 0 ? '+' : ''}
                   {data?.revenueSummary?.ordersGrowth ?? 0}%
                 </strong>
@@ -530,7 +518,7 @@ export default function VendorDashboardPage() {
                       style={{
                         width: `${Math.min(100, data.topProducts[0].percentage)}%`,
                         height: '100%',
-                        background: 'linear-gradient(90deg, #10b981 0%, #25D366 100%)',
+                        background: 'var(--primary)',
                         borderRadius: '3px',
                       }}
                     />
@@ -720,7 +708,7 @@ export default function VendorDashboardPage() {
                             height: '100%',
                             background:
                               pm.method === 'PAID_CASH'
-                                ? '#10b981'
+                                ? 'var(--primary)'
                                 : pm.method === 'PAID_ONLINE'
                                 ? '#3b82f6'
                                 : '#eab308',

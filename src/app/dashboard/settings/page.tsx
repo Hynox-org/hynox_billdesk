@@ -370,12 +370,9 @@ export default function SettingsPage() {
     <div style={{ maxWidth: '1000px', margin: '0 auto', paddingBottom: '40px' }}>
       {/* Top Header */}
       <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)', marginBottom: '4px' }}>
-          Settings & Account Management
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)', margin: 0 }}>
+          Settings
         </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          Configure your business profile, dispatch currency, and account security.
-        </p>
       </div>
 
       {/* Navigation Pills */}
@@ -425,7 +422,7 @@ export default function SettingsPage() {
           {/* Editable Business Information Card */}
           <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px', paddingBottom: '12px', borderBottom: '1px solid var(--border-subtle)' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(37, 211, 102, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--whatsapp)' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--color-light-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
                 <Store size={18} />
               </div>
               <div>
@@ -468,16 +465,13 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span>Business WhatsApp Phone *</span>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                      Country: {country.name} ({country.dialCode})
-                    </span>
+                  <label className="form-label">
+                    Business WhatsApp Phone *
                   </label>
                   <div className="phone-fixed-input-group">
                     <div
                       className="phone-fixed-prefix"
-                      title={`Fixed Country Dial Code: ${country.name} (${country.dialCode})`}
+                      title={`${country.name} (${country.dialCode})`}
                     >
                       <span className="phone-fixed-prefix-code">{country.code}</span>
                       <span>{country.dialCode}</span>
@@ -494,13 +488,10 @@ export default function SettingsPage() {
                         }
                         setPhone(val);
                       }}
-                      placeholder="e.g. 98765 43210"
+                      placeholder="Phone number"
                       required
                     />
                   </div>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
-                    Dial code {country.dialCode} is fixed from header selection. Stored as: {country.dialCode} {phone || '...'}
-                  </span>
                 </div>
 
                 <div className="form-group">
@@ -538,7 +529,7 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="e.g. 102 Market St, New York"
+                    placeholder="Store address"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                   />
@@ -548,12 +539,9 @@ export default function SettingsPage() {
               {/* Tax & Google Online Presence (Receipt Configuration) */}
               <div style={{ marginTop: '20px', paddingTop: '18px', borderTop: '1px solid var(--border-subtle)', marginBottom: '18px' }}>
                 <div style={{ marginBottom: '16px' }}>
-                  <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '4px' }}>
-                    Tax & Google Online Presence (Receipt Visibility)
+                  <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
+                    Tax &amp; Online Presence
                   </h3>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    Manage your official GST identification and Google profile link, with options to display them on customer order receipts upon creation.
-                  </p>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
@@ -575,11 +563,11 @@ export default function SettingsPage() {
                           width: '30px',
                           height: '30px',
                           borderRadius: '8px',
-                          background: 'rgba(37, 211, 102, 0.15)',
+                          background: 'var(--color-light-green)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          color: 'var(--whatsapp)',
+                          color: 'var(--primary)',
                         }}
                       >
                         <FileText size={16} />
@@ -595,14 +583,11 @@ export default function SettingsPage() {
                       <input
                         type="text"
                         className="form-input"
-                        placeholder="e.g. 22AAAAA0000A1Z5"
+                        placeholder="GSTIN or Tax ID"
                         value={gstNumber}
                         onChange={(e) => setGstNumber(e.target.value.toUpperCase())}
                         style={{ textTransform: 'uppercase' }}
                       />
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
-                        Your registered business GST or Tax ID.
-                      </span>
                     </div>
 
                     <label
@@ -612,8 +597,8 @@ export default function SettingsPage() {
                         gap: '10px',
                         padding: '10px 12px',
                         borderRadius: '8px',
-                        background: showGstOnReceipt ? 'rgba(37, 211, 102, 0.08)' : 'rgba(0, 0, 0, 0.02)',
-                        border: `1px solid ${showGstOnReceipt ? 'rgba(37, 211, 102, 0.3)' : 'var(--border-subtle)'}`,
+                        background: showGstOnReceipt ? 'var(--color-light-green)' : 'rgba(0, 0, 0, 0.02)',
+                        border: `1px solid ${showGstOnReceipt ? 'var(--border-medium)' : 'var(--border-subtle)'}`,
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
                         marginTop: 'auto',
@@ -680,13 +665,10 @@ export default function SettingsPage() {
                       <input
                         type="url"
                         className="form-input"
-                        placeholder="https://g.page/r/.../review or maps link"
+                        placeholder="Google profile or review URL"
                         value={googleProfileUrl}
                         onChange={(e) => setGoogleProfileUrl(e.target.value)}
                       />
-                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
-                        Direct URL to your Google business listing or review page.
-                      </span>
                     </div>
 
                     <label
@@ -696,8 +678,8 @@ export default function SettingsPage() {
                         gap: '10px',
                         padding: '10px 12px',
                         borderRadius: '8px',
-                        background: showGoogleReviewOnReceipt ? 'rgba(37, 211, 102, 0.08)' : 'rgba(0, 0, 0, 0.02)',
-                        border: `1px solid ${showGoogleReviewOnReceipt ? 'rgba(37, 211, 102, 0.3)' : 'var(--border-subtle)'}`,
+                        background: showGoogleReviewOnReceipt ? 'var(--color-light-green)' : 'rgba(0, 0, 0, 0.02)',
+                        border: `1px solid ${showGoogleReviewOnReceipt ? 'var(--border-medium)' : 'var(--border-subtle)'}`,
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
                         marginTop: 'auto',
@@ -841,7 +823,7 @@ export default function SettingsPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px', paddingBottom: '12px', borderBottom: '1px solid var(--border-subtle)' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(37, 211, 102, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--whatsapp)' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--color-light-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
                 <User size={18} />
               </div>
               <div>
@@ -948,7 +930,7 @@ export default function SettingsPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px', paddingBottom: '12px', borderBottom: '1px solid var(--border-subtle)' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(37, 211, 102, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--whatsapp)' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--color-light-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
                 <Key size={18} />
               </div>
               <div>
@@ -1022,10 +1004,10 @@ export default function SettingsPage() {
                   className="form-group"
                   style={{
                     marginBottom: '20px',
-                    background: 'rgba(37, 211, 102, 0.05)',
+                    background: 'var(--color-light-green)',
                     padding: '16px',
                     borderRadius: '12px',
-                    border: '1px solid rgba(37, 211, 102, 0.25)',
+                    border: '1px solid var(--border-medium)',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>

@@ -153,12 +153,12 @@ export default function SuperAdminPage() {
               width: '40px',
               height: '40px',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              background: 'var(--primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#fff',
-              boxShadow: '0 4px 14px var(--whatsapp-glow)',
+              color: '#ffffff',
+              boxShadow: '0 4px 14px var(--primary-glow)',
             }}
           >
             <Shield size={22} />

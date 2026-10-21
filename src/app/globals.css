@@ -4846,11 +4846,11 @@ nextjs-portal,
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: rgba(59, 130, 246, 0.08);
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  background: var(--color-light-green);
+  border: 1px solid var(--border-medium);
   border-radius: 9999px;
   font-size: 0.76rem;
-  color: #93c5fd;
+  color: var(--primary);
   margin-bottom: 12px;
 }
 
@@ -4861,10 +4861,645 @@ nextjs-portal,
   .orders-cards-mobile {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
   }
 }
 
+.orders-mobile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 
+.order-mobile-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 13px 15px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
 
+.order-mobile-row:hover {
+  border-color: var(--border-medium);
+  background: var(--bg-card-hover);
+}
+
+.order-mobile-row:active {
+  transform: scale(0.99);
+}
+
+.order-mobile-row.selected {
+  border-color: var(--primary);
+  background: var(--color-light-green) !important;
+}
+
+.floating-selection-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 990;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-medium);
+  border-radius: 9999px;
+  box-shadow: 0 10px 30px var(--shadow-color, rgba(0, 0, 0, 0.4));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  max-width: calc(100vw - 32px);
+  overflow-x: auto;
+}
+
+@media (max-width: 1080px) {
+  .floating-selection-bar {
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ========================================================================= */
+/* TWO-SECTION EXACT RECEIPT & ACTIONS SYSTEM                                */
+/* ========================================================================= */
+
+.receipt-page-wrapper {
+  min-height: 100vh;
+  background-color: var(--bg-dark);
+  padding: 32px 16px 64px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.receipt-two-section-layout {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 32px;
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+/* ------------------------------------------------------------------------- */
+/* SECTION 1: ALL ACTION BUTTONS                                             */
+/* ------------------------------------------------------------------------- */
+
+.receipt-actions-section {
+  width: 290px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 24px;
+}
+
+.receipt-actions-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-medium);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 8px 28px var(--shadow-color, rgba(0, 0, 0, 0.06));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.receipt-actions-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.receipt-actions-subtitle {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  display: block;
+}
+
+.receipt-actions-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 2px 0 0;
+  color: var(--text-main);
+}
+
+.receipt-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.receipt-action-btn {
+  width: 100%;
+  justify-content: flex-start;
+  font-size: 0.85rem;
+  padding: 9px 14px;
+  border-radius: 10px;
+  gap: 9px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.receipt-actions-footer {
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.receipt-actions-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
+}
+
+.receipt-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 9999px;
+}
+
+.receipt-status-paid {
+  background: var(--color-light-green);
+  color: var(--primary);
+  border: 1px solid var(--border-medium);
+}
+
+/* ------------------------------------------------------------------------- */
+/* SECTION 2: THE ORDER BILL (EXACT THERMAL RECEIPT UI STRUCTURE)            */
+/* ------------------------------------------------------------------------- */
+
+.receipt-bill-section {
+  flex: 1;
+  max-width: 440px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.receipt-thermal-paper {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-medium);
+  border-radius: 6px;
+  box-shadow: 0 12px 36px var(--shadow-color, rgba(0, 0, 0, 0.08));
+  position: relative;
+  overflow: hidden;
+}
+
+/* Sawtooth Perforation Details */
+.receipt-sawtooth-top {
+  height: 8px;
+  background-color: var(--bg-dark);
+  background-image:
+    linear-gradient(135deg, var(--bg-card) 4px, transparent 0),
+    linear-gradient(-135deg, var(--bg-card) 4px, transparent 0);
+  background-size: 10px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.receipt-sawtooth-bottom {
+  height: 8px;
+  background-color: var(--bg-dark);
+  background-image:
+    linear-gradient(45deg, var(--bg-card) 4px, transparent 0),
+    linear-gradient(-45deg, var(--bg-card) 4px, transparent 0);
+  background-size: 10px 8px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.receipt-paper-body {
+  padding: 22px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Store Header */
+.receipt-thermal-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.receipt-store-title {
+  font-size: 1.25rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-main);
+  margin: 0;
+  line-height: 1.25;
+}
+
+.receipt-store-sub {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.35;
+}
+
+/* Receipt Perforations / Dashed Lines */
+.receipt-dashed-line {
+  border-top: 1.5px dashed var(--border-medium);
+  width: 100%;
+  margin: 3px 0;
+}
+
+.receipt-dashed-line-thin {
+  border-top: 1px dashed var(--border-subtle);
+  width: 100%;
+  margin: 4px 0;
+}
+
+.receipt-double-line {
+  border-top: 3px double var(--text-main);
+  width: 100%;
+  margin: 5px 0;
+}
+
+/* Metadata Lines */
+.receipt-meta-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.receipt-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.receipt-meta-key {
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.receipt-meta-val {
+  color: var(--text-main);
+  font-weight: 700;
+  text-align: right;
+}
+
+/* Items Thermal Table */
+.receipt-items-thermal {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.receipt-items-thermal-head {
+  display: flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.03em;
+  padding-bottom: 2px;
+}
+
+.receipt-col-qty {
+  width: 32px;
+  text-align: left;
+  flex-shrink: 0;
+}
+
+.receipt-col-item {
+  flex: 1;
+  min-width: 0;
+  padding-right: 6px;
+}
+
+.receipt-col-price {
+  width: 65px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.receipt-col-total {
+  width: 75px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.receipt-items-thermal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.receipt-thermal-item-row {
+  display: flex;
+  flex-direction: column;
+}
+
+.receipt-thermal-item-main {
+  display: flex;
+  align-items: flex-start;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.receipt-item-name {
+  font-weight: 700;
+  color: var(--text-main);
+  word-break: break-word;
+}
+
+.receipt-item-sku-sub {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 1px;
+}
+
+/* Totals Thermal Section */
+.receipt-totals-thermal {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.receipt-total-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: var(--text-main);
+  line-height: 1.4;
+}
+
+.receipt-discount-text {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.receipt-grand-total-thermal {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 4px 0;
+}
+
+.receipt-grand-total-title {
+  font-size: 0.96rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  color: var(--text-main);
+}
+
+.receipt-grand-total-figure {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: var(--primary);
+}
+
+.receipt-order-note-line {
+  margin-top: 4px;
+  padding: 6px 8px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  font-size: 0.74rem;
+}
+
+.receipt-order-note-line p {
+  margin: 2px 0 0;
+  color: var(--text-secondary);
+}
+
+/* Barcode Thermal Section */
+.receipt-barcode-section {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 0;
+}
+
+.receipt-barcode-thermal {
+  font-family: var(--font-mono);
+  font-size: 1.3rem;
+  letter-spacing: 0.22em;
+  color: var(--text-main);
+  user-select: none;
+  line-height: 1;
+}
+
+.receipt-barcode-caption {
+  font-size: 0.74rem;
+  letter-spacing: 0.16em;
+  color: var(--text-muted);
+}
+
+/* Google Review Box (Screen Only) */
+.receipt-review-box {
+  background: var(--color-light-green);
+  border: 1px solid var(--border-medium);
+  border-radius: 8px;
+  padding: 10px 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.receipt-review-text {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.receipt-review-link {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: underline;
+}
+
+/* Footer Appreciation */
+.receipt-thermal-footer {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding-top: 4px;
+}
+
+.receipt-appreciation-main {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.receipt-appreciation-sub {
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.receipt-watermark-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.66rem;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  margin-top: 4px;
+}
+
+.receipt-mono-text {
+  font-family: var(--font-mono);
+}
+
+/* ------------------------------------------------------------------------- */
+/* RESPONSIVE LAYOUT (Mobile & Tablet <= 880px)                              */
+/* ------------------------------------------------------------------------- */
+
+@media (max-width: 880px) {
+  .receipt-page-wrapper {
+    padding: 20px 12px 64px;
+  }
+
+  .receipt-two-section-layout {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    max-width: 460px;
+  }
+
+  .receipt-actions-section {
+    width: 100%;
+    position: static;
+  }
+
+  .receipt-actions-card {
+    padding: 16px;
+  }
+
+  .receipt-actions-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .receipt-action-btn {
+    font-size: 0.82rem;
+    padding: 8px 10px;
+  }
+
+  .receipt-bill-section {
+    max-width: 100%;
+  }
+
+  .receipt-paper-body {
+    padding: 18px 14px 20px;
+  }
+}
+
+@media (max-width: 420px) {
+  .receipt-actions-list {
+    grid-template-columns: 1fr;
+  }
+
+  .receipt-col-price {
+    width: 55px;
+  }
+
+  .receipt-col-total {
+    width: 65px;
+  }
+}
+
+/* ------------------------------------------------------------------------- */
+/* PRINT MEDIA QUERY                                                         */
+/* ------------------------------------------------------------------------- */
+
+@media print {
+  .receipt-screen-only,
+  .dashboard-header,
+  .dashboard-nav,
+  .bottom-nav {
+    display: none !important;
+  }
+
+  body, html {
+    background: transparent !important;
+  }
+
+  .receipt-page-wrapper {
+    padding: 0 !important;
+    background: transparent !important;
+    min-height: auto !important;
+  }
+
+  .receipt-two-section-layout {
+    display: block !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .receipt-actions-section {
+    display: none !important;
+  }
+
+  .receipt-bill-section {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .receipt-thermal-paper {
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .receipt-sawtooth-top,
+  .receipt-sawtooth-bottom {
+    display: none !important;
+  }
+
+  .receipt-paper-body {
+    padding: 0 !important;
+  }
+}
 

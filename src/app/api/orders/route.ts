@@ -52,6 +52,21 @@ export async function GET(req: NextRequest) {
         avgOrder: Number(avgOrder.toFixed(2)),
       },
       currency: auth.tenant.currency || '$',
+      tenant: {
+        businessName: auth.tenant.businessName,
+        phone: auth.tenant.phone,
+        address: auth.tenant.address,
+        location: auth.tenant.location || 'Main Store',
+        city: auth.tenant.city || '',
+        province: auth.tenant.province || '',
+        provinceCode: auth.tenant.provinceCode || '',
+        zip: auth.tenant.zip || '',
+        country: auth.tenant.country || '',
+        defaultEmployee: auth.tenant.defaultEmployee || '',
+        defaultTaxName: auth.tenant.defaultTaxName || 'GST 18%',
+        defaultTax2Name: auth.tenant.defaultTax2Name || '',
+        deviceId: auth.tenant.deviceId || '',
+      },
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || 'Error fetching orders' }, { status: 500 });

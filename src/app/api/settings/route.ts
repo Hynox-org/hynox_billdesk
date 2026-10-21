@@ -28,6 +28,16 @@ export async function GET() {
         phone: tenant.phone,
         currency: tenant.currency || '$',
         address: tenant.address || '',
+        location: tenant.location || 'Main Store',
+        city: tenant.city || '',
+        province: tenant.province || '',
+        provinceCode: tenant.provinceCode || '',
+        zip: tenant.zip || '',
+        country: tenant.country || '',
+        defaultEmployee: tenant.defaultEmployee || '',
+        defaultTaxName: tenant.defaultTaxName || 'GST 18%',
+        defaultTax2Name: tenant.defaultTax2Name || '',
+        deviceId: tenant.deviceId || '',
         gstNumber: tenant.gstNumber || '',
         showGstOnReceipt: Boolean(tenant.showGstOnReceipt),
         googleProfileUrl: tenant.googleProfileUrl || '',
@@ -62,6 +72,16 @@ export async function PUT(req: NextRequest) {
       phone,
       address,
       currency,
+      location,
+      city,
+      province,
+      provinceCode,
+      zip,
+      country,
+      defaultEmployee,
+      defaultTaxName,
+      defaultTax2Name,
+      deviceId,
       gstNumber,
       showGstOnReceipt,
       googleProfileUrl,
@@ -75,13 +95,22 @@ export async function PUT(req: NextRequest) {
       });
     }
 
-    // 2. Update business information (businessName, phone, address, currency, gstNumber, googleProfileUrl)
-    // Restricted fields like slug, plan, status, trialEndsAt are deliberately omitted and preserved!
+    // 2. Update business information
     const tenantUpdate: Record<string, any> = {};
     if (businessName && businessName.trim()) tenantUpdate.businessName = businessName.trim();
     if (phone && phone.trim()) tenantUpdate.phone = phone.trim();
     if (address !== undefined) tenantUpdate.address = address.trim();
     if (currency && currency.trim()) tenantUpdate.currency = currency.trim();
+    if (location !== undefined) tenantUpdate.location = location.trim();
+    if (city !== undefined) tenantUpdate.city = city.trim();
+    if (province !== undefined) tenantUpdate.province = province.trim();
+    if (provinceCode !== undefined) tenantUpdate.provinceCode = provinceCode.trim();
+    if (zip !== undefined) tenantUpdate.zip = zip.trim();
+    if (country !== undefined) tenantUpdate.country = country.trim();
+    if (defaultEmployee !== undefined) tenantUpdate.defaultEmployee = defaultEmployee.trim();
+    if (defaultTaxName !== undefined) tenantUpdate.defaultTaxName = defaultTaxName.trim();
+    if (defaultTax2Name !== undefined) tenantUpdate.defaultTax2Name = defaultTax2Name.trim();
+    if (deviceId !== undefined) tenantUpdate.deviceId = deviceId.trim();
     if (gstNumber !== undefined) tenantUpdate.gstNumber = typeof gstNumber === 'string' ? gstNumber.trim() : '';
     if (showGstOnReceipt !== undefined) tenantUpdate.showGstOnReceipt = Boolean(showGstOnReceipt);
     if (googleProfileUrl !== undefined) tenantUpdate.googleProfileUrl = typeof googleProfileUrl === 'string' ? googleProfileUrl.trim() : '';
@@ -119,6 +148,16 @@ export async function PUT(req: NextRequest) {
         phone: updatedTenant!.phone,
         currency: updatedTenant!.currency,
         address: updatedTenant!.address,
+        location: updatedTenant!.location || 'Main Store',
+        city: updatedTenant!.city || '',
+        province: updatedTenant!.province || '',
+        provinceCode: updatedTenant!.provinceCode || '',
+        zip: updatedTenant!.zip || '',
+        country: updatedTenant!.country || '',
+        defaultEmployee: updatedTenant!.defaultEmployee || '',
+        defaultTaxName: updatedTenant!.defaultTaxName || 'GST 18%',
+        defaultTax2Name: updatedTenant!.defaultTax2Name || '',
+        deviceId: updatedTenant!.deviceId || '',
         gstNumber: updatedTenant!.gstNumber || '',
         showGstOnReceipt: Boolean(updatedTenant!.showGstOnReceipt),
         googleProfileUrl: updatedTenant!.googleProfileUrl || '',

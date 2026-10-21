@@ -61,6 +61,8 @@ export async function POST(req: NextRequest) {
       ? paymentStatus
       : 'PAID_CASH';
 
+    const tenant = auth.tenant;
+
     // Calculate line totals and subtotal
     const sanitizedItems = items.map((item: any) => {
       const unitPrice = Math.max(0, Number(item.unitPrice) || 0);
@@ -72,6 +74,13 @@ export async function POST(req: NextRequest) {
         unitPrice,
         quantity,
         lineTotal,
+        compareAtPrice: Number(item.compareAtPrice) || 0,
+        sku: item.sku || '',
+        requiresShipping: Boolean(item.requiresShipping),
+        taxable: item.taxable !== undefined ? Boolean(item.taxable) : true,
+        fulfillmentStatus: item.fulfillmentStatus || 'fulfilled',
+        discount: Number(item.discount) || 0,
+        vendor: item.vendor || tenant.businessName,
       };
     });
 
@@ -114,12 +123,17 @@ export async function POST(req: NextRequest) {
       receiptUrl,
     });
 
-    // Save Order into Database
+    const isPaid = normalizedPaymentStatus !== 'PENDING';
+    const now = new Date();
+
+    // Save Order into Database with complete vendor and Shopify-standard export attributes
     const order = await Order.create({
       tenantId: auth.tenant._id,
       orderNumber,
-      customerName: customerName.trim(),
+      customerName: customerName.trim() || 'Valued Customer',
       customerPhone: cleanPhone,
+      customerEmail: body.customerEmail || '',
+      acceptsMarketing: Boolean(body.acceptsMarketing),
       items: sanitizedItems,
       subtotal,
       tax: taxAmount,
@@ -127,8 +141,58 @@ export async function POST(req: NextRequest) {
       totalAmount,
       currency: auth.tenant.currency || '$',
       paymentStatus: normalizedPaymentStatus,
+      paymentMethod,
       whatsappStatus: 'GENERATED',
       notes: notes ? notes.trim() : '',
+      financialStatus: isPaid ? 'paid' : 'pending',
+      paidAt: isPaid ? now : undefined,
+      fulfillmentStatus: 'fulfilled',
+      fulfilledAt: now,
+      shippingMethod: paymentMethod === 'COD' ? 'CASH ON DELIVERY' : 'Store POS / Walk-in',
+      shippingCost: Number(body.shippingCost) || 0,
+      discountCode: body.discountCode || '',
+      refundedAmount: 0,
+      outstandingBalance: isPaid ? 0 : totalAmount,
+      vendor: auth.tenant.businessName,
+      employee: auth.user?.fullName || auth.tenant.defaultEmployee || 'Cashier',
+      location: auth.tenant.location || 'Main Store',
+      deviceId: auth.tenant.deviceId || '',
+      tags: body.tags || 'POS, WALK_IN',
+      riskLevel: 'Low',
+      source: 'POS',
+      receiptNumber: orderNumber,
+      paymentReference: `#${orderNumber}`,
+      paymentId: `#${orderNumber}`,
+      paymentReferences: `#${orderNumber}`,
+      // Billing Address
+      billingName: customerName.trim() || 'Valued Customer',
+      billingStreet: auth.tenant.address || '',
+      billingAddress1: auth.tenant.address || '',
+      billingAddress2: '',
+      billingCompany: '',
+      billingCity: auth.tenant.city || '',
+      billingZip: auth.tenant.zip || '',
+      billingProvince: auth.tenant.provinceCode || 'TN',
+      billingProvinceName: auth.tenant.province || 'Tamil Nadu',
+      billingCountry: auth.tenant.country || 'IN',
+      billingPhone: cleanPhone,
+      // Shipping Address
+      shippingName: customerName.trim() || 'Valued Customer',
+      shippingStreet: auth.tenant.address || '',
+      shippingAddress1: auth.tenant.address || '',
+      shippingAddress2: '',
+      shippingCompany: '',
+      shippingCity: auth.tenant.city || '',
+      shippingZip: auth.tenant.zip || '',
+      shippingProvince: auth.tenant.provinceCode || 'TN',
+      shippingProvinceName: auth.tenant.province || 'Tamil Nadu',
+      shippingCountry: auth.tenant.country || 'IN',
+      shippingPhone: cleanPhone,
+      // Tax Breakdown
+      tax1Name: taxAmount > 0 ? (auth.tenant.defaultTaxName || 'GST 18%') : '',
+      tax1Value: taxAmount,
+      tax2Name: auth.tenant.defaultTax2Name || '',
+      tax2Value: 0,
       gstNumber: auth.tenant.showGstOnReceipt && auth.tenant.gstNumber ? auth.tenant.gstNumber.trim() : '',
       googleProfileUrl: auth.tenant.showGoogleReviewOnReceipt && auth.tenant.googleProfileUrl ? auth.tenant.googleProfileUrl.trim() : '',
     });

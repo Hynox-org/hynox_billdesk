@@ -7,6 +7,16 @@ export interface ITenant extends Document {
   currency: string;
   countryCode: string;
   address: string;
+  location?: string;
+  city?: string;
+  province?: string;
+  provinceCode?: string;
+  zip?: string;
+  country?: string;
+  defaultEmployee?: string;
+  defaultTaxName?: string;
+  defaultTax2Name?: string;
+  deviceId?: string;
   gstNumber?: string;
   showGstOnReceipt?: boolean;
   googleProfileUrl?: string;
@@ -28,6 +38,16 @@ const TenantSchema: Schema<ITenant> = new Schema(
     currency: { type: String, default: '$' },
     countryCode: { type: String, default: '1' },
     address: { type: String, default: '' },
+    location: { type: String, default: 'Main Store', trim: true },
+    city: { type: String, default: '', trim: true },
+    province: { type: String, default: '', trim: true },
+    provinceCode: { type: String, default: '', trim: true },
+    zip: { type: String, default: '', trim: true },
+    country: { type: String, default: '', trim: true },
+    defaultEmployee: { type: String, default: '', trim: true },
+    defaultTaxName: { type: String, default: 'GST 18%', trim: true },
+    defaultTax2Name: { type: String, default: '', trim: true },
+    deviceId: { type: String, default: '', trim: true },
     gstNumber: { type: String, default: '', trim: true },
     showGstOnReceipt: { type: Boolean, default: false },
     googleProfileUrl: { type: String, default: '', trim: true },

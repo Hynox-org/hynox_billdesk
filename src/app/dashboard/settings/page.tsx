@@ -40,6 +40,16 @@ interface SettingsData {
     phone: string;
     currency: string;
     address: string;
+    location?: string;
+    city?: string;
+    province?: string;
+    provinceCode?: string;
+    zip?: string;
+    country?: string;
+    defaultEmployee?: string;
+    defaultTaxName?: string;
+    defaultTax2Name?: string;
+    deviceId?: string;
     gstNumber?: string;
     showGstOnReceipt?: boolean;
     googleProfileUrl?: string;
@@ -65,6 +75,16 @@ export default function SettingsPage() {
   const [businessName, setBusinessName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [location, setLocation] = useState('Main Store');
+  const [city, setCity] = useState('');
+  const [province, setProvince] = useState('');
+  const [provinceCode, setProvinceCode] = useState('');
+  const [zip, setZip] = useState('');
+  const [countryName, setCountryName] = useState('');
+  const [defaultEmployee, setDefaultEmployee] = useState('');
+  const [defaultTaxName, setDefaultTaxName] = useState('GST 18%');
+  const [defaultTax2Name, setDefaultTax2Name] = useState('');
+  const [deviceId, setDeviceId] = useState('');
   const [currency, setCurrency] = useState('$');
   const [gstNumber, setGstNumber] = useState('');
   const [showGstOnReceipt, setShowGstOnReceipt] = useState(false);
@@ -118,6 +138,16 @@ export default function SettingsPage() {
           }
           setPhone(rawPhone);
           setAddress(json.tenant?.address || '');
+          setLocation(json.tenant?.location || 'Main Store');
+          setCity(json.tenant?.city || '');
+          setProvince(json.tenant?.province || '');
+          setProvinceCode(json.tenant?.provinceCode || '');
+          setZip(json.tenant?.zip || '');
+          setCountryName(json.tenant?.country || '');
+          setDefaultEmployee(json.tenant?.defaultEmployee || '');
+          setDefaultTaxName(json.tenant?.defaultTaxName || 'GST 18%');
+          setDefaultTax2Name(json.tenant?.defaultTax2Name || '');
+          setDeviceId(json.tenant?.deviceId || '');
           setCurrency(json.tenant?.currency || '$');
           setGstNumber(json.tenant?.gstNumber || '');
           setShowGstOnReceipt(Boolean(json.tenant?.showGstOnReceipt));
@@ -155,6 +185,16 @@ export default function SettingsPage() {
           businessName,
           phone: fullPhone,
           address,
+          location,
+          city,
+          province,
+          provinceCode,
+          zip,
+          country: countryName,
+          defaultEmployee,
+          defaultTaxName,
+          defaultTax2Name,
+          deviceId,
           currency,
           gstNumber,
           showGstOnReceipt,
@@ -176,6 +216,16 @@ export default function SettingsPage() {
             businessName,
             phone,
             address,
+            location,
+            city,
+            province,
+            provinceCode,
+            zip,
+            country: countryName,
+            defaultEmployee,
+            defaultTaxName,
+            defaultTax2Name,
+            deviceId,
             currency,
             gstNumber,
             showGstOnReceipt,
@@ -525,14 +575,118 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Store Location / Address (Optional)</label>
+                  <label className="form-label">Location / Branch Name</label>
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="Store address"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="e.g. Main Store, Outlet 1"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
                   />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Default Staff / Cashier Name</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. Cashier 1"
+                    value={defaultEmployee}
+                    onChange={(e) => setDefaultEmployee(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">POS Terminal / Device ID</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. POS-01"
+                    value={deviceId}
+                    onChange={(e) => setDeviceId(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Business Location & Address Section */}
+              <div style={{ marginTop: '20px', paddingTop: '18px', borderTop: '1px solid var(--border-subtle)', marginBottom: '18px' }}>
+                <div style={{ marginBottom: '14px' }}>
+                  <h3 style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
+                    Store Address &amp; Export Location
+                  </h3>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                    Used for orders billing &amp; shipping details in official export files.
+                  </p>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+                  <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                    <label className="form-label">Street Address</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. No. 20, Elementary School 2nd Street"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">City</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. Tiruppur, Chennai"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">State / Province</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. Tamil Nadu, Karnataka"
+                      value={province}
+                      onChange={(e) => setProvince(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">State Code (2-letter)</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. TN, KA, MH"
+                      value={provinceCode}
+                      onChange={(e) => setProvinceCode(e.target.value.toUpperCase())}
+                      style={{ textTransform: 'uppercase' }}
+                      maxLength={4}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Postal / Zip Code</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. 641602"
+                      value={zip}
+                      onChange={(e) => setZip(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Country</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="e.g. India or IN"
+                      value={countryName}
+                      onChange={(e) => setCountryName(e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -545,7 +699,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-                  {/* GST Information Card */}
+                  {/* GST & Tax Labels Card */}
                   <div
                     style={{
                       background: 'var(--bg-input)',
@@ -573,8 +727,8 @@ export default function SettingsPage() {
                         <FileText size={16} />
                       </div>
                       <div>
-                        <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-main)' }}>GST Information</span>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Tax Identification Number</span>
+                        <span style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-main)' }}>GST &amp; Tax Configuration</span>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>Tax Number and Export Tax Labels</span>
                       </div>
                     </div>
 
@@ -588,6 +742,29 @@ export default function SettingsPage() {
                         onChange={(e) => setGstNumber(e.target.value.toUpperCase())}
                         style={{ textTransform: 'uppercase' }}
                       />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontSize: '0.78rem' }}>Tax 1 Label</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          placeholder="e.g. GST 18%, IGST 18%"
+                          value={defaultTaxName}
+                          onChange={(e) => setDefaultTaxName(e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontSize: '0.78rem' }}>Tax 2 Label (Optional)</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          placeholder="e.g. SGST 9%"
+                          value={defaultTax2Name}
+                          onChange={(e) => setDefaultTax2Name(e.target.value)}
+                        />
+                      </div>
                     </div>
 
                     <label

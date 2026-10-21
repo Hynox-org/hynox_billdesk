@@ -33,10 +33,18 @@ import {
 } from 'lucide-react';
 
 interface OrderItem {
+  productId?: string;
   productName: string;
   unitPrice: number;
   quantity: number;
   lineTotal: number;
+  compareAtPrice?: number;
+  sku?: string;
+  requiresShipping?: boolean;
+  taxable?: boolean;
+  fulfillmentStatus?: string;
+  discount?: number;
+  vendor?: string;
 }
 
 interface Order {
@@ -44,6 +52,8 @@ interface Order {
   orderNumber: string;
   customerName: string;
   customerPhone: string;
+  customerEmail?: string;
+  acceptsMarketing?: boolean;
   items: OrderItem[];
   subtotal: number;
   tax: number;
@@ -52,7 +62,84 @@ interface Order {
   currency?: string;
   paymentStatus: string;
   paymentMethod?: string;
+  notes?: string;
+  noteAttributes?: string;
+  financialStatus?: string;
+  paidAt?: string;
+  fulfillmentStatus?: string;
+  fulfilledAt?: string;
+  cancelledAt?: string;
+  shippingMethod?: string;
+  shippingCost?: number;
+  discountCode?: string;
+  refundedAmount?: number;
+  outstandingBalance?: number;
+  vendor?: string;
+  employee?: string;
+  location?: string;
+  deviceId?: string;
+  tags?: string;
+  riskLevel?: string;
+  source?: string;
+  receiptNumber?: string;
+  paymentReference?: string;
+  paymentId?: string;
+  paymentTermsName?: string;
+  nextPaymentDueAt?: string;
+  paymentReferences?: string;
+  duties?: number;
+  billingName?: string;
+  billingStreet?: string;
+  billingAddress1?: string;
+  billingAddress2?: string;
+  billingCompany?: string;
+  billingCity?: string;
+  billingZip?: string;
+  billingProvince?: string;
+  billingProvinceName?: string;
+  billingCountry?: string;
+  billingPhone?: string;
+  shippingName?: string;
+  shippingStreet?: string;
+  shippingAddress1?: string;
+  shippingAddress2?: string;
+  shippingCompany?: string;
+  shippingCity?: string;
+  shippingZip?: string;
+  shippingProvince?: string;
+  shippingProvinceName?: string;
+  shippingCountry?: string;
+  shippingPhone?: string;
+  tax1Name?: string;
+  tax1Value?: number;
+  tax2Name?: string;
+  tax2Value?: number;
+  tax3Name?: string;
+  tax3Value?: number;
+  tax4Name?: string;
+  tax4Value?: number;
+  tax5Name?: string;
+  tax5Value?: number;
+  gstNumber?: string;
+  googleProfileUrl?: string;
   createdAt: string;
+  updatedAt?: string;
+}
+
+interface TenantExportInfo {
+  businessName?: string;
+  phone?: string;
+  address?: string;
+  location?: string;
+  city?: string;
+  province?: string;
+  provinceCode?: string;
+  zip?: string;
+  country?: string;
+  defaultEmployee?: string;
+  defaultTaxName?: string;
+  defaultTax2Name?: string;
+  deviceId?: string;
 }
 
 type DatePreset = 'ALL' | 'TODAY' | 'YESTERDAY' | 'WEEK' | 'MONTH' | 'CUSTOM';
@@ -62,6 +149,7 @@ export default function OrdersPage() {
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [currency, setCurrency] = useState('$');
+  const [tenantInfo, setTenantInfo] = useState<TenantExportInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Filters State
@@ -117,6 +205,7 @@ export default function OrdersPage() {
         const data = await res.json();
         setOrders(data.orders || []);
         if (data.currency) setCurrency(data.currency);
+        if (data.tenant) setTenantInfo(data.tenant);
       }
     } catch (err) {
       console.error('Error fetching orders:', err);
@@ -303,7 +392,416 @@ export default function OrdersPage() {
     router.push(`/receipt/${order.orderNumber}`);
   };
 
-  // Excel Export Handler
+  // Exact 79 Headers matching the user's sample CSV file
+  const SHOPIFY_EXPORT_HEADERS = [
+    'Name',
+    'Email',
+    'Financial Status',
+    'Paid at',
+    'Fulfillment Status',
+    'Fulfilled at',
+    'Accepts Marketing',
+    'Currency',
+    'Subtotal',
+    'Shipping',
+    'Taxes',
+    'Total',
+    'Discount Code',
+    'Discount Amount',
+    'Shipping Method',
+    'Created at',
+    'Lineitem quantity',
+    'Lineitem name',
+    'Lineitem price',
+    'Lineitem compare at price',
+    'Lineitem sku',
+    'Lineitem requires shipping',
+    'Lineitem taxable',
+    'Lineitem fulfillment status',
+    'Billing Name',
+    'Billing Street',
+    'Billing Address1',
+    'Billing Address2',
+    'Billing Company',
+    'Billing City',
+    'Billing Zip',
+    'Billing Province',
+    'Billing Country',
+    'Billing Phone',
+    'Shipping Name',
+    'Shipping Street',
+    'Shipping Address1',
+    'Shipping Address2',
+    'Shipping Company',
+    'Shipping City',
+    'Shipping Zip',
+    'Shipping Province',
+    'Shipping Country',
+    'Shipping Phone',
+    'Notes',
+    'Note Attributes',
+    'Cancelled at',
+    'Payment Method',
+    'Payment Reference',
+    'Refunded Amount',
+    'Vendor',
+    'Outstanding Balance',
+    'Employee',
+    'Location',
+    'Device ID',
+    'Id',
+    'Tags',
+    'Risk Level',
+    'Source',
+    'Lineitem discount',
+    'Tax 1 Name',
+    'Tax 1 Value',
+    'Tax 2 Name',
+    'Tax 2 Value',
+    'Tax 3 Name',
+    'Tax 3 Value',
+    'Tax 4 Name',
+    'Tax 4 Value',
+    'Tax 5 Name',
+    'Tax 5 Value',
+    'Phone',
+    'Receipt Number',
+    'Duties',
+    'Billing Province Name',
+    'Shipping Province Name',
+    'Payment ID',
+    'Payment Terms Name',
+    'Next Payment Due At',
+    'Payment References',
+  ];
+
+  const normalizeCurrencyCode = (symbolOrCode?: string): string => {
+    if (!symbolOrCode) return 'INR';
+    const clean = symbolOrCode.trim();
+    const map: Record<string, string> = {
+      '₹': 'INR',
+      '$': 'USD',
+      '€': 'EUR',
+      '£': 'GBP',
+      'AED': 'AED',
+      'SAR': 'SAR',
+      'QAR': 'QAR',
+      'S$': 'SGD',
+      'RM': 'MYR',
+      '₱': 'PHP',
+      '৳': 'BDT',
+      '₨': 'PKR',
+      '¥': 'JPY',
+      'CHF': 'CHF',
+      'kr': 'SEK',
+      'R$': 'BRL',
+      'R': 'ZAR',
+      'KSh': 'KES',
+      '₦': 'NGN',
+    };
+    return map[clean] || clean;
+  };
+
+  const formatCSVDate = (dateVal?: string | Date | number): string => {
+    if (!dateVal) return '';
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '';
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const year = d.getFullYear();
+    const month = pad(d.getMonth() + 1);
+    const day = pad(d.getDate());
+    const hours = pad(d.getHours());
+    const minutes = pad(d.getMinutes());
+    const seconds = pad(d.getSeconds());
+
+    const offsetMin = -d.getTimezoneOffset();
+    const sign = offsetMin >= 0 ? '+' : '-';
+    const absOffset = Math.abs(offsetMin);
+    const offsetHours = pad(Math.floor(absOffset / 60));
+    const offsetMinutes = pad(absOffset % 60);
+    const offsetStr = `${sign}${offsetHours}${offsetMinutes}`;
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds} ${offsetStr}`;
+  };
+
+  const escapeCSVCell = (val: any): string => {
+    if (val === null || val === undefined) return '';
+    const str = String(val);
+    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const buildExportRows = (targets: Order[]) => {
+    const rows: Record<string, string>[] = [];
+
+    targets.forEach((o) => {
+      const rawItems =
+        o.items && o.items.length > 0
+          ? o.items
+          : [
+              {
+                productName: 'Custom Item',
+                unitPrice: o.totalAmount,
+                quantity: 1,
+                lineTotal: o.totalAmount,
+              },
+            ];
+
+      const orderName = o.orderNumber
+        ? o.orderNumber.startsWith('#')
+          ? o.orderNumber
+          : `#${o.orderNumber}`
+        : '#ORD';
+      const email = o.customerEmail || '';
+      const rawStatus = (o.financialStatus || o.paymentStatus || 'paid').toLowerCase();
+      const financialStatus = rawStatus.includes('pending')
+        ? 'pending'
+        : rawStatus.includes('paid') || rawStatus === 'completed'
+        ? 'paid'
+        : rawStatus;
+      const createdAtStr = formatCSVDate(o.createdAt);
+      const paidAtStr = o.paidAt
+        ? formatCSVDate(o.paidAt)
+        : financialStatus === 'paid'
+        ? createdAtStr
+        : '';
+      const fulfillmentStatus = o.fulfillmentStatus || 'fulfilled';
+      const fulfilledAtStr = o.fulfilledAt ? formatCSVDate(o.fulfilledAt) : createdAtStr;
+      const acceptsMarketing = o.acceptsMarketing ? 'yes' : 'no';
+      const currencyCode = normalizeCurrencyCode(o.currency || currency);
+      const subtotal = Number(o.subtotal || 0).toFixed(2);
+      const shipping = Number(o.shippingCost || 0).toFixed(2);
+      const taxes = Number(o.tax || 0).toFixed(2);
+      const total = Number(o.totalAmount || 0).toFixed(2);
+      const discountCode = o.discountCode || '';
+      const discountAmount = Number(o.discount || 0).toFixed(2);
+      const shippingMethod =
+        o.shippingMethod ||
+        (o.paymentMethod === 'COD' ? 'CASH ON DELIVERY' : 'Store POS / Walk-in');
+
+      const customerName = o.customerName || 'Valued Customer';
+      const cleanCustomerPhone = o.customerPhone ? o.customerPhone.replace(/^\+/, '') : '';
+      const billingName = o.billingName || customerName;
+      const streetAddress = o.billingStreet || o.billingAddress1 || tenantInfo?.address || '';
+      const billingStreet = streetAddress;
+      const billingAddress1 = o.billingAddress1 || streetAddress;
+      const billingAddress2 = o.billingAddress2 || '';
+      const billingCompany = o.billingCompany || '';
+      const billingCity = o.billingCity || tenantInfo?.city || '';
+      const rawZip = o.billingZip || tenantInfo?.zip || '';
+      const billingZip = rawZip ? (rawZip.startsWith("'") ? rawZip : `'${rawZip}`) : '';
+      const billingProvince = o.billingProvince || tenantInfo?.provinceCode || 'TN';
+      const billingCountry = o.billingCountry || tenantInfo?.country || 'IN';
+      const billingPhone = o.billingPhone
+        ? o.billingPhone.replace(/^\+/, '')
+        : cleanCustomerPhone;
+
+      const shippingName = o.shippingName || billingName;
+      const shippingStreet = o.shippingStreet || streetAddress;
+      const shippingAddress1 = o.shippingAddress1 || billingAddress1;
+      const shippingAddress2 = o.shippingAddress2 || billingAddress2;
+      const shippingCompany = o.shippingCompany || billingCompany;
+      const shippingCity = o.shippingCity || billingCity;
+      const rawShipZip = o.shippingZip || rawZip;
+      const shippingZip = rawShipZip
+        ? rawShipZip.startsWith("'")
+          ? rawShipZip
+          : `'${rawShipZip}`
+        : '';
+      const shippingProvince = o.shippingProvince || billingProvince;
+      const shippingCountry = o.shippingCountry || billingCountry;
+      const shippingPhone = o.shippingPhone
+        ? o.shippingPhone.replace(/^\+/, '')
+        : billingPhone;
+
+      const notes = o.notes || '';
+      const noteAttributes = o.noteAttributes || '';
+      const cancelledAt = o.cancelledAt ? formatCSVDate(o.cancelledAt) : '';
+      const paymentMethod = o.paymentMethod || o.paymentStatus || 'Cash';
+      const paymentReference = o.paymentReference || orderName;
+      const refundedAmount = Number(o.refundedAmount || 0).toFixed(2);
+      const vendorName = o.vendor || tenantInfo?.businessName || 'Store';
+      const outstandingBalance = Number(
+        o.outstandingBalance !== undefined
+          ? o.outstandingBalance
+          : financialStatus === 'pending'
+          ? o.totalAmount
+          : 0
+      ).toFixed(2);
+      const employee = o.employee || tenantInfo?.defaultEmployee || 'Cashier';
+      const location = o.location || tenantInfo?.location || 'Main Store';
+      const deviceId = o.deviceId || tenantInfo?.deviceId || '';
+      const orderId = o._id || '';
+      const tags = o.tags || 'POS, WALK_IN';
+      const riskLevel = o.riskLevel || 'Low';
+      const source = o.source || 'POS';
+
+      const tax1Name =
+        o.tax1Name || (o.tax > 0 ? tenantInfo?.defaultTaxName || 'GST 18%' : '');
+      const tax1Value =
+        o.tax1Value !== undefined && o.tax1Value > 0
+          ? Number(o.tax1Value).toFixed(2)
+          : o.tax > 0
+          ? Number(o.tax).toFixed(2)
+          : '';
+      const tax2Name = o.tax2Name || tenantInfo?.defaultTax2Name || '';
+      const tax2Value =
+        o.tax2Value !== undefined && o.tax2Value > 0 ? Number(o.tax2Value).toFixed(2) : '';
+
+      const phone = cleanCustomerPhone;
+      const receiptNumber = o.receiptNumber || o.orderNumber;
+      const duties = o.duties ? Number(o.duties).toFixed(2) : '';
+      const billingProvinceName =
+        o.billingProvinceName || tenantInfo?.province || 'Tamil Nadu';
+      const shippingProvinceName =
+        o.shippingProvinceName || tenantInfo?.province || 'Tamil Nadu';
+      const paymentId = o.paymentId || paymentReference;
+      const paymentTermsName = o.paymentTermsName || '';
+      const nextPaymentDueAt = o.nextPaymentDueAt ? formatCSVDate(o.nextPaymentDueAt) : '';
+      const paymentReferences = o.paymentReferences || paymentReference;
+
+      rawItems.forEach((item, idx) => {
+        const isFirst = idx === 0;
+
+        const rowObj: Record<string, string> = {
+          'Name': orderName,
+          'Email': email,
+          'Financial Status': isFirst ? financialStatus : '',
+          'Paid at': isFirst ? paidAtStr : '',
+          'Fulfillment Status': isFirst ? fulfillmentStatus : '',
+          'Fulfilled at': isFirst ? fulfilledAtStr : '',
+          'Accepts Marketing': isFirst ? acceptsMarketing : '',
+          'Currency': isFirst ? currencyCode : '',
+          'Subtotal': isFirst ? subtotal : '',
+          'Shipping': isFirst ? shipping : '',
+          'Taxes': isFirst ? taxes : '',
+          'Total': isFirst ? total : '',
+          'Discount Code': isFirst ? discountCode : '',
+          'Discount Amount': isFirst ? discountAmount : '',
+          'Shipping Method': isFirst ? shippingMethod : '',
+          'Created at': createdAtStr,
+          'Lineitem quantity': String(item.quantity || 1),
+          'Lineitem name': item.productName || 'Custom Item',
+          'Lineitem price': Number(item.unitPrice || 0).toFixed(2),
+          'Lineitem compare at price': item.compareAtPrice
+            ? Number(item.compareAtPrice).toFixed(2)
+            : '',
+          'Lineitem sku': item.sku || '',
+          'Lineitem requires shipping': item.requiresShipping ? 'true' : 'false',
+          'Lineitem taxable': item.taxable !== false ? 'true' : 'false',
+          'Lineitem fulfillment status':
+            item.fulfillmentStatus || (isFirst ? fulfillmentStatus : 'not_eligible'),
+          'Billing Name': isFirst ? billingName : '',
+          'Billing Street': isFirst ? billingStreet : '',
+          'Billing Address1': isFirst ? billingAddress1 : '',
+          'Billing Address2': isFirst ? billingAddress2 : '',
+          'Billing Company': isFirst ? billingCompany : '',
+          'Billing City': isFirst ? billingCity : '',
+          'Billing Zip': isFirst ? billingZip : '',
+          'Billing Province': isFirst ? billingProvince : '',
+          'Billing Country': isFirst ? billingCountry : '',
+          'Billing Phone': isFirst ? billingPhone : '',
+          'Shipping Name': isFirst ? shippingName : '',
+          'Shipping Street': isFirst ? shippingStreet : '',
+          'Shipping Address1': isFirst ? shippingAddress1 : '',
+          'Shipping Address2': isFirst ? shippingAddress2 : '',
+          'Shipping Company': isFirst ? shippingCompany : '',
+          'Shipping City': isFirst ? shippingCity : '',
+          'Shipping Zip': isFirst ? shippingZip : '',
+          'Shipping Province': isFirst ? shippingProvince : '',
+          'Shipping Country': isFirst ? shippingCountry : '',
+          'Shipping Phone': isFirst ? shippingPhone : '',
+          'Notes': isFirst ? notes : '',
+          'Note Attributes': isFirst ? noteAttributes : '',
+          'Cancelled at': isFirst ? cancelledAt : '',
+          'Payment Method': isFirst ? paymentMethod : '',
+          'Payment Reference': isFirst ? paymentReference : '',
+          'Refunded Amount': isFirst ? refundedAmount : '',
+          'Vendor': item.vendor || vendorName,
+          'Outstanding Balance': isFirst ? outstandingBalance : '',
+          'Employee': isFirst ? employee : '',
+          'Location': isFirst ? location : '',
+          'Device ID': isFirst ? deviceId : '',
+          'Id': isFirst ? orderId : '',
+          'Tags': isFirst ? tags : '',
+          'Risk Level': isFirst ? riskLevel : '',
+          'Source': isFirst ? source : '',
+          'Lineitem discount': Number(item.discount || 0).toFixed(2),
+          'Tax 1 Name': isFirst ? tax1Name : '',
+          'Tax 1 Value': isFirst ? tax1Value : '',
+          'Tax 2 Name': isFirst ? tax2Name : '',
+          'Tax 2 Value': isFirst ? tax2Value : '',
+          'Tax 3 Name': isFirst ? o.tax3Name || '' : '',
+          'Tax 3 Value':
+            isFirst && o.tax3Value ? Number(o.tax3Value).toFixed(2) : '',
+          'Tax 4 Name': isFirst ? o.tax4Name || '' : '',
+          'Tax 4 Value':
+            isFirst && o.tax4Value ? Number(o.tax4Value).toFixed(2) : '',
+          'Tax 5 Name': isFirst ? o.tax5Name || '' : '',
+          'Tax 5 Value':
+            isFirst && o.tax5Value ? Number(o.tax5Value).toFixed(2) : '',
+          'Phone': isFirst ? phone : '',
+          'Receipt Number': isFirst ? receiptNumber : '',
+          'Duties': isFirst ? duties : '',
+          'Billing Province Name': isFirst ? billingProvinceName : '',
+          'Shipping Province Name': isFirst ? shippingProvinceName : '',
+          'Payment ID': isFirst ? paymentId : '',
+          'Payment Terms Name': isFirst ? paymentTermsName : '',
+          'Next Payment Due At': isFirst ? nextPaymentDueAt : '',
+          'Payment References': isFirst ? paymentReferences : '',
+        };
+
+        rows.push(rowObj);
+      });
+    });
+
+    return rows;
+  };
+
+  // CSV Export Handler (Matches sample format exactly)
+  const handleExportCSV = (ordersToExport?: Order[]) => {
+    setExporting(true);
+    try {
+      const targets =
+        ordersToExport && ordersToExport.length > 0
+          ? ordersToExport
+          : selectedIds.length > 0
+          ? orders.filter((o) => selectedIds.includes(o._id))
+          : filteredOrders;
+
+      if (targets.length === 0) {
+        alert('No orders available to export.');
+        return;
+      }
+
+      const rows = buildExportRows(targets);
+      const headerLine = SHOPIFY_EXPORT_HEADERS.map(escapeCSVCell).join(',');
+      const dataLines = rows.map((r) =>
+        SHOPIFY_EXPORT_HEADERS.map((h) => escapeCSVCell(r[h])).join(',')
+      );
+      const csvContent = '\uFEFF' + [headerLine, ...dataLines].join('\r\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const dateStr = new Date().toISOString().slice(0, 10);
+      link.href = url;
+      link.setAttribute('download', `Orders_Sales_Export_${dateStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to export CSV file:', err);
+      alert('Failed to generate CSV export file.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // Excel Export Handler (.xlsx format with exact 79 columns)
   const handleExportExcel = (ordersToExport?: Order[]) => {
     setExporting(true);
     try {
@@ -319,51 +817,14 @@ export default function OrdersPage() {
         return;
       }
 
-      const rows = targets.map((o) => {
-        const dateObj = new Date(o.createdAt);
-        return {
-          'Order Number': o.orderNumber,
-          'Date': dateObj.toLocaleDateString(),
-          'Time': dateObj.toLocaleTimeString(),
-          'Customer Name': o.customerName || 'Valued Customer',
-          'Customer Phone': o.customerPhone ? `+${o.customerPhone}` : '',
-          'Items Summary': o.items.map((i) => `${i.productName} (x${i.quantity})`).join(', '),
-          'Total Items': o.items.reduce((acc, i) => acc + (i.quantity || 1), 0),
-          'Subtotal': Number((o.subtotal || 0).toFixed(2)),
-          'Discount': Number((o.discount || 0).toFixed(2)),
-          'Tax': Number((o.tax || 0).toFixed(2)),
-          'Total Amount': Number((o.totalAmount || 0).toFixed(2)),
-          'Currency': o.currency || currency,
-          'Payment Status': o.paymentStatus || 'PAID',
-          'Payment Method': o.paymentMethod || o.paymentStatus || 'CASH',
-        };
-      });
-
-      const worksheet = XLSX.utils.json_to_sheet(rows);
-
-      // Auto-fit column widths
-      worksheet['!cols'] = [
-        { wch: 16 }, // Order Number
-        { wch: 12 }, // Date
-        { wch: 12 }, // Time
-        { wch: 20 }, // Customer Name
-        { wch: 16 }, // Customer Phone
-        { wch: 36 }, // Items Summary
-        { wch: 12 }, // Total Items
-        { wch: 12 }, // Subtotal
-        { wch: 10 }, // Discount
-        { wch: 10 }, // Tax
-        { wch: 14 }, // Total Amount
-        { wch: 10 }, // Currency
-        { wch: 16 }, // Payment Status
-        { wch: 16 }, // Payment Method
-      ];
+      const rows = buildExportRows(targets);
+      const worksheet = XLSX.utils.json_to_sheet(rows, { header: SHOPIFY_EXPORT_HEADERS });
 
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders');
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'SALES');
 
       const dateStr = new Date().toISOString().slice(0, 10);
-      XLSX.writeFile(workbook, `Orders_Export_${dateStr}.xlsx`);
+      XLSX.writeFile(workbook, `Orders_Sales_Export_${dateStr}.xlsx`);
     } catch (err) {
       console.error('Failed to export Excel file:', err);
       alert('Failed to generate Excel export file.');
@@ -546,7 +1007,23 @@ export default function OrdersPage() {
           </h1>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => handleExportCSV()}
+            disabled={exporting || filteredOrders.length === 0}
+            className="btn btn-secondary"
+            style={{ gap: '6px' }}
+            title="Export orders to standard CSV format"
+          >
+            <Download size={16} style={{ color: 'var(--whatsapp)' }} />
+            <span>
+              {isSelectionActive
+                ? `Export CSV (${selectedIds.length})`
+                : `Export CSV (${filteredOrders.length})`}
+            </span>
+          </button>
+
           <button
             type="button"
             onClick={() => handleExportExcel()}
@@ -556,11 +1033,7 @@ export default function OrdersPage() {
             title="Export orders to Excel format"
           >
             <FileSpreadsheet size={16} style={{ color: 'var(--emerald)' }} />
-            <span>
-              {isSelectionActive
-                ? `Export Selected (${selectedIds.length})`
-                : `Export Filtered (${filteredOrders.length})`}
-            </span>
+            <span>Excel</span>
           </button>
 
           <Link href="/dashboard/pos" className="btn btn-primary" style={{ gap: '6px' }}>
@@ -842,13 +1315,26 @@ export default function OrdersPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <button
               type="button"
+              onClick={() => handleExportCSV()}
+              disabled={exporting}
+              className="btn btn-secondary btn-sm"
+              style={{ gap: '6px' }}
+              title="Export selected orders to CSV format"
+            >
+              <Download size={14} style={{ color: 'var(--whatsapp)' }} />
+              <span>CSV ({selectedIds.length})</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => handleExportExcel()}
               disabled={exporting}
               className="btn btn-secondary btn-sm"
               style={{ gap: '6px' }}
+              title="Export selected orders to Excel"
             >
-              <FileSpreadsheet size={15} style={{ color: 'var(--emerald)' }} />
-              <span>Export ({selectedIds.length})</span>
+              <FileSpreadsheet size={14} style={{ color: 'var(--emerald)' }} />
+              <span>Excel</span>
             </button>
 
             <button

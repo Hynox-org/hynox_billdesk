@@ -42,9 +42,16 @@ export default function CatalogPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
 
-  // Modals state
+  // Navigation & Modals state
+  const [activeTab, setActiveTab] = useState<'products' | 'categories'>('products');
   const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [categoryForm, setCategoryForm] = useState({
+    name: '',
+    displayOrder: '0',
+  });
+  const [categorySearchQuery, setCategorySearchQuery] = useState('');
+  const [savingCategory, setSavingCategory] = useState(false);
 
   const [showProductModal, setShowProductModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -113,39 +120,80 @@ export default function CatalogPage() {
     return matchesCategory && matchesSearch;
   });
 
-  // Category Actions
-  const handleCreateCategory = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newCategoryName.trim()) return;
+  // Filter categories by search
+  const filteredCategories = categories.filter((c) => {
+    const q = categorySearchQuery.toLowerCase().trim();
+    return !q || c.name.toLowerCase().includes(q);
+  });
 
-    try {
-      const res = await fetch('/api/catalog/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newCategoryName.trim() }),
+  // Category Actions (Full CRUD)
+  const handleOpenCategoryModal = (cat?: Category) => {
+    if (cat) {
+      setEditingCategory(cat);
+      setCategoryForm({
+        name: cat.name,
+        displayOrder: (cat.displayOrder ?? 0).toString(),
       });
+    } else {
+      setEditingCategory(null);
+      setCategoryForm({
+        name: '',
+        displayOrder: categories.length.toString(),
+      });
+    }
+    setShowCategoryModal(true);
+  };
+
+  const handleSaveCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!categoryForm.name.trim()) {
+      showMsg('error', 'Category name is required');
+      return;
+    }
+
+    setSavingCategory(true);
+    try {
+      const url = '/api/catalog/categories';
+      const method = editingCategory ? 'PUT' : 'POST';
+      const body = {
+        ...(editingCategory && { id: editingCategory._id }),
+        name: categoryForm.name.trim(),
+        displayOrder: parseInt(categoryForm.displayOrder, 10) || 0,
+      };
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || data.error);
 
-      setNewCategoryName('');
       setShowCategoryModal(false);
-      showMsg('success', 'Category added to catalog');
+      showMsg('success', editingCategory ? 'Category updated successfully' : 'Category added to catalog');
       loadData();
     } catch (err: any) {
-      showMsg('error', err.message || 'Failed to add category');
+      showMsg('error', err.message || 'Failed to save category');
+    } finally {
+      setSavingCategory(false);
     }
   };
 
-  const handleDeleteCategory = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this category?')) return;
+  const handleDeleteCategory = async (id: string, name?: string) => {
+    const label = name ? ` "${name}"` : '';
+    if (!confirm(`Are you sure you want to delete category${label}?`)) return;
     try {
       const res = await fetch(`/api/catalog/categories?id=${id}`, { method: 'DELETE' });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to delete category');
+      if (!res.ok) throw new Error(data.message || data.error || 'Failed to delete category');
       showMsg('success', 'Category deleted');
+      if (selectedCategory === id) {
+        setSelectedCategory('ALL');
+      }
       loadData();
     } catch (err: any) {
-      showMsg('error', err.message);
+      showMsg('error', err.message || 'Failed to delete category');
     }
   };
 
@@ -253,14 +301,14 @@ export default function CatalogPage() {
       <div className="catalog-header">
         <div>
           <h1 className="catalog-title">
-            Products &amp; Menu
+            Products &amp; Categories
           </h1>
         </div>
 
         <div className="catalog-actions">
           <button
             type="button"
-            onClick={() => setShowCategoryModal(true)}
+            onClick={() => handleOpenCategoryModal()}
             className="btn btn-secondary btn-sm"
           >
             <Plus size={16} /> New Category
@@ -296,8 +344,32 @@ export default function CatalogPage() {
         </div>
       )}
 
-      {/* Search and Category Filter Bar */}
-      <div className="glass-panel catalog-filter-bar">
+      {/* Catalog Views Tab Switcher */}
+      <div className="catalog-nav-tabs">
+        <button
+          type="button"
+          onClick={() => setActiveTab('products')}
+          className={`catalog-nav-tab-btn ${activeTab === 'products' ? 'active' : ''}`}
+        >
+          <ShoppingBag size={16} />
+          <span>Products &amp; Items ({products.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('categories')}
+          className={`catalog-nav-tab-btn ${activeTab === 'categories' ? 'active' : ''}`}
+        >
+          <Layers size={16} />
+          <span>Categories ({categories.length})</span>
+        </button>
+      </div>
+
+      {/* VIEW 1: PRODUCTS & ITEMS */}
+      {activeTab === 'products' && (
+        <>
+          {/* Search and Category Filter Bar */}
+          <div className="glass-panel catalog-filter-bar">
         <div className="catalog-search-wrapper">
           <Search size={16} className="catalog-search-icon" />
           <input
@@ -347,11 +419,21 @@ export default function CatalogPage() {
 
       {/* Categories Overview Bar */}
       <div className="glass-panel catalog-categories-panel">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-          <Layers size={18} style={{ color: 'var(--primary)' }} />
-          <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>
-            Catalog Categories ({categories.length})
-          </h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Layers size={18} style={{ color: 'var(--primary)' }} />
+            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
+              Catalog Categories ({categories.length})
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab('categories')}
+            className="btn btn-secondary btn-sm"
+            style={{ fontSize: '0.74rem', padding: '3px 8px' }}
+          >
+            Manage Categories
+          </button>
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
@@ -364,14 +446,25 @@ export default function CatalogPage() {
               <div key={cat._id} className="catalog-category-tag">
                 <Tag size={13} style={{ color: 'var(--primary)' }} />
                 <span>{cat.name}</span>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteCategory(cat._id)}
-                  className="catalog-category-del-btn"
-                  title="Delete category"
-                >
-                  <X size={13} />
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '4px' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenCategoryModal(cat)}
+                    className="catalog-category-del-btn"
+                    title="Edit category"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    <Edit2 size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteCategory(cat._id, cat.name)}
+                    className="catalog-category-del-btn"
+                    title="Delete category"
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
               </div>
             ))
           )}
@@ -583,35 +676,208 @@ export default function CatalogPage() {
           </>
         )}
       </div>
+      </>
+      )}
 
-      {/* Category Modal */}
+      {/* VIEW 2: CATEGORIES MANAGEMENT (FULL CRUD) */}
+      {activeTab === 'categories' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Categories Search & Action Bar */}
+          <div className="glass-panel catalog-filter-bar">
+            <div className="catalog-search-wrapper" style={{ flex: 1 }}>
+              <Search size={16} className="catalog-search-icon" />
+              <input
+                type="text"
+                className="form-input catalog-search-input"
+                placeholder="Search categories..."
+                value={categorySearchQuery}
+                onChange={(e) => setCategorySearchQuery(e.target.value)}
+              />
+              {categorySearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setCategorySearchQuery('')}
+                  className="catalog-search-clear"
+                  title="Clear search"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleOpenCategoryModal()}
+              className="btn btn-primary btn-sm"
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              <Plus size={15} /> Add Category
+            </button>
+          </div>
+
+          {/* Categories Management Panel */}
+          <div className="glass-panel catalog-products-panel">
+            <div className="catalog-panel-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Layers size={18} style={{ color: 'var(--primary)' }} />
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
+                  Manage Categories ({filteredCategories.length}{filteredCategories.length !== categories.length ? ` of ${categories.length}` : ''})
+                </h3>
+              </div>
+              {filteredCategories.length !== categories.length && (
+                <button
+                  type="button"
+                  onClick={() => setCategorySearchQuery('')}
+                  className="btn btn-secondary btn-sm"
+                  style={{ fontSize: '0.78rem', padding: '4px 10px' }}
+                >
+                  Reset Filter
+                </button>
+              )}
+            </div>
+
+            {filteredCategories.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-muted)' }}>
+                <Layers size={36} style={{ margin: '0 auto 12px', opacity: 0.4, display: 'block' }} />
+                <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '4px' }}>
+                  No categories found
+                </h4>
+                <p style={{ fontSize: '0.82rem', marginBottom: '16px' }}>
+                  {categorySearchQuery ? 'No categories matched your search term.' : 'Create categories to organize your menu and catalog items.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handleOpenCategoryModal()}
+                  className="btn btn-primary btn-sm"
+                >
+                  <Plus size={15} /> Create First Category
+                </button>
+              </div>
+            ) : (
+              <div className="catalog-category-grid">
+                {filteredCategories.map((cat) => {
+                  const linkedCount = products.filter((p) =>
+                    typeof p.categoryId === 'string' ? p.categoryId === cat._id : p.categoryId?._id === cat._id
+                  ).length;
+
+                  return (
+                    <div key={cat._id} className="catalog-category-manage-card">
+                      <div className="catalog-category-card-top">
+                        <div>
+                          <div className="catalog-category-card-title">
+                            {cat.name}
+                          </div>
+                          <div className="catalog-category-card-count" style={{ marginTop: '6px' }}>
+                            <Tag size={13} style={{ color: 'var(--primary)' }} />
+                            <span>{linkedCount} {linkedCount === 1 ? 'item' : 'items'} in catalog</span>
+                          </div>
+                        </div>
+                        <span
+                          className="badge"
+                          style={{
+                            background: 'var(--bg-input)',
+                            border: '1px solid var(--border-subtle)',
+                            color: 'var(--text-muted)',
+                            fontSize: '0.7rem',
+                            fontWeight: 600,
+                          }}
+                        >
+                          Order #{cat.displayOrder ?? 0}
+                        </span>
+                      </div>
+
+                      <div className="catalog-category-card-footer">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedCategory(cat._id);
+                            setActiveTab('products');
+                          }}
+                          className="btn btn-secondary btn-sm"
+                          style={{ fontSize: '0.76rem', padding: '5px 10px' }}
+                          title="View all items in this category"
+                        >
+                          View Items ({linkedCount})
+                        </button>
+
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenCategoryModal(cat)}
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '6px 9px' }}
+                            title="Edit category name and order"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCategory(cat._id, cat.name)}
+                            className="btn btn-danger btn-sm"
+                            style={{ padding: '6px 9px' }}
+                            title="Delete category"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Category Modal (Create & Edit) */}
       {showCategoryModal && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '420px' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '16px' }}>Add Category</h3>
-            <form onSubmit={handleCreateCategory}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '16px', color: 'var(--text-main)' }}>
+              {editingCategory ? 'Edit Category' : 'Add New Category'}
+            </h3>
+            <form onSubmit={handleSaveCategory}>
               <div className="form-group">
-                <label className="form-label">Category Name</label>
+                <label className="form-label">Category Name *</label>
                 <input
                   type="text"
                   className="form-input"
-                  placeholder="Category name"
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="e.g. Hot Beverages, Desserts, Starters"
+                  value={categoryForm.name}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
                   required
                   autoFocus
                 />
               </div>
+
+              <div className="form-group">
+                <label className="form-label">Display Order (Sort Index)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  className="form-input"
+                  placeholder="0"
+                  value={categoryForm.displayOrder}
+                  onChange={(e) => setCategoryForm({ ...categoryForm, displayOrder: e.target.value })}
+                />
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                  Lower numbers appear first in POS catalog category tabs.
+                </span>
+              </div>
+
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
                 <button
                   type="button"
                   onClick={() => setShowCategoryModal(false)}
                   className="btn btn-secondary"
+                  disabled={savingCategory}
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  Save Category
+                <button type="submit" className="btn btn-primary" disabled={savingCategory}>
+                  {savingCategory ? 'Saving...' : editingCategory ? 'Update Category' : 'Save Category'}
                 </button>
               </div>
             </form>

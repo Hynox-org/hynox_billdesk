@@ -86,7 +86,7 @@ export default function OrderCreationPage() {
   const [discountValue, setDiscountValue] = useState<string>('');
 
   // Tax / GST State (Loaded from settings, modifiable in checkout)
-  const [isTaxEnabled, setIsTaxEnabled] = useState(true);
+  const [isTaxEnabled, setIsTaxEnabled] = useState(false);
   const [taxRate, setTaxRate] = useState<number | string>(18);
   const [taxName, setTaxName] = useState('GST');
 
@@ -128,6 +128,7 @@ export default function OrderCreationPage() {
     showGoogleReviewOnReceipt?: boolean;
     defaultTaxName?: string;
     defaultTaxRate?: number;
+    enableTaxOnCheckout?: boolean;
   } | null>(null);
 
   // Load Catalog Items
@@ -154,6 +155,7 @@ export default function OrderCreationPage() {
           if (authData.tenant) {
             const tRate = authData.tenant.defaultTaxRate !== undefined ? authData.tenant.defaultTaxRate : 18;
             const tName = authData.tenant.defaultTaxName || 'GST';
+            const checkoutTaxEnabled = Boolean(authData.tenant.enableTaxOnCheckout);
             setTenantInfo({
               businessName: authData.tenant.businessName,
               businessType: authData.tenant.businessType,
@@ -163,10 +165,11 @@ export default function OrderCreationPage() {
               showGoogleReviewOnReceipt: Boolean(authData.tenant.showGoogleReviewOnReceipt),
               defaultTaxName: tName,
               defaultTaxRate: tRate,
+              enableTaxOnCheckout: checkoutTaxEnabled,
             });
             setTaxRate(tRate);
             setTaxName(tName);
-            setIsTaxEnabled(tRate > 0);
+            setIsTaxEnabled(checkoutTaxEnabled);
           }
         }
       } catch (err) {
@@ -280,7 +283,7 @@ export default function OrderCreationPage() {
     setDiscountType('PERCENT');
     if (tenantInfo?.defaultTaxRate !== undefined) {
       setTaxRate(tenantInfo.defaultTaxRate);
-      setIsTaxEnabled(tenantInfo.defaultTaxRate > 0);
+      setIsTaxEnabled(Boolean(tenantInfo.enableTaxOnCheckout));
     }
     setPaymentMethod('CASH');
     setOrderError(null);
@@ -1003,6 +1006,9 @@ export default function OrderCreationPage() {
                         val = val.slice(cleanDial.length);
                       }
                       setCustomerPhone(val);
+                    }}
+                    onBlur={() => {
+                      if (typeof window !== 'undefined') window.scrollTo({ left: 0, top: window.scrollY });
                     }}
                     required
                   />

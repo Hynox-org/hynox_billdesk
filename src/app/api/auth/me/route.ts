@@ -32,6 +32,7 @@ export async function GET() {
             defaultTax2Name: tenant.defaultTax2Name || '',
             gstNumber: tenant.gstNumber || '',
             showGstOnReceipt: Boolean(tenant.showGstOnReceipt),
+            enableTaxOnCheckout: Boolean(tenant.enableTaxOnCheckout),
             googleProfileUrl: tenant.googleProfileUrl || '',
             showGoogleReviewOnReceipt: Boolean(tenant.showGoogleReviewOnReceipt),
             status: tenant.status,

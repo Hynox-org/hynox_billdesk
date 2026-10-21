@@ -21,6 +21,7 @@ export interface ITenant extends Document {
   deviceId?: string;
   gstNumber?: string;
   showGstOnReceipt?: boolean;
+  enableTaxOnCheckout?: boolean;
   googleProfileUrl?: string;
   showGoogleReviewOnReceipt?: boolean;
   status: 'ACTIVE' | 'SUSPENDED' | 'EXPIRED';
@@ -54,6 +55,7 @@ const TenantSchema: Schema<ITenant> = new Schema(
     deviceId: { type: String, default: '', trim: true },
     gstNumber: { type: String, default: '', trim: true },
     showGstOnReceipt: { type: Boolean, default: false },
+    enableTaxOnCheckout: { type: Boolean, default: false },
     googleProfileUrl: { type: String, default: '', trim: true },
     showGoogleReviewOnReceipt: { type: Boolean, default: false },
     status: {

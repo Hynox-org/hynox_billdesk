@@ -55,6 +55,7 @@ interface SettingsData {
     deviceId?: string;
     gstNumber?: string;
     showGstOnReceipt?: boolean;
+    enableTaxOnCheckout?: boolean;
     googleProfileUrl?: string;
     showGoogleReviewOnReceipt?: boolean;
     plan: 'FREE_TRIAL' | 'PRO';
@@ -93,6 +94,7 @@ export default function SettingsPage() {
   const [currency, setCurrency] = useState('$');
   const [gstNumber, setGstNumber] = useState('');
   const [showGstOnReceipt, setShowGstOnReceipt] = useState(false);
+  const [enableTaxOnCheckout, setEnableTaxOnCheckout] = useState(false);
   const [googleProfileUrl, setGoogleProfileUrl] = useState('');
   const [showGoogleReviewOnReceipt, setShowGoogleReviewOnReceipt] = useState(false);
   const [savingBusiness, setSavingBusiness] = useState(false);
@@ -158,6 +160,7 @@ export default function SettingsPage() {
           setCurrency(json.tenant?.currency || '$');
           setGstNumber(json.tenant?.gstNumber || '');
           setShowGstOnReceipt(Boolean(json.tenant?.showGstOnReceipt));
+          setEnableTaxOnCheckout(Boolean(json.tenant?.enableTaxOnCheckout));
           setGoogleProfileUrl(json.tenant?.googleProfileUrl || '');
           setShowGoogleReviewOnReceipt(Boolean(json.tenant?.showGoogleReviewOnReceipt));
           setFullName(json.user?.fullName || '');
@@ -207,6 +210,7 @@ export default function SettingsPage() {
           currency,
           gstNumber,
           showGstOnReceipt,
+          enableTaxOnCheckout,
           googleProfileUrl,
           showGoogleReviewOnReceipt,
         }),
@@ -240,6 +244,7 @@ export default function SettingsPage() {
             currency,
             gstNumber,
             showGstOnReceipt,
+            enableTaxOnCheckout,
             googleProfileUrl,
             showGoogleReviewOnReceipt,
           },
@@ -428,30 +433,20 @@ export default function SettingsPage() {
   const user = data?.user;
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto', paddingBottom: '40px' }}>
+    <div className="settings-page-wrapper">
       {/* Top Header */}
-      <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-main)', margin: 0 }}>
+      <div className="settings-header">
+        <h1 className="settings-title">
           Settings
         </h1>
       </div>
 
       {/* Navigation Pills */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '8px',
-          marginBottom: '24px',
-          borderBottom: '1px solid var(--border-subtle)',
-          paddingBottom: '12px',
-          overflowX: 'auto',
-        }}
-      >
+      <div className="settings-tabs-container">
         <button
           type="button"
           onClick={() => setActiveTab('business')}
-          className={`btn btn-sm ${activeTab === 'business' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ borderRadius: '10px', gap: '6px' }}
+          className={`btn btn-sm settings-tab-pill ${activeTab === 'business' ? 'btn-primary' : 'btn-secondary'}`}
         >
           <Store size={15} /> Business Profile
         </button>
@@ -459,8 +454,7 @@ export default function SettingsPage() {
         <button
           type="button"
           onClick={() => setActiveTab('personal')}
-          className={`btn btn-sm ${activeTab === 'personal' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ borderRadius: '10px', gap: '6px' }}
+          className={`btn btn-sm settings-tab-pill ${activeTab === 'personal' ? 'btn-primary' : 'btn-secondary'}`}
         >
           <User size={15} /> Personal Information
         </button>
@@ -468,10 +462,9 @@ export default function SettingsPage() {
         <button
           type="button"
           onClick={() => setActiveTab('security')}
-          className={`btn btn-sm ${activeTab === 'security' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ borderRadius: '10px', gap: '6px' }}
+          className={`btn btn-sm settings-tab-pill ${activeTab === 'security' ? 'btn-primary' : 'btn-secondary'}`}
         >
-          <Key size={15} /> Security & Password
+          <Key size={15} /> Security &amp; Password
         </button>
       </div>
 
@@ -479,16 +472,16 @@ export default function SettingsPage() {
       {/* TAB 1: BUSINESS PROFILE                                             */}
       {/* =================================================================== */}
       {activeTab === 'business' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Editable Business Information Card */}
-          <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px', paddingBottom: '12px', borderBottom: '1px solid var(--border-subtle)' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--color-light-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+          <div className="glass-panel settings-card">
+            <div className="settings-card-header">
+              <div className="settings-card-header-icon">
                 <Store size={18} />
               </div>
               <div>
-                <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)' }}>Manage Business Details</h2>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>These details appear on your printed and WhatsApp customer receipts.</p>
+                <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>Manage Business Details</h2>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>These details appear on your printed and WhatsApp customer receipts.</p>
               </div>
             </div>
 
@@ -513,7 +506,7 @@ export default function SettingsPage() {
             )}
 
             <form onSubmit={handleSaveBusiness}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+              <div className="settings-grid-2col">
                 <div className="form-group">
                   <label className="form-label">Business / Shop Name *</label>
                   <input
@@ -567,6 +560,9 @@ export default function SettingsPage() {
                           val = val.slice(cleanDial.length);
                         }
                         setPhone(val);
+                      }}
+                      onBlur={() => {
+                        if (typeof window !== 'undefined') window.scrollTo({ left: 0, top: window.scrollY });
                       }}
                       placeholder="Phone number"
                       required
@@ -649,7 +645,7 @@ export default function SettingsPage() {
                   </p>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+                <div className="settings-grid-address">
                   <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                     <label className="form-label">Street Address</label>
                     <input
@@ -728,7 +724,7 @@ export default function SettingsPage() {
                   </h3>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                <div className="settings-receipt-grid">
                   {/* GST & Tax Labels Card */}
                   <div
                     style={{
@@ -774,7 +770,7 @@ export default function SettingsPage() {
                       />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '10px' }}>
+                    <div className="settings-tax-inner-grid">
                       <div className="form-group" style={{ marginBottom: 0 }}>
                         <label className="form-label" style={{ fontSize: '0.78rem' }}>Default Tax Label</label>
                         <input
@@ -815,7 +811,6 @@ export default function SettingsPage() {
                         border: `1px solid ${showGstOnReceipt ? 'var(--border-medium)' : 'var(--border-subtle)'}`,
                         cursor: 'pointer',
                         transition: 'all 0.2s ease',
-                        marginTop: 'auto',
                       }}
                     >
                       <input
@@ -835,7 +830,43 @@ export default function SettingsPage() {
                           Visible on Order Receipt
                         </span>
                         <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
-                          Display GST number under your business name on customer WhatsApp order receipts upon creation.
+                          Display GST number under your business name on customer receipts upon creation.
+                        </span>
+                      </div>
+                    </label>
+
+                    {/* Toggle: Calculate GST/Tax in Order Receipt Checkout */}
+                    <label
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '10px',
+                        padding: '10px 12px',
+                        borderRadius: '8px',
+                        background: enableTaxOnCheckout ? 'var(--color-light-green)' : 'rgba(0, 0, 0, 0.02)',
+                        border: `1px solid ${enableTaxOnCheckout ? 'var(--border-medium)' : 'var(--border-subtle)'}`,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={enableTaxOnCheckout}
+                        onChange={(e) => setEnableTaxOnCheckout(e.target.checked)}
+                        style={{
+                          marginTop: '3px',
+                          width: '16px',
+                          height: '16px',
+                          cursor: 'pointer',
+                          accentColor: 'var(--whatsapp)',
+                        }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)', display: 'block' }}>
+                          Enable GST &amp; Tax in Checkout
+                        </span>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
+                          When enabled, your default tax percentage is automatically calculated on order totals in checkout.
                         </span>
                       </div>
                     </label>
@@ -924,7 +955,7 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '10px', borderTop: '1px solid var(--border-subtle)' }}>
+              <div className="settings-btn-row">
                 <button
                   type="submit"
                   disabled={savingBusiness}
@@ -939,18 +970,18 @@ export default function SettingsPage() {
           </div>
 
           {/* Restricted Business Details Card */}
-          <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid var(--border-subtle)' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--emerald-deep)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+          <div className="glass-panel settings-card">
+            <div className="settings-card-header">
+              <div className="settings-card-header-icon" style={{ background: 'var(--emerald-deep)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}>
                 <Lock size={18} />
               </div>
               <div>
-                <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)' }}>Restricted Store Details</h2>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>These core platform identifiers and billing tiers are locked to protect data integrity.</p>
+                <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>Restricted Store Details</h2>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>These core platform identifiers and billing tiers are locked to protect data integrity.</p>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
+            <div className="settings-restricted-grid">
               {/* Unique Slug */}
               <div style={{ background: 'var(--bg-input)', border: '1px solid var(--border-subtle)', borderRadius: '12px', padding: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
@@ -1034,15 +1065,15 @@ export default function SettingsPage() {
       {/* TAB 2: PERSONAL PROFILE                                             */}
       {/* =================================================================== */}
       {activeTab === 'personal' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px', paddingBottom: '12px', borderBottom: '1px solid var(--border-subtle)' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--color-light-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="glass-panel settings-card">
+            <div className="settings-card-header">
+              <div className="settings-card-header-icon">
                 <User size={18} />
               </div>
               <div>
-                <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)' }}>Personal Profile</h2>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Manage your personal identity as store administrator.</p>
+                <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>Personal Profile</h2>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>Manage your personal identity as store administrator.</p>
               </div>
             </div>
 
@@ -1067,7 +1098,7 @@ export default function SettingsPage() {
             )}
 
             <form onSubmit={handleSavePersonal}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+              <div className="settings-grid-2col">
                 {/* Full Name (Editable) */}
                 <div className="form-group">
                   <label className="form-label">Full Name *</label>
@@ -1121,7 +1152,7 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '10px', borderTop: '1px solid var(--border-subtle)' }}>
+              <div className="settings-btn-row">
                 <button
                   type="submit"
                   disabled={savingPersonal}
@@ -1141,15 +1172,15 @@ export default function SettingsPage() {
       {/* TAB 3: SECURITY & RESET PASSWORD                                    */}
       {/* =================================================================== */}
       {activeTab === 'security' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px', paddingBottom: '12px', borderBottom: '1px solid var(--border-subtle)' }}>
-              <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--color-light-green)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="glass-panel settings-card">
+            <div className="settings-card-header">
+              <div className="settings-card-header-icon">
                 <Key size={18} />
               </div>
               <div>
-                <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)' }}>Reset Account Password</h2>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Update your password credentials to keep your vendor store secure.</p>
+                <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>Reset Account Password</h2>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>Update your password credentials to keep your vendor store secure.</p>
               </div>
             </div>
 
@@ -1173,7 +1204,7 @@ export default function SettingsPage() {
               </div>
             )}
 
-            <form onSubmit={handleResetPassword} style={{ maxWidth: '480px' }}>
+            <form onSubmit={handleResetPassword} style={{ maxWidth: '480px', width: '100%' }}>
               <div className="form-group" style={{ marginBottom: '14px' }}>
                 <label className="form-label">Current Password *</label>
                 <input

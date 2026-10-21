@@ -42,6 +42,7 @@ export async function GET() {
         deviceId: tenant.deviceId || '',
         gstNumber: tenant.gstNumber || '',
         showGstOnReceipt: Boolean(tenant.showGstOnReceipt),
+        enableTaxOnCheckout: Boolean(tenant.enableTaxOnCheckout),
         googleProfileUrl: tenant.googleProfileUrl || '',
         showGoogleReviewOnReceipt: Boolean(tenant.showGoogleReviewOnReceipt),
         plan: tenant.plan,
@@ -88,6 +89,7 @@ export async function PUT(req: NextRequest) {
       deviceId,
       gstNumber,
       showGstOnReceipt,
+      enableTaxOnCheckout,
       googleProfileUrl,
       showGoogleReviewOnReceipt,
     } = body;
@@ -119,6 +121,7 @@ export async function PUT(req: NextRequest) {
     if (deviceId !== undefined) tenantUpdate.deviceId = deviceId.trim();
     if (gstNumber !== undefined) tenantUpdate.gstNumber = typeof gstNumber === 'string' ? gstNumber.trim() : '';
     if (showGstOnReceipt !== undefined) tenantUpdate.showGstOnReceipt = Boolean(showGstOnReceipt);
+    if (enableTaxOnCheckout !== undefined) tenantUpdate.enableTaxOnCheckout = Boolean(enableTaxOnCheckout);
     if (googleProfileUrl !== undefined) tenantUpdate.googleProfileUrl = typeof googleProfileUrl === 'string' ? googleProfileUrl.trim() : '';
     if (showGoogleReviewOnReceipt !== undefined) tenantUpdate.showGoogleReviewOnReceipt = Boolean(showGoogleReviewOnReceipt);
 

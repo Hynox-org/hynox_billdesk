@@ -455,6 +455,9 @@ export default function RegisterPage() {
                       }
                       setFormData({ ...formData, phone: val });
                     }}
+                    onBlur={() => {
+                      if (typeof window !== 'undefined') window.scrollTo({ left: 0, top: window.scrollY });
+                    }}
                     required
                   />
                 </div>

@@ -5,11 +5,13 @@ export interface ReceiptPdfItem {
   quantity: number;
   unitPrice: number;
   lineTotal: number;
+  sku?: string;
 }
 
 export interface ReceiptPdfData {
   orderNumber: string;
   businessName: string;
+  businessType?: string;
   businessAddress?: string;
   businessPhone?: string;
   currency: string;
@@ -23,6 +25,9 @@ export interface ReceiptPdfData {
   totalAmount: number;
   paymentStatus?: string;
   paymentMethod?: string;
+  paymentReference?: string;
+  employee?: string;
+  notes?: string;
   gstNumber?: string;
   showGstOnReceipt?: boolean;
   googleProfileUrl?: string;
@@ -30,7 +35,7 @@ export interface ReceiptPdfData {
 }
 
 /**
- * Standard PDF fonts (Helvetica) only support standard WinAnsi / Latin-1 characters.
+ * Standard PDF fonts (Courier & Helvetica) only support standard WinAnsi characters.
  * This helper normalizes unicode quotes, Indian Rupee symbol, em-dashes, and strips
  * unsupported codepoints so PDF rendering never throws WinAnsi encoding errors.
  */
@@ -47,473 +52,644 @@ function safePdfText(text: string | undefined | null): string {
 }
 
 function safePdfCurrency(curr: string | undefined | null): string {
-  if (!curr) return '$ ';
-  if (curr.includes('₹') || curr === '₹') return 'Rs. ';
+  if (!curr) return '$';
+  if (curr.includes('₹') || curr === '₹') return 'Rs.';
   const cleaned = curr.replace(/[^\x20-\x7E\xA0-\xFF]/g, '').trim();
-  return cleaned ? `${cleaned} ` : '$ ';
+  return cleaned || '$';
 }
 
 /**
- * Generates an official, clean A5-format invoice PDF using pdf-lib
+ * Helper to draw a dashed horizontal line across the receipt
+ */
+function drawDashedLine(
+  page: any,
+  x1: number,
+  x2: number,
+  y: number,
+  color: any,
+  dashLen = 3,
+  gapLen = 2
+) {
+  for (let x = x1; x < x2; x += dashLen + gapLen) {
+    const endX = Math.min(x + dashLen, x2);
+    page.drawLine({
+      start: { x, y },
+      end: { x: endX, y },
+      thickness: 0.75,
+      color,
+    });
+  }
+}
+
+/**
+ * Helper to draw a double line separator (common in thermal POS total bars)
+ */
+function drawDoubleLine(page: any, x1: number, x2: number, y: number, color: any) {
+  page.drawLine({ start: { x: x1, y: y + 1.2 }, end: { x: x2, y: y + 1.2 }, thickness: 0.75, color });
+  page.drawLine({ start: { x: x1, y: y - 1.2 }, end: { x: x2, y: y - 1.2 }, thickness: 0.75, color });
+}
+
+/**
+ * Helper to draw subtle sawtooth / serrated perforation teeth at paper edges
+ */
+function drawSawtoothPerforation(page: any, width: number, y: number, isTop: boolean, color: any) {
+  const toothWidth = 6;
+  const toothHeight = 3;
+  const numTeeth = Math.ceil(width / toothWidth);
+
+  for (let i = 0; i < numTeeth; i++) {
+    const xLeft = i * toothWidth;
+    const xMid = xLeft + toothWidth / 2;
+    const xRight = xLeft + toothWidth;
+
+    const yBase = y;
+    const yPeak = isTop ? y - toothHeight : y + toothHeight;
+
+    page.drawLine({
+      start: { x: xLeft, y: yBase },
+      end: { x: xMid, y: yPeak },
+      thickness: 0.5,
+      color,
+    });
+    page.drawLine({
+      start: { x: xMid, y: yPeak },
+      end: { x: xRight, y: yBase },
+      thickness: 0.5,
+      color,
+    });
+  }
+}
+
+/**
+ * Generates an authentic thermal POS order receipt PDF
  */
 export async function generateReceiptPdf(data: ReceiptPdfData): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
 
-  // A5 dimensions: 420pt x 595pt (half of A4, ideal for digital receipt & thermal viewing)
-  const pageWidth = 420;
-  // Calculate dynamic page height if many items, minimum 595pt
-  const minHeight = 595;
-  const itemsHeight = Math.max(0, data.items.length - 6) * 22;
-  const pageHeight = minHeight + itemsHeight;
-
-  const page = doc.addPage([pageWidth, pageHeight]);
-
-  const helvetica = await doc.embedFont(StandardFonts.Helvetica);
-  const helveticaBold = await doc.embedFont(StandardFonts.HelveticaBold);
-
-  // Palette
-  const colorDark = rgb(0.08, 0.12, 0.18);
-  const colorSecondary = rgb(0.38, 0.44, 0.52);
-  const colorMuted = rgb(0.55, 0.60, 0.68);
-  const colorEmerald = rgb(0.06, 0.65, 0.44);
-  const colorBorder = rgb(0.88, 0.91, 0.94);
-  const colorLightBg = rgb(0.97, 0.98, 0.99);
-
-  const margin = 32;
+  // Standard 80mm thermal receipt paper roll width: 280 points (~3.88 inches)
+  const pageWidth = 280;
+  const margin = 16;
   const contentWidth = pageWidth - margin * 2;
-  let currentY = pageHeight - margin;
+  const leftX = margin;
+  const rightX = pageWidth - margin;
+
+  // Colors
+  const colorBlack = rgb(0.06, 0.06, 0.07); // Thermal carbon black
+  const colorSecondary = rgb(0.26, 0.28, 0.32); // Dark charcoal
+  const colorMuted = rgb(0.55, 0.58, 0.62); // Faint line / captions
+  const colorPaper = rgb(1, 1, 1); // Pure thermal white
+  const colorBorder = rgb(0.85, 0.88, 0.90); // Subtle paper edge
+
+  // Fonts
+  const courier = await doc.embedFont(StandardFonts.Courier);
+  const courierBold = await doc.embedFont(StandardFonts.CourierBold);
+  const helveticaBold = await doc.embedFont(StandardFonts.HelveticaBold);
 
   const curr = safePdfCurrency(data.currency);
 
-  // 1. Top Decorative Brand Bar
+  // 1. Calculate Dynamic Receipt Page Height accurately
+  let estimatedHeight = 0;
+  // Top padding & sawtooth
+  estimatedHeight += 20;
+
+  // Header
+  estimatedHeight += 22; // business name
+  if (data.businessType) estimatedHeight += 11;
+  if (data.businessAddress) estimatedHeight += 11;
+  if (data.businessPhone) estimatedHeight += 11;
+  if (data.showGstOnReceipt && data.gstNumber) estimatedHeight += 11;
+
+  // Divider
+  estimatedHeight += 14;
+
+  // Metadata block (RECEIPT NO, DATE, CUSTOMER, CONTACT, PAYMENT)
+  estimatedHeight += 12 * 4;
+  if (data.customerPhone) estimatedHeight += 12;
+  if (data.employee) estimatedHeight += 12;
+
+  // Divider
+  estimatedHeight += 14;
+
+  // Items table header & thin divider
+  estimatedHeight += 16;
+
+  // Items rows
+  for (const item of data.items) {
+    estimatedHeight += 14;
+    if (item.sku) estimatedHeight += 9;
+    if (safePdfText(item.productName).length > 20) estimatedHeight += 11;
+  }
+
+  // Divider
+  estimatedHeight += 14;
+
+  // Financial summary (Items count, discount, tax)
+  estimatedHeight += 13; // items count / subtotal
+  if (data.discount > 0) estimatedHeight += 13;
+  if (data.tax > 0) estimatedHeight += 13;
+
+  // Double line + Grand Total + Double line
+  estimatedHeight += 38;
+
+  // Payment details (amount paid, mode, txn ref, notes)
+  estimatedHeight += 24;
+  if (data.paymentReference) estimatedHeight += 12;
+  if (data.notes) estimatedHeight += 18;
+
+  // Divider
+  estimatedHeight += 14;
+
+  // Barcode & caption
+  estimatedHeight += 44;
+
+  // Google review box (if enabled)
+  if (data.showGoogleReviewOnReceipt && data.googleProfileUrl) estimatedHeight += 30;
+
+  // Footer thank you & credentials
+  estimatedHeight += 38;
+
+  // Bottom padding & sawtooth
+  estimatedHeight += 20;
+
+  const pageHeight = Math.max(340, Math.ceil(estimatedHeight));
+  const page = doc.addPage([pageWidth, pageHeight]);
+
+  // Background Paper
   page.drawRectangle({
     x: 0,
-    y: pageHeight - 6,
+    y: 0,
     width: pageWidth,
-    height: 6,
-    color: colorEmerald,
+    height: pageHeight,
+    color: colorPaper,
   });
 
-  // 2. Header: Business Name & Document Title
-  currentY -= 20;
-  const businessName = safePdfText(data.businessName) || 'Business Receipt';
+  // Subtle thermal paper roll side guides
+  page.drawLine({ start: { x: 0, y: 0 }, end: { x: 0, y: pageHeight }, thickness: 0.5, color: colorBorder });
+  page.drawLine({ start: { x: pageWidth, y: 0 }, end: { x: pageWidth, y: pageHeight }, thickness: 0.5, color: colorBorder });
+
+  // Top Sawtooth Paper Tear Effect
+  drawSawtoothPerforation(page, pageWidth, pageHeight - 1, true, colorBorder);
+
+  let currentY = pageHeight - 16;
+
+  // --------------------------------------------------------------------------
+  // SECTION 1: Thermal Receipt Store Header (Centered)
+  // --------------------------------------------------------------------------
+  const businessName = safePdfText(data.businessName).toUpperCase() || 'RECEIPT';
+  const nameSize = businessName.length > 24 ? 12 : 13.5;
+  const nameWidth = helveticaBold.widthOfTextAtSize(businessName, nameSize);
   page.drawText(businessName, {
-    x: margin,
+    x: (pageWidth - nameWidth) / 2,
     y: currentY,
-    size: 16,
+    size: nameSize,
     font: helveticaBold,
-    color: colorDark,
+    color: colorBlack,
   });
-
-  const titleText = 'OFFICIAL RECEIPT';
-  const titleWidth = helveticaBold.widthOfTextAtSize(titleText, 10);
-  page.drawText(titleText, {
-    x: pageWidth - margin - titleWidth,
-    y: currentY + 3,
-    size: 10,
-    font: helveticaBold,
-    color: colorEmerald,
-  });
-
-  // 3. Store Contact & Address info
-  currentY -= 14;
-  const businessAddress = safePdfText(data.businessAddress);
-  if (businessAddress) {
-    page.drawText(businessAddress, {
-      x: margin,
-      y: currentY,
-      size: 8.5,
-      font: helvetica,
-      color: colorSecondary,
-    });
-    currentY -= 12;
-  }
-
-  const businessPhone = safePdfText(data.businessPhone);
-  if (businessPhone) {
-    page.drawText(`Contact: ${businessPhone}`, {
-      x: margin,
-      y: currentY,
-      size: 8.5,
-      font: helvetica,
-      color: colorSecondary,
-    });
-    currentY -= 12;
-  }
-
-  // GST Information (if enabled)
-  const gstNum = safePdfText(data.gstNumber).toUpperCase();
-  if (data.showGstOnReceipt && gstNum) {
-    page.drawText(`GSTIN: ${gstNum}`, {
-      x: margin,
-      y: currentY,
-      size: 8.5,
-      font: helveticaBold,
-      color: colorDark,
-    });
-    currentY -= 12;
-  }
-
-  // 4. Divider Line
-  currentY -= 6;
-  page.drawLine({
-    start: { x: margin, y: currentY },
-    end: { x: pageWidth - margin, y: currentY },
-    thickness: 1,
-    color: colorBorder,
-  });
-
-  // 5. Order & Customer Info Grid
-  currentY -= 16;
-  // Left: Customer Info
-  page.drawText('BILLED TO:', {
-    x: margin,
-    y: currentY,
-    size: 7.5,
-    font: helveticaBold,
-    color: colorMuted,
-  });
-  const customerName = safePdfText(data.customerName) || 'Valued Customer';
-  page.drawText(customerName, {
-    x: margin,
-    y: currentY - 12,
-    size: 9.5,
-    font: helveticaBold,
-    color: colorDark,
-  });
-  if (data.customerPhone) {
-    const customerPhone = safePdfText(data.customerPhone);
-    page.drawText(`Phone: +${customerPhone}`, {
-      x: margin,
-      y: currentY - 24,
-      size: 8.5,
-      font: helvetica,
-      color: colorSecondary,
-    });
-  }
-
-  // Right: Order Number & Date
-  const dateFormatted = safePdfText(new Date(data.createdAt).toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }));
-
-  const orderNumStr = `#${safePdfText(data.orderNumber)}`;
-  const orderNumWidth = helveticaBold.widthOfTextAtSize(orderNumStr, 9.5);
-  page.drawText('RECEIPT NO:', {
-    x: pageWidth - margin - 80,
-    y: currentY,
-    size: 7.5,
-    font: helveticaBold,
-    color: colorMuted,
-  });
-  page.drawText(orderNumStr, {
-    x: pageWidth - margin - orderNumWidth,
-    y: currentY - 12,
-    size: 9.5,
-    font: helveticaBold,
-    color: colorEmerald,
-  });
-
-  const dateWidth = helvetica.widthOfTextAtSize(dateFormatted, 8);
-  page.drawText(dateFormatted, {
-    x: pageWidth - margin - dateWidth,
-    y: currentY - 24,
-    size: 8,
-    font: helvetica,
-    color: colorSecondary,
-  });
-
-  currentY -= 36;
-
-  // 6. Items Table Header
-  page.drawRectangle({
-    x: margin,
-    y: currentY - 6,
-    width: contentWidth,
-    height: 18,
-    color: colorLightBg,
-  });
-
-  page.drawText('ITEM DESCRIPTION', {
-    x: margin + 6,
-    y: currentY,
-    size: 7.5,
-    font: helveticaBold,
-    color: colorSecondary,
-  });
-
-  const qtyX = margin + 200;
-  page.drawText('QTY', {
-    x: qtyX,
-    y: currentY,
-    size: 7.5,
-    font: helveticaBold,
-    color: colorSecondary,
-  });
-
-  const priceX = margin + 250;
-  page.drawText('PRICE', {
-    x: priceX,
-    y: currentY,
-    size: 7.5,
-    font: helveticaBold,
-    color: colorSecondary,
-  });
-
-  const totalColX = pageWidth - margin - 10;
-  const totalHeaderWidth = helveticaBold.widthOfTextAtSize('AMOUNT', 7.5);
-  page.drawText('AMOUNT', {
-    x: totalColX - totalHeaderWidth,
-    y: currentY,
-    size: 7.5,
-    font: helveticaBold,
-    color: colorSecondary,
-  });
-
   currentY -= 14;
 
-  // 7. Item Rows
-  data.items.forEach((item) => {
-    currentY -= 14;
-
-    // Item Name (truncated if too long)
-    const rawName = safePdfText(item.productName) || 'Product';
-    const nameMaxLen = 32;
-    const displayName = rawName.length > nameMaxLen ? `${rawName.slice(0, nameMaxLen)}...` : rawName;
-
-    page.drawText(displayName, {
-      x: margin + 6,
+  if (data.businessType) {
+    const bTypeStr = safePdfText(data.businessType).toUpperCase();
+    const bTypeWidth = courier.widthOfTextAtSize(bTypeStr, 7.5);
+    page.drawText(bTypeStr, {
+      x: (pageWidth - bTypeWidth) / 2,
       y: currentY,
-      size: 8.5,
-      font: helvetica,
-      color: colorDark,
-    });
-
-    // Qty
-    page.drawText(String(item.quantity), {
-      x: qtyX,
-      y: currentY,
-      size: 8.5,
-      font: helvetica,
-      color: colorDark,
-    });
-
-    // Unit Price
-    const unitPrice = typeof item.unitPrice === 'number' ? item.unitPrice : 0;
-    const unitPriceStr = `${curr}${unitPrice.toFixed(2)}`;
-    page.drawText(unitPriceStr, {
-      x: priceX,
-      y: currentY,
-      size: 8.5,
-      font: helvetica,
+      size: 7.5,
+      font: courier,
       color: colorSecondary,
     });
-
-    // Line Total
-    const lineTotal = typeof item.lineTotal === 'number' ? item.lineTotal : unitPrice * (item.quantity || 1);
-    const lineTotalStr = `${curr}${lineTotal.toFixed(2)}`;
-    const lineTotalWidth = helveticaBold.widthOfTextAtSize(lineTotalStr, 8.5);
-    page.drawText(lineTotalStr, {
-      x: totalColX - lineTotalWidth,
-      y: currentY,
-      size: 8.5,
-      font: helveticaBold,
-      color: colorDark,
-    });
-
-    // Light subtle line between items
-    page.drawLine({
-      start: { x: margin, y: currentY - 5 },
-      end: { x: pageWidth - margin, y: currentY - 5 },
-      thickness: 0.5,
-      color: rgb(0.93, 0.94, 0.96),
-    });
-  });
-
-  currentY -= 16;
-
-  // 8. Breakdown & Totals (Right Aligned Box)
-  const breakdownLabelX = margin + 180;
-
-  // Subtotal
-  page.drawText('Subtotal:', {
-    x: breakdownLabelX,
-    y: currentY,
-    size: 8.5,
-    font: helvetica,
-    color: colorSecondary,
-  });
-  const subtotalStr = `${curr}${data.subtotal.toFixed(2)}`;
-  const subtotalWidth = helvetica.widthOfTextAtSize(subtotalStr, 8.5);
-  page.drawText(subtotalStr, {
-    x: totalColX - subtotalWidth,
-    y: currentY,
-    size: 8.5,
-    font: helvetica,
-    color: colorDark,
-  });
-  currentY -= 13;
-
-  // Discount (if any)
-  if (data.discount > 0) {
-    page.drawText('Discount:', {
-      x: breakdownLabelX,
-      y: currentY,
-      size: 8.5,
-      font: helvetica,
-      color: colorEmerald,
-    });
-    const discountStr = `-${curr}${data.discount.toFixed(2)}`;
-    const discountWidth = helvetica.widthOfTextAtSize(discountStr, 8.5);
-    page.drawText(discountStr, {
-      x: totalColX - discountWidth,
-      y: currentY,
-      size: 8.5,
-      font: helvetica,
-      color: colorEmerald,
-    });
-    currentY -= 13;
+    currentY -= 11;
   }
 
-  // Tax (if any)
-  if (data.tax > 0) {
-    page.drawText('Tax / VAT:', {
-      x: breakdownLabelX,
+  if (data.businessAddress) {
+    const addrStr = safePdfText(data.businessAddress);
+    const addrWidth = courier.widthOfTextAtSize(addrStr, 7.5);
+    // If address is long, center fit or wrap
+    if (addrWidth > contentWidth) {
+      const shortAddr = `${addrStr.slice(0, 36)}...`;
+      const shortW = courier.widthOfTextAtSize(shortAddr, 7.5);
+      page.drawText(shortAddr, {
+        x: (pageWidth - shortW) / 2,
+        y: currentY,
+        size: 7.5,
+        font: courier,
+        color: colorSecondary,
+      });
+    } else {
+      page.drawText(addrStr, {
+        x: (pageWidth - addrWidth) / 2,
+        y: currentY,
+        size: 7.5,
+        font: courier,
+        color: colorSecondary,
+      });
+    }
+    currentY -= 11;
+  }
+
+  if (data.businessPhone) {
+    const phoneStr = `TEL: ${safePdfText(data.businessPhone)}`;
+    const phoneWidth = courier.widthOfTextAtSize(phoneStr, 7.5);
+    page.drawText(phoneStr, {
+      x: (pageWidth - phoneWidth) / 2,
       y: currentY,
-      size: 8.5,
-      font: helvetica,
+      size: 7.5,
+      font: courier,
       color: colorSecondary,
     });
-    const taxStr = `${curr}${data.tax.toFixed(2)}`;
-    const taxWidth = helvetica.widthOfTextAtSize(taxStr, 8.5);
-    page.drawText(taxStr, {
-      x: totalColX - taxWidth,
-      y: currentY,
-      size: 8.5,
-      font: helvetica,
-      color: colorDark,
-    });
-    currentY -= 13;
+    currentY -= 11;
   }
 
-  // Total Row Background Box
+  if (data.showGstOnReceipt && data.gstNumber) {
+    const gstStr = `GSTIN: ${safePdfText(data.gstNumber).toUpperCase()}`;
+    const gstWidth = courierBold.widthOfTextAtSize(gstStr, 7.5);
+    page.drawText(gstStr, {
+      x: (pageWidth - gstWidth) / 2,
+      y: currentY,
+      size: 7.5,
+      font: courierBold,
+      color: colorBlack,
+    });
+    currentY -= 11;
+  }
+
+  // Dashed Separator
   currentY -= 4;
-  page.drawRectangle({
-    x: breakdownLabelX - 8,
-    y: currentY - 8,
-    width: pageWidth - margin - (breakdownLabelX - 8),
-    height: 24,
-    color: rgb(0.93, 0.98, 0.95),
-    borderColor: rgb(0.8, 0.93, 0.86),
-    borderWidth: 1,
-  });
+  drawDashedLine(page, leftX, rightX, currentY, colorMuted);
+  currentY -= 12;
 
-  page.drawText('TOTAL PAID:', {
-    x: breakdownLabelX,
-    y: currentY,
-    size: 10,
-    font: helveticaBold,
-    color: colorEmerald,
-  });
+  // --------------------------------------------------------------------------
+  // SECTION 2: Receipt Order Metadata & Customer Details
+  // --------------------------------------------------------------------------
+  const renderMetaRow = (key: string, val: string, isBold = false) => {
+    page.drawText(key, {
+      x: leftX,
+      y: currentY,
+      size: 8,
+      font: courier,
+      color: colorSecondary,
+    });
 
-  const totalStr = `${curr}${data.totalAmount.toFixed(2)}`;
-  const totalWidth = helveticaBold.widthOfTextAtSize(totalStr, 11);
-  page.drawText(totalStr, {
-    x: totalColX - totalWidth,
-    y: currentY,
-    size: 11,
-    font: helveticaBold,
-    color: colorEmerald,
-  });
-
-  currentY -= 28;
-
-  // 9. Payment Details
-  const paymentLabels: Record<string, string> = {
-    CASH: 'Paid via Cash',
-    CARD: 'Paid via Card',
-    UPI: 'Paid via UPI / QR',
-    PAID_CASH: 'Paid via Cash',
-    PAID_ONLINE: 'Paid Online / Card / UPI',
-    PENDING: 'Payment Pending',
-    COD: 'Cash on Delivery',
+    const fontToUse = isBold ? courierBold : courier;
+    const valWidth = fontToUse.widthOfTextAtSize(val, 8);
+    page.drawText(val, {
+      x: rightX - valWidth,
+      y: currentY,
+      size: 8,
+      font: fontToUse,
+      color: colorBlack,
+    });
+    currentY -= 12;
   };
 
-  const rawPaymentMethod =
-    (data.paymentMethod && paymentLabels[data.paymentMethod]) ||
-    (data.paymentStatus && paymentLabels[data.paymentStatus]) ||
-    'Paid via Cash';
-  const paymentMethodStr = safePdfText(rawPaymentMethod);
+  renderMetaRow('RECEIPT NO', `#${safePdfText(data.orderNumber)}`, true);
 
-  page.drawText(`Payment Method: ${paymentMethodStr}`, {
-    x: margin,
-    y: currentY,
-    size: 8.5,
-    font: helveticaBold,
-    color: colorDark,
+  const orderDate = new Date(data.createdAt);
+  const formattedDate = orderDate.toLocaleDateString('en-US', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).toUpperCase();
+  const formattedTime = orderDate.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
   });
+  renderMetaRow('DATE', `${formattedDate}  ${formattedTime}`);
 
-  currentY -= 20;
+  const customerName = safePdfText(data.customerName) || 'VALUED CUSTOMER';
+  renderMetaRow('CUSTOMER', customerName.toUpperCase());
 
-  // 10. Google Review Link Callout (if enabled)
-  const googleUrl = safePdfText(data.googleProfileUrl);
-  if (data.showGoogleReviewOnReceipt && googleUrl) {
-    page.drawRectangle({
-      x: margin,
-      y: currentY - 14,
-      width: contentWidth,
-      height: 24,
-      color: rgb(0.95, 0.97, 1.0),
-      borderColor: rgb(0.82, 0.88, 0.98),
-      borderWidth: 1,
-    });
-
-    page.drawText('Review us on Google:', {
-      x: margin + 8,
-      y: currentY - 5,
-      size: 8,
-      font: helveticaBold,
-      color: rgb(0.15, 0.35, 0.75),
-    });
-
-    const shortUrl = googleUrl.length > 45 ? `${googleUrl.slice(0, 45)}...` : googleUrl;
-    page.drawText(shortUrl, {
-      x: margin + 110,
-      y: currentY - 5,
-      size: 8,
-      font: helvetica,
-      color: rgb(0.15, 0.35, 0.75),
-    });
-
-    currentY -= 30;
+  if (data.customerPhone) {
+    renderMetaRow('CONTACT', `+${safePdfText(data.customerPhone)}`);
   }
 
-  // 11. Footer Thank You
+  if (data.employee) {
+    renderMetaRow('CASHIER', safePdfText(data.employee).toUpperCase());
+  }
+
+  const paymentLabels: Record<string, string> = {
+    CASH: 'CASH',
+    CARD: 'CARD',
+    UPI: 'UPI / QR',
+    PAID_CASH: 'CASH',
+    PAID_ONLINE: 'ONLINE / UPI',
+    PENDING: 'PENDING',
+    COD: 'CASH ON DELIVERY',
+  };
+  const payLabel =
+    (data.paymentMethod && paymentLabels[data.paymentMethod]) ||
+    (data.paymentStatus && paymentLabels[data.paymentStatus]) ||
+    'CASH';
+  renderMetaRow('PAYMENT', `${payLabel} (PAID)`, true);
+
+  // Dashed Separator
+  currentY -= 3;
+  drawDashedLine(page, leftX, rightX, currentY, colorMuted);
+  currentY -= 12;
+
+  // --------------------------------------------------------------------------
+  // SECTION 3: Itemized Table (Authentic POS Monospace Columns)
+  // --------------------------------------------------------------------------
+  // Header Columns:
+  // QTY (left aligned at 16)
+  // ITEM (left aligned at 40)
+  // PRICE (right aligned at 210)
+  // TOTAL (right aligned at 264)
+  page.drawText('QTY', { x: leftX, y: currentY, size: 7.5, font: courierBold, color: colorSecondary });
+  page.drawText('ITEM DESCRIPTION', { x: leftX + 26, y: currentY, size: 7.5, font: courierBold, color: colorSecondary });
+
+  const priceHeaderWidth = courierBold.widthOfTextAtSize('PRICE', 7.5);
+  page.drawText('PRICE', { x: rightX - 52 - priceHeaderWidth, y: currentY, size: 7.5, font: courierBold, color: colorSecondary });
+
+  const totalHeaderWidth = courierBold.widthOfTextAtSize('TOTAL', 7.5);
+  page.drawText('TOTAL', { x: rightX - totalHeaderWidth, y: currentY, size: 7.5, font: courierBold, color: colorSecondary });
+
+  currentY -= 5;
+  drawDashedLine(page, leftX, rightX, currentY, colorBorder, 2, 2);
   currentY -= 10;
-  const thankYouText = 'Thank you for your order!';
-  const thankYouWidth = helveticaBold.widthOfTextAtSize(thankYouText, 9);
-  page.drawText(thankYouText, {
-    x: (pageWidth - thankYouWidth) / 2,
+
+  // Items Body
+  for (const item of data.items) {
+    const qtyStr = String(item.quantity);
+    const unitPrice = typeof item.unitPrice === 'number' ? item.unitPrice : 0;
+    const lineTotal = typeof item.lineTotal === 'number' ? item.lineTotal : unitPrice * item.quantity;
+
+    const priceStr = unitPrice.toFixed(2);
+    const totalStr = lineTotal.toFixed(2);
+
+    page.drawText(qtyStr, {
+      x: leftX,
+      y: currentY,
+      size: 8,
+      font: courier,
+      color: colorBlack,
+    });
+
+    const rawName = safePdfText(item.productName) || 'Item';
+    const maxChars = 20;
+
+    if (rawName.length <= maxChars) {
+      page.drawText(rawName, {
+        x: leftX + 26,
+        y: currentY,
+        size: 8,
+        font: courierBold,
+        color: colorBlack,
+      });
+    } else {
+      // Split into two lines
+      const line1 = rawName.slice(0, maxChars);
+      const line2 = rawName.slice(maxChars, maxChars * 2);
+
+      page.drawText(line1, {
+        x: leftX + 26,
+        y: currentY,
+        size: 8,
+        font: courierBold,
+        color: colorBlack,
+      });
+
+      currentY -= 9.5;
+      page.drawText(line2, {
+        x: leftX + 26,
+        y: currentY,
+        size: 7.5,
+        font: courier,
+        color: colorSecondary,
+      });
+    }
+
+    const priceW = courier.widthOfTextAtSize(priceStr, 8);
+    page.drawText(priceStr, {
+      x: rightX - 52 - priceW,
+      y: currentY,
+      size: 8,
+      font: courier,
+      color: colorSecondary,
+    });
+
+    const totalW = courierBold.widthOfTextAtSize(totalStr, 8);
+    page.drawText(totalStr, {
+      x: rightX - totalW,
+      y: currentY,
+      size: 8,
+      font: courierBold,
+      color: colorBlack,
+    });
+
+    currentY -= 11.5;
+
+    if (item.sku) {
+      const skuStr = `[SKU: ${safePdfText(item.sku)}]`;
+      page.drawText(skuStr, {
+        x: leftX + 26,
+        y: currentY,
+        size: 6.5,
+        font: courier,
+        color: colorMuted,
+      });
+      currentY -= 9;
+    }
+  }
+
+  // Dashed Separator
+  currentY -= 3;
+  drawDashedLine(page, leftX, rightX, currentY, colorMuted);
+  currentY -= 12;
+
+  // --------------------------------------------------------------------------
+  // SECTION 4: Financial Breakdown & Totals (Monospace Receipt Summary)
+  // --------------------------------------------------------------------------
+  const totalQty = data.items.reduce((acc, i) => acc + (i.quantity || 1), 0);
+  const renderTotalRow = (label: string, valueStr: string, isNegative = false) => {
+    page.drawText(label, {
+      x: leftX,
+      y: currentY,
+      size: 8,
+      font: courier,
+      color: colorSecondary,
+    });
+
+    const valW = courier.widthOfTextAtSize(valueStr, 8);
+    page.drawText(valueStr, {
+      x: rightX - valW,
+      y: currentY,
+      size: 8,
+      font: courier,
+      color: isNegative ? rgb(0.7, 0.1, 0.1) : colorBlack,
+    });
+    currentY -= 12;
+  };
+
+  renderTotalRow(`TOTAL ITEMS (${totalQty})`, `${curr} ${data.subtotal.toFixed(2)}`);
+
+  if (data.discount > 0) {
+    renderTotalRow('DISCOUNT', `-${curr} ${data.discount.toFixed(2)}`, true);
+  }
+
+  if (data.tax > 0) {
+    renderTotalRow('TAX / GST', `${curr} ${data.tax.toFixed(2)}`);
+  }
+
+  // Double Line Separator
+  currentY -= 2;
+  drawDoubleLine(page, leftX, rightX, currentY, colorBlack);
+  currentY -= 14;
+
+  // GRAND TOTAL (PROMINENT BOLD THERMAL TEXT)
+  page.drawText('TOTAL AMOUNT', {
+    x: leftX,
     y: currentY,
-    size: 9,
-    font: helveticaBold,
-    color: colorDark,
+    size: 11,
+    font: courierBold,
+    color: colorBlack,
   });
 
-  currentY -= 12;
-  const subFooter = 'This is a computer-generated digital receipt powered by HYNOX Billing.';
-  const subFooterWidth = helvetica.widthOfTextAtSize(subFooter, 7);
-  page.drawText(subFooter, {
-    x: (pageWidth - subFooterWidth) / 2,
+  const grandTotalStr = `${curr} ${data.totalAmount.toFixed(2)}`;
+  const grandTotalW = courierBold.widthOfTextAtSize(grandTotalStr, 11);
+  page.drawText(grandTotalStr, {
+    x: rightX - grandTotalW,
+    y: currentY,
+    size: 11,
+    font: courierBold,
+    color: colorBlack,
+  });
+
+  currentY -= 6;
+  drawDoubleLine(page, leftX, rightX, currentY, colorBlack);
+  currentY -= 14;
+
+  // Payment Confirmation
+  renderTotalRow('AMOUNT PAID', `${curr} ${data.totalAmount.toFixed(2)}`);
+  renderTotalRow('PAYMENT MODE', payLabel);
+
+  if (data.paymentReference) {
+    renderTotalRow('TXN REF', safePdfText(data.paymentReference));
+  }
+
+  if (data.notes) {
+    const noteStr = `NOTE: ${safePdfText(data.notes)}`;
+    page.drawText(noteStr.slice(0, 40), {
+      x: leftX,
+      y: currentY,
+      size: 7.5,
+      font: courier,
+      color: colorSecondary,
+    });
+    currentY -= 12;
+  }
+
+  // Dashed Separator
+  currentY -= 3;
+  drawDashedLine(page, leftX, rightX, currentY, colorMuted);
+  currentY -= 14;
+
+  // --------------------------------------------------------------------------
+  // SECTION 5: Thermal Barcode & Security Stamp
+  // --------------------------------------------------------------------------
+  // Draw authentic Code 128 / Code 39 style vertical black bars
+  const barPattern = [
+    2, 1, 1, 2, 3, 1, 2, 2, 1, 3, 1, 1, 2, 3, 1, 2, 1, 2, 2, 1, 1, 3, 2, 1,
+    1, 2, 2, 3, 1, 1, 2, 1, 3, 2, 1, 2, 1, 1, 3, 2, 2, 1, 1, 2, 3, 1, 2, 1,
+    2, 2, 1, 3, 1, 1, 2, 1, 2, 3, 1, 2, 1, 1, 2, 2, 3, 1, 2, 1, 2, 1, 3, 2,
+  ];
+  const barcodeHeight = 24;
+  const barcodeTotalWidth = barPattern.reduce((acc, w) => acc + w + 0.8, 0);
+  let bx = (pageWidth - barcodeTotalWidth) / 2;
+
+  for (let i = 0; i < barPattern.length; i++) {
+    const barWidth = barPattern[i] * 0.95;
+    if (i % 2 === 0) {
+      page.drawRectangle({
+        x: bx,
+        y: currentY - barcodeHeight,
+        width: barWidth,
+        height: barcodeHeight,
+        color: colorBlack,
+      });
+    }
+    bx += barWidth + 0.8;
+  }
+
+  currentY -= barcodeHeight + 10;
+
+  // Order Number under Barcode
+  const barcodeCaption = `* ${safePdfText(data.orderNumber)} *`;
+  const barcodeCapW = courierBold.widthOfTextAtSize(barcodeCaption, 8);
+  page.drawText(barcodeCaption, {
+    x: (pageWidth - barcodeCapW) / 2,
+    y: currentY,
+    size: 8,
+    font: courierBold,
+    color: colorBlack,
+  });
+  currentY -= 14;
+
+  // --------------------------------------------------------------------------
+  // SECTION 6: Google Review Notice (if enabled)
+  // --------------------------------------------------------------------------
+  if (data.showGoogleReviewOnReceipt && data.googleProfileUrl) {
+    const reviewBoxHeight = 22;
+    page.drawRectangle({
+      x: leftX,
+      y: currentY - reviewBoxHeight + 6,
+      width: contentWidth,
+      height: reviewBoxHeight,
+      color: rgb(0.96, 0.98, 0.97),
+      borderColor: colorBorder,
+      borderWidth: 0.75,
+    });
+
+    const revText = 'Enjoyed your experience? Review us on Google!';
+    const revW = courier.widthOfTextAtSize(revText, 7);
+    page.drawText(revText, {
+      x: (pageWidth - revW) / 2,
+      y: currentY - 6,
+      size: 7,
+      font: courier,
+      color: colorSecondary,
+    });
+
+    currentY -= reviewBoxHeight + 6;
+  }
+
+  // --------------------------------------------------------------------------
+  // SECTION 7: Thermal Footer & Brand Tagline
+  // --------------------------------------------------------------------------
+  const thankYou = '*** THANK YOU FOR YOUR VISIT! ***';
+  const thankYouW = courierBold.widthOfTextAtSize(thankYou, 8);
+  page.drawText(thankYou, {
+    x: (pageWidth - thankYouW) / 2,
+    y: currentY,
+    size: 8,
+    font: courierBold,
+    color: colorBlack,
+  });
+  currentY -= 11;
+
+  const retainText = 'Please retain this receipt for your records';
+  const retainW = courier.widthOfTextAtSize(retainText, 7);
+  page.drawText(retainText, {
+    x: (pageWidth - retainW) / 2,
     y: currentY,
     size: 7,
-    font: helvetica,
+    font: courier,
+    color: colorSecondary,
+  });
+  currentY -= 11;
+
+  const brandText = 'Powered by HYNOX Billing';
+  const brandW = courier.widthOfTextAtSize(brandText, 6.5);
+  page.drawText(brandText, {
+    x: (pageWidth - brandW) / 2,
+    y: currentY,
+    size: 6.5,
+    font: courier,
     color: colorMuted,
   });
+
+  // Bottom Sawtooth Paper Tear Effect
+  drawSawtoothPerforation(page, pageWidth, 4, false, colorBorder);
 
   return doc.save();
 }

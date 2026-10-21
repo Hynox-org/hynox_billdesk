@@ -202,26 +202,6 @@ export default function ReceiptView({
                 <span>Print Receipt</span>
               </button>
 
-              {/* Copy Receipt Link */}
-              <button
-                type="button"
-                onClick={handleCopyLink}
-                className="btn btn-secondary receipt-action-btn"
-                title="Copy digital receipt link"
-              >
-                {copied ? (
-                  <>
-                    <Check size={16} style={{ color: 'var(--emerald)' }} />
-                    <span style={{ color: 'var(--emerald)' }}>Link Copied</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy size={16} style={{ color: 'var(--text-secondary)' }} />
-                    <span>Copy Receipt Link</span>
-                  </>
-                )}
-              </button>
-
               {/* New Order Link */}
               <Link
                 href="/dashboard/pos"

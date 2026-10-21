@@ -30,7 +30,7 @@ if (fs.existsSync(envPath)) {
 
 const apiKey = process.env.BREVO_API_KEY;
 const senderEmail = process.env.BREVO_SENDER_EMAIL;
-const senderName = process.env.BREVO_SENDER_NAME || 'BillDesk';
+const senderName = process.env.BREVO_SENDER_NAME || 'HYNOX Billing';
 const targetEmail = process.argv[2] || senderEmail;
 
 console.log('--- Brevo Configuration Check ---');

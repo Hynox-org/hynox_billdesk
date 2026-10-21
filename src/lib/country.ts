@@ -118,7 +118,7 @@ export function detectBrowserCountry(): Country {
 
   // 1. Check persisted selection in localStorage
   try {
-    const saved = localStorage.getItem('billdesk_country_code');
+    const saved = localStorage.getItem('hynox_billing_country_code') || localStorage.getItem('billdesk_country_code');
     if (saved) {
       const matched = COUNTRIES.find((c) => c.code.toUpperCase() === saved.toUpperCase());
       if (matched) return matched;

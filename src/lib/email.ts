@@ -31,7 +31,7 @@ export interface SendEmailResult {
 export async function sendEmail(options: SendEmailOptions): Promise<SendEmailResult> {
   const apiKey = process.env.BREVO_API_KEY;
   const defaultSenderEmail = process.env.BREVO_SENDER_EMAIL;
-  const defaultSenderName = process.env.BREVO_SENDER_NAME || 'BillDesk';
+  const defaultSenderName = process.env.BREVO_SENDER_NAME || 'HYNOX Billing';
 
   if (!apiKey) {
     console.error('[Brevo Email] BREVO_API_KEY is not defined in environment variables.');
@@ -117,7 +117,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<SendEmailRes
 }
 
 /**
- * Standard branded email layout wrapper for BillDesk notifications.
+ * Standard branded email layout wrapper for HYNOX Billing notifications.
  * Uses clean green palette (#25D366, #059669) and responsive structure.
  */
 export function buildBrandedEmailHtml(params: {
@@ -213,7 +213,7 @@ export function buildBrandedEmailHtml(params: {
   <div class="wrapper">
     <div class="container">
       <div class="header">
-        <h1 class="brand-title">BillDesk</h1>
+        <h1 class="brand-title">HYNOX Billing</h1>
         <p class="brand-subtitle">Order & Billing Workspace</p>
       </div>
       <div class="body-content">
@@ -221,7 +221,7 @@ export function buildBrandedEmailHtml(params: {
         ${actionButton ? `<div style="text-align: center; margin-top: 28px;"><a href="${actionButton.url}" class="btn" target="_blank">${actionButton.text}</a></div>` : ''}
       </div>
       <div class="footer">
-        <p style="margin: 0 0 6px 0;">This is an automated notification from BillDesk.</p>
+        <p style="margin: 0 0 6px 0;">This is an automated notification from HYNOX Billing.</p>
         ${footerNote ? `<p style="margin: 0;">${footerNote}</p>` : ''}
       </div>
     </div>

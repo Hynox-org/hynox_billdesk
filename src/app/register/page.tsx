@@ -208,7 +208,7 @@ export default function RegisterPage() {
               <Zap size={20} />
             </div>
             <span className="auth-brand-title">
-              Bill<span style={{ color: 'var(--whatsapp)' }}>Desk</span>
+              HYNOX <span style={{ color: 'var(--whatsapp)' }}>Billing</span>
             </span>
           </Link>
           <div>

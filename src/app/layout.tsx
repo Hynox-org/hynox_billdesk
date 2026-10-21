@@ -3,7 +3,7 @@ import './globals.css';
 import { CountryProvider } from '@/context/CountryContext';
 
 export const metadata: Metadata = {
-  title: 'BillDesk | Multi-Tenant Vendor POS & WhatsApp Ordering SaaS',
+  title: 'HYNOX Billing | Multi-Tenant Vendor POS & WhatsApp Ordering SaaS',
   description:
     'Empower retail shops, artisan cafes, and service businesses with instant Point-of-Sale ordering and direct WhatsApp receipt dispatching. Zero external payment gateway required.',
   icons: {
@@ -28,7 +28,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap" rel="stylesheet" />
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{document.documentElement.setAttribute('data-theme','light');localStorage.setItem('billdesk_theme','light');}catch(e){}})();`,
+            __html: `(function(){try{document.documentElement.setAttribute('data-theme','light');localStorage.setItem('hynox_billing_theme','light');}catch(e){}})();`,
           }}
         />
       </head>

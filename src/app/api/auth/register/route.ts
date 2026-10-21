@@ -126,11 +126,11 @@ export async function POST(req: NextRequest) {
 
     // Send welcome email asynchronously
     const welcomeHtml = buildBrandedEmailHtml({
-      title: 'Welcome to BillDesk',
+      title: 'Welcome to HYNOX Billing',
       preheader: `Your store workspace "${tenant.businessName}" is ready.`,
       contentHtml: `
         <h2 style="color: #25D366; margin-top: 0;">Welcome aboard, ${user.fullName}!</h2>
-        <p>Your store workspace <strong>${tenant.businessName}</strong> has been created on BillDesk.</p>
+        <p>Your store workspace <strong>${tenant.businessName}</strong> has been created on HYNOX Billing.</p>
         <p>You have full access to create orders, manage your catalog, and dispatch instant WhatsApp receipts during your <strong>15-day free trial</strong>.</p>
         <div style="background: rgba(37, 211, 102, 0.08); border-left: 4px solid #25D366; padding: 12px 16px; margin: 20px 0; border-radius: 4px;">
           <strong style="color: #ffffff;">Store Slug:</strong> ${tenant.slug}<br/>
@@ -146,9 +146,9 @@ export async function POST(req: NextRequest) {
 
     sendEmail({
       to: { email: user.email, name: user.fullName },
-      subject: `Welcome to BillDesk, ${user.fullName}!`,
+      subject: `Welcome to HYNOX Billing, ${user.fullName}!`,
       htmlContent: welcomeHtml,
-      textContent: `Welcome to BillDesk! Your store workspace "${tenant.businessName}" is now ready.`,
+      textContent: `Welcome to HYNOX Billing! Your store workspace "${tenant.businessName}" is now ready.`,
     }).catch((e) => console.error('[Welcome Email Failed]:', e));
 
     const response = NextResponse.json({

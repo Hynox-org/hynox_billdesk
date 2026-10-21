@@ -116,12 +116,12 @@ export async function POST(req: NextRequest) {
           If you did not initiate this password change request, please contact administrator immediately.
         </p>
       `,
-      footerNote: 'This is an automated security verification message from BillDesk.',
+      footerNote: 'This is an automated security verification message from HYNOX Billing.',
     });
 
     const emailResult = await sendEmail({
       to: { email: normalizedEmail, name: auth.user.fullName },
-      subject: 'BillDesk - Security Verification Code for Password Reset',
+      subject: 'HYNOX Billing - Security Verification Code for Password Reset',
       htmlContent,
       textContent: `Your password reset verification code is ${otpCode}. It expires in 10 minutes.`,
     });

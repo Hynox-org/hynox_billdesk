@@ -77,11 +77,11 @@ export async function POST(req: NextRequest) {
     // Send security notification email
     const securityEmailHtml = buildBrandedEmailHtml({
       title: 'Password Reset Successful',
-      preheader: 'Your BillDesk account password was successfully reset.',
+      preheader: 'Your HYNOX Billing account password was successfully reset.',
       contentHtml: `
         <h2 style="color: #25D366; margin-top: 0;">Password Successfully Reset</h2>
         <p>Hello <strong>${user.fullName}</strong>,</p>
-        <p>Your BillDesk account password has been reset successfully using email verification.</p>
+        <p>Your HYNOX Billing account password has been reset successfully using email verification.</p>
         <p>You can now sign in with your new password.</p>
         <div style="background: rgba(37, 211, 102, 0.08); border-left: 4px solid #25D366; padding: 12px 16px; margin: 20px 0; border-radius: 4px;">
           <strong style="color: #ffffff;">Account:</strong> ${user.email}<br/>
@@ -92,16 +92,16 @@ export async function POST(req: NextRequest) {
         </p>
       `,
       actionButton: {
-        text: 'Sign In to BillDesk',
+        text: 'Sign In to HYNOX Billing',
         url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login`,
       },
     });
 
     sendEmail({
       to: { email: user.email, name: user.fullName },
-      subject: 'BillDesk - Your Password Was Reset',
+      subject: 'HYNOX Billing - Your Password Was Reset',
       htmlContent: securityEmailHtml,
-      textContent: 'Your BillDesk account password was successfully reset.',
+      textContent: 'Your HYNOX Billing account password was successfully reset.',
     }).catch((e) => console.error('[Password Reset Notice Failed]:', e));
 
     return NextResponse.json({

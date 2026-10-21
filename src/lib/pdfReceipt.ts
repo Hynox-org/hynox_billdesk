@@ -505,7 +505,7 @@ export async function generateReceiptPdf(data: ReceiptPdfData): Promise<Uint8Arr
   });
 
   currentY -= 12;
-  const subFooter = 'This is a computer-generated digital receipt powered by Hynox BillDesk.';
+  const subFooter = 'This is a computer-generated digital receipt powered by HYNOX Billing.';
   const subFooterWidth = helvetica.widthOfTextAtSize(subFooter, 7);
   page.drawText(subFooter, {
     x: (pageWidth - subFooterWidth) / 2,

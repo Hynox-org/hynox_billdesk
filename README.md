@@ -1,4 +1,4 @@
-# Hynox BillDesk
+# HYNOX Billing
 
 > Multi-Tenant Cloud POS & Instant WhatsApp E-Receipt SaaS Platform.
 

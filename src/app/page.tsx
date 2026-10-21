@@ -73,7 +73,7 @@ export default function LandingPage() {
           </div>
           <div className="landing-header-brand-text">
             <div className="landing-brand-title">
-              Bill<span style={{ color: 'var(--whatsapp)' }}>Desk</span>
+              HYNOX <span style={{ color: 'var(--whatsapp)' }}>Billing</span>
             </div>
             <div className="landing-brand-subtitle">
               Multi-Tenant Orders & WhatsApp Receipts
@@ -405,7 +405,7 @@ _Thank you for your order!_`}
           backgroundColor: 'var(--bg-header)',
         }}
       >
-        © 2026 BillDesk. Multi-Tenant Architecture & Direct WhatsApp Order Dispatching.
+        © 2026 HYNOX Billing. Multi-Tenant Architecture & Direct WhatsApp Order Dispatching.
       </footer>
     </div>
   );

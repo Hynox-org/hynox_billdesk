@@ -23,15 +23,15 @@ export async function POST(req: NextRequest) {
       preheader: 'Your Brevo email notifications are now active.',
       contentHtml: `
         <h2 style="color: #25D366; margin-top: 0;">Configuration Successful</h2>
-        <p>Your <strong>Brevo</strong> domain and API integration with <strong>BillDesk</strong> is configured and operational.</p>
+        <p>Your <strong>Brevo</strong> domain and API integration with <strong>HYNOX Billing</strong> is configured and operational.</p>
         <p>Transactional notifications, billing confirmations, and account security alerts can now be dispatched securely through your verified domain.</p>
         <div style="background: rgba(37, 211, 102, 0.08); border-left: 4px solid #25D366; padding: 12px 16px; margin: 20px 0; border-radius: 4px;">
-          <strong style="color: #ffffff;">Sender Identity:</strong> ${process.env.BREVO_SENDER_NAME || 'BillDesk'} &lt;${process.env.BREVO_SENDER_EMAIL}&gt;<br/>
+          <strong style="color: #ffffff;">Sender Identity:</strong> ${process.env.BREVO_SENDER_NAME || 'HYNOX Billing'} &lt;${process.env.BREVO_SENDER_EMAIL}&gt;<br/>
           <strong style="color: #ffffff;">Status:</strong> Connected via Brevo REST API v3
         </div>
       `,
       actionButton: {
-        text: 'Go to BillDesk Dashboard',
+        text: 'Go to HYNOX Billing Dashboard',
         url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000/dashboard',
       },
       footerNote: 'Sent to verify transactional email delivery.',
@@ -39,10 +39,10 @@ export async function POST(req: NextRequest) {
 
     const result = await sendEmail({
       to: { email: targetEmail },
-      subject: 'BillDesk - Brevo Email Notification Test',
+      subject: 'HYNOX Billing - Brevo Email Notification Test',
       htmlContent,
       textContent:
-        'Your Brevo email configuration with BillDesk is active and operational.',
+        'Your Brevo email configuration with HYNOX Billing is active and operational.',
     });
 
     if (!result.success) {

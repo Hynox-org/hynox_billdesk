@@ -85,11 +85,11 @@ export async function POST(req: NextRequest) {
     // Send security notification email
     const noticeHtml = buildBrandedEmailHtml({
       title: 'Security Alert: Password Changed',
-      preheader: 'Your BillDesk account password was successfully updated.',
+      preheader: 'Your HYNOX Billing account password was successfully updated.',
       contentHtml: `
         <h2 style="color: #25D366; margin-top: 0;">Password Successfully Changed</h2>
         <p>Hello <strong>${auth.user.fullName}</strong>,</p>
-        <p>Your BillDesk password has been updated from the store settings security panel.</p>
+        <p>Your HYNOX Billing password has been updated from the store settings security panel.</p>
         <div style="background: rgba(37, 211, 102, 0.08); border-left: 4px solid #25D366; padding: 12px 16px; margin: 20px 0; border-radius: 4px;">
           <strong style="color: #ffffff;">Account:</strong> ${auth.user.email}<br/>
           <strong style="color: #ffffff;">Date & Time:</strong> ${new Date().toUTCString()}
@@ -102,9 +102,9 @@ export async function POST(req: NextRequest) {
 
     sendEmail({
       to: { email: auth.user.email, name: auth.user.fullName },
-      subject: 'BillDesk - Security Alert: Password Updated',
+      subject: 'HYNOX Billing - Security Alert: Password Updated',
       htmlContent: noticeHtml,
-      textContent: 'Your BillDesk password was recently updated in your account settings.',
+      textContent: 'Your HYNOX Billing password was recently updated in your account settings.',
     }).catch((e) => console.error('[Password Change Notice Failed]:', e));
 
     return NextResponse.json({

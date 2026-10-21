@@ -83,16 +83,16 @@ export async function POST(req: NextRequest) {
     });
 
     // Content configuration based on type
-    let subject = 'BillDesk - Email Verification Code';
+    let subject = 'HYNOX Billing - Email Verification Code';
     let title = 'Verify Your Email';
     let actionDesc = 'verify your email and complete your vendor account registration.';
 
     if (type === 'FORGOT_PASSWORD') {
-      subject = 'BillDesk - Password Reset Code';
+      subject = 'HYNOX Billing - Password Reset Code';
       title = 'Reset Your Password';
       actionDesc = 'reset your account password. If you did not request this, you can safely ignore this email.';
     } else if (type === 'RESET_PASSWORD') {
-      subject = 'BillDesk - Security Verification Code';
+      subject = 'HYNOX Billing - Security Verification Code';
       title = 'Password Change Request';
       actionDesc = 'confirm your password change in your store settings. If you did not perform this action, please secure your account immediately.';
     }
@@ -116,17 +116,17 @@ export async function POST(req: NextRequest) {
         </div>
 
         <p style="color: #64748b; font-size: 13px; margin-top: 24px;">
-          Never share this code with anyone. BillDesk staff will never ask for your verification code.
+          Never share this code with anyone. HYNOX Billing staff will never ask for your verification code.
         </p>
       `,
-      footerNote: 'This is an automated security verification message from BillDesk.',
+      footerNote: 'This is an automated security verification message from HYNOX Billing.',
     });
 
     const emailResult = await sendEmail({
       to: { email: normalizedEmail, name: existingUser?.fullName || 'Valued User' },
       subject,
       htmlContent,
-      textContent: `Your BillDesk verification code is ${otpCode}. It expires in 10 minutes.`,
+      textContent: `Your HYNOX Billing verification code is ${otpCode}. It expires in 10 minutes.`,
     });
 
     if (!emailResult.success) {

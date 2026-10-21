@@ -21,7 +21,7 @@ export default function PaywallPage() {
   }, []);
 
   const adminWhatsAppUrl = `https://wa.me/918870524355?text=${encodeURIComponent(
-    `Hello BillDesk Super Admin, I would like to upgrade my business (${tenant?.businessName || 'My Store'}) to the Pro Subscription plan.`
+    `Hello HYNOX Billing Super Admin, I would like to upgrade my business (${tenant?.businessName || 'My Store'}) to the Pro Subscription plan.`
   )}`;
 
   return (
@@ -77,7 +77,7 @@ export default function PaywallPage() {
           lineHeight: 1.6,
         }}
       >
-        We hope you enjoyed using BillDesk POS! Your Point of Sale ordering and catalog write operations
+        We hope you enjoyed using HYNOX Billing POS! Your Point of Sale ordering and catalog write operations
         have been safely paused for <strong>{tenant?.businessName || 'your business'}</strong>.
         Your existing orders and catalog records remain securely preserved.
       </p>

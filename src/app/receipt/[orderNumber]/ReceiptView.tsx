@@ -461,7 +461,7 @@ export default function ReceiptView({
                 <p className="receipt-appreciation-sub">PLEASE VISIT AGAIN</p>
                 <div className="receipt-watermark-line">
                   <ShieldCheck size={12} />
-                  <span>POWERED BY HYNOX BILLDESK</span>
+                  <span>POWERED BY HYNOX BILLING</span>
                 </div>
               </footer>
             </div>

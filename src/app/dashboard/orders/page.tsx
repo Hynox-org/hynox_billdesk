@@ -123,6 +123,7 @@ interface Order {
 
 interface TenantExportInfo {
   businessName?: string;
+  businessType?: string;
   phone?: string;
   address?: string;
   location?: string;

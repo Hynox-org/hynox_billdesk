@@ -27,6 +27,7 @@ export async function seedInitialData() {
   if (!activeTenant) {
     activeTenant = await Tenant.create({
       businessName: 'Brew & Bite Artisan Cafe',
+      businessType: 'Cafés & coffee shops',
       slug: 'brew-and-bite-cafe',
       phone: '+1 555-0199',
       currency: '$',
@@ -143,6 +144,7 @@ export async function seedInitialData() {
     const expiredPastDate = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000); // 3 days ago
     expiredTenant = await Tenant.create({
       businessName: 'Vintage Threads Boutique',
+      businessType: 'Boutiques & clothing',
       slug: 'vintage-threads',
       phone: '+1 555-0822',
       currency: '$',

@@ -22,6 +22,7 @@ export async function GET() {
         ? {
             id: tenant._id,
             businessName: tenant.businessName,
+            businessType: tenant.businessType || 'Retail shops',
             slug: tenant.slug,
             phone: tenant.phone,
             currency: tenant.currency,

@@ -89,6 +89,7 @@ export default function OrderCreationPage() {
   const [completedOrder, setCompletedOrder] = useState<{
     orderNumber: string;
     businessName: string;
+    businessType?: string;
     items: Array<{
       productName: string;
       quantity: number;
@@ -113,6 +114,7 @@ export default function OrderCreationPage() {
 
   const [tenantInfo, setTenantInfo] = useState<{
     businessName?: string;
+    businessType?: string;
     gstNumber?: string;
     showGstOnReceipt?: boolean;
     googleProfileUrl?: string;
@@ -143,6 +145,7 @@ export default function OrderCreationPage() {
           if (authData.tenant) {
             setTenantInfo({
               businessName: authData.tenant.businessName,
+              businessType: authData.tenant.businessType,
               gstNumber: authData.tenant.gstNumber,
               showGstOnReceipt: Boolean(authData.tenant.showGstOnReceipt),
               googleProfileUrl: authData.tenant.googleProfileUrl,
@@ -343,6 +346,7 @@ export default function OrderCreationPage() {
       setCompletedOrder({
         orderNumber: data.order.orderNumber,
         businessName: tenantInfo?.businessName || 'Store Receipt',
+        businessType: tenantInfo?.businessType,
         items: data.order.items && data.order.items.length > 0 ? data.order.items : cart,
         subtotal: typeof data.order.subtotal === 'number' ? data.order.subtotal : subtotal,
         discount: typeof data.order.discount === 'number' ? data.order.discount : discountAmount,
@@ -1040,7 +1044,7 @@ export default function OrderCreationPage() {
                       {completedOrder.businessName}
                     </h3>
                     <div className="pos-ref-receipt-bill-no">
-                      Bill {completedOrder.orderNumber}
+                      Bill {completedOrder.orderNumber}{completedOrder.businessType ? ` • ${completedOrder.businessType}` : ''}
                     </div>
                   </div>
                   <span className="pos-ref-receipt-status-pill">

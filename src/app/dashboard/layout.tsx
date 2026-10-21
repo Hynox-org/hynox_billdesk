@@ -30,6 +30,7 @@ interface AuthState {
   tenant: {
     id: string;
     businessName: string;
+    businessType?: string;
     slug: string;
     phone: string;
     currency: string;
@@ -129,7 +130,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 {tenant?.businessName || 'My Business'}
               </div>
               <div className="dashboard-brand-subtitle">
-                {tenant?.businessName || 'Store'} • {tenant?.currency || '$'}
+                {tenant?.businessName || 'Store'}{tenant?.businessType ? ` • ${tenant.businessType}` : ''} • {tenant?.currency || '$'}
               </div>
             </div>
           </Link>

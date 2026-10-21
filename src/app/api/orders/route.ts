@@ -54,6 +54,7 @@ export async function GET(req: NextRequest) {
       currency: auth.tenant.currency || '$',
       tenant: {
         businessName: auth.tenant.businessName,
+        businessType: auth.tenant.businessType || 'Retail shops',
         phone: auth.tenant.phone,
         address: auth.tenant.address,
         location: auth.tenant.location || 'Main Store',

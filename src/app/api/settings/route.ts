@@ -24,6 +24,7 @@ export async function GET() {
       tenant: {
         id: tenant._id,
         businessName: tenant.businessName,
+        businessType: tenant.businessType || 'Retail shops',
         slug: tenant.slug,
         phone: tenant.phone,
         currency: tenant.currency || '$',
@@ -69,6 +70,7 @@ export async function PUT(req: NextRequest) {
     const {
       fullName,
       businessName,
+      businessType,
       phone,
       address,
       currency,
@@ -98,6 +100,7 @@ export async function PUT(req: NextRequest) {
     // 2. Update business information
     const tenantUpdate: Record<string, any> = {};
     if (businessName && businessName.trim()) tenantUpdate.businessName = businessName.trim();
+    if (businessType && businessType.trim()) tenantUpdate.businessType = businessType.trim();
     if (phone && phone.trim()) tenantUpdate.phone = phone.trim();
     if (address !== undefined) tenantUpdate.address = address.trim();
     if (currency && currency.trim()) tenantUpdate.currency = currency.trim();
@@ -145,6 +148,7 @@ export async function PUT(req: NextRequest) {
       tenant: {
         id: updatedTenant!._id,
         businessName: updatedTenant!.businessName,
+        businessType: updatedTenant!.businessType || 'Retail shops',
         phone: updatedTenant!.phone,
         currency: updatedTenant!.currency,
         address: updatedTenant!.address,

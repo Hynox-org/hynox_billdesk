@@ -44,6 +44,7 @@ export interface IOrder extends Document {
   refundedAmount?: number;
   outstandingBalance?: number;
   vendor?: string;
+  businessType?: string;
   employee?: string;
   location?: string;
   deviceId?: string;
@@ -159,6 +160,7 @@ const OrderSchema: Schema<IOrder> = new Schema(
     refundedAmount: { type: Number, default: 0 },
     outstandingBalance: { type: Number, default: 0 },
     vendor: { type: String, default: '' },
+    businessType: { type: String, default: '' },
     employee: { type: String, default: '' },
     location: { type: String, default: 'Main Store' },
     deviceId: { type: String, default: '' },

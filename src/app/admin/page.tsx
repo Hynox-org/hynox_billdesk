@@ -26,6 +26,7 @@ import {
 interface TenantItem {
   id: string;
   businessName: string;
+  businessType?: string;
   slug: string;
   phone: string;
   currency: string;
@@ -341,6 +342,22 @@ export default function SuperAdminPage() {
                         <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                           {t.owner?.fullName} • {t.owner?.email}
                         </div>
+                        {t.businessType && (
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              marginTop: '4px',
+                              padding: '2px 8px',
+                              borderRadius: '6px',
+                              background: 'var(--color-light-green)',
+                              color: 'var(--primary)',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                            }}
+                          >
+                            {t.businessType}
+                          </span>
+                        )}
                       </td>
 
                       <td style={{ padding: '14px 18px' }}>

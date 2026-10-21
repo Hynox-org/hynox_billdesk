@@ -24,6 +24,7 @@ import {
   Globe,
 } from 'lucide-react';
 import { useCountry } from '@/context/CountryContext';
+import { BUSINESS_TYPES, getBusinessTypeDescription } from '@/lib/businessTypes';
 
 interface SettingsData {
   user: {
@@ -36,6 +37,7 @@ interface SettingsData {
   tenant: {
     id: string;
     businessName: string;
+    businessType?: string;
     slug: string;
     phone: string;
     currency: string;
@@ -73,6 +75,7 @@ export default function SettingsPage() {
 
   // Business Form State
   const [businessName, setBusinessName] = useState('');
+  const [businessType, setBusinessType] = useState('Retail shops');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [location, setLocation] = useState('Main Store');
@@ -131,6 +134,7 @@ export default function SettingsPage() {
           setData(json);
           // Pre-populate forms
           setBusinessName(json.tenant?.businessName || '');
+          setBusinessType(json.tenant?.businessType || 'Retail shops');
           let rawPhone = json.tenant?.phone || '';
           const cleanDial = country.dialCode.replace(/\D/g, '');
           if (rawPhone.startsWith(cleanDial) && rawPhone.length > cleanDial.length) {
@@ -183,6 +187,7 @@ export default function SettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           businessName,
+          businessType,
           phone: fullPhone,
           address,
           location,
@@ -214,6 +219,7 @@ export default function SettingsPage() {
           tenant: {
             ...data.tenant,
             businessName,
+            businessType,
             phone,
             address,
             location,
@@ -512,6 +518,25 @@ export default function SettingsPage() {
                     onChange={(e) => setBusinessName(e.target.value)}
                     required
                   />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Business Type *</label>
+                  <select
+                    className="form-select"
+                    value={businessType}
+                    onChange={(e) => setBusinessType(e.target.value)}
+                    required
+                  >
+                    {BUSINESS_TYPES.map((bt) => (
+                      <option key={bt.id} value={bt.name}>
+                        {bt.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                    {getBusinessTypeDescription(businessType)}
+                  </div>
                 </div>
 
                 <div className="form-group">

@@ -284,6 +284,7 @@ export async function GET(req: NextRequest) {
       success: true,
       currency: auth.tenant.currency || '$',
       businessName: auth.tenant.businessName,
+      businessType: auth.tenant.businessType || 'Retail shops',
       period,
       revenueSummary: {
         totalRevenue: Number(totalRevenue.toFixed(2)),

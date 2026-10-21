@@ -154,6 +154,7 @@ export async function POST(req: NextRequest) {
       refundedAmount: 0,
       outstandingBalance: isPaid ? 0 : totalAmount,
       vendor: auth.tenant.businessName,
+      businessType: auth.tenant.businessType || 'Retail shops',
       employee: auth.user?.fullName || auth.tenant.defaultEmployee || 'Cashier',
       location: auth.tenant.location || 'Main Store',
       deviceId: auth.tenant.deviceId || '',

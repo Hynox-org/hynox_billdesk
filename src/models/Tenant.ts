@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface ITenant extends Document {
   businessName: string;
+  businessType?: string;
   slug: string;
   phone: string;
   currency: string;
@@ -33,6 +34,7 @@ export interface ITenant extends Document {
 const TenantSchema: Schema<ITenant> = new Schema(
   {
     businessName: { type: String, required: true, trim: true },
+    businessType: { type: String, default: 'Retail shops', trim: true },
     slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
     phone: { type: String, required: true, trim: true },
     currency: { type: String, default: '$' },

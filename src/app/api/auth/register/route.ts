@@ -18,7 +18,7 @@ function generateSlug(name: string): string {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { fullName, email, password, businessName, phone, address, currency = '$', otp } = body;
+    const { fullName, email, password, businessName, businessType = 'Retail shops', phone, address, currency = '$', otp } = body;
 
     if (!fullName || !email || !password || !businessName || !phone) {
       return NextResponse.json(
@@ -87,6 +87,7 @@ export async function POST(req: NextRequest) {
     const slug = generateSlug(businessName);
     const tenant = await Tenant.create({
       businessName: businessName.trim(),
+      businessType: businessType ? businessType.trim() : 'Retail shops',
       slug,
       phone: phone.trim(),
       currency,
@@ -162,6 +163,7 @@ export async function POST(req: NextRequest) {
       tenant: {
         id: tenant._id,
         businessName: tenant.businessName,
+        businessType: tenant.businessType || 'Retail shops',
         phone: tenant.phone,
         currency: tenant.currency,
         trialEndsAt: tenant.trialEndsAt,

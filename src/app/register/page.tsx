@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   Zap,
   Store,
+  Briefcase,
   User,
   Mail,
   Lock,
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react';
 import CountryDropdown from '@/components/CountryDropdown';
 import { useCountry } from '@/context/CountryContext';
+import { BUSINESS_TYPES, getBusinessTypeDescription } from '@/lib/businessTypes';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -31,6 +33,7 @@ export default function RegisterPage() {
     email: '',
     password: '',
     businessName: '',
+    businessType: 'Retail shops',
     phone: '',
     address: '',
     currency: '$',
@@ -83,6 +86,11 @@ export default function RegisterPage() {
 
     if (!formData.businessName.trim()) {
       setError('Please enter your business / store name');
+      return;
+    }
+
+    if (!formData.businessType) {
+      setError('Please select your business type');
       return;
     }
 
@@ -343,6 +351,51 @@ export default function RegisterPage() {
                     onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
                     required
                   />
+                </div>
+              </div>
+
+              {/* Business Type */}
+              <div className="form-group">
+                <label className="form-label">Business Type *</label>
+                <div style={{ position: 'relative' }}>
+                  <Briefcase
+                    size={16}
+                    style={{
+                      position: 'absolute',
+                      left: '12px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: 'var(--text-muted)',
+                    }}
+                  />
+                  <select
+                    className="form-select"
+                    style={{ paddingLeft: '36px' }}
+                    value={formData.businessType}
+                    onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
+                    required
+                  >
+                    {BUSINESS_TYPES.map((bt) => (
+                      <option key={bt.id} value={bt.name}>
+                        {bt.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div
+                  style={{
+                    fontSize: '0.78rem',
+                    color: 'var(--text-secondary)',
+                    marginTop: '6px',
+                    padding: '6px 10px',
+                    background: 'var(--color-light-green)',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-subtle)',
+                    lineHeight: '1.4',
+                  }}
+                >
+                  <strong style={{ color: 'var(--primary)' }}>{formData.businessType}:</strong>{' '}
+                  {getBusinessTypeDescription(formData.businessType)}
                 </div>
               </div>
 

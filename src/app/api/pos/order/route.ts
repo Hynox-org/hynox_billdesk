@@ -37,7 +37,9 @@ export async function POST(req: NextRequest) {
       customerName = 'Valued Customer',
       customerPhone,
       items,
-      tax = 0,
+      tax,
+      taxRate,
+      taxName,
       paymentStatus = 'PAID_CASH',
       paymentMethod = 'CASH',
       notes = '',
@@ -85,10 +87,19 @@ export async function POST(req: NextRequest) {
     });
 
     const subtotal = sanitizedItems.reduce((acc: number, item: any) => acc + item.lineTotal, 0);
-    const taxAmount = Math.max(0, Number(tax) || 0);
     const parsedDiscount = Math.max(0, Number(rawDiscount) || 0);
-    const discountAmount = Math.min(subtotal + taxAmount, parsedDiscount);
-    const totalAmount = Number((subtotal + taxAmount - discountAmount).toFixed(2));
+    const discountAmount = Math.min(subtotal, parsedDiscount);
+    const taxableAmount = Math.max(0, subtotal - discountAmount);
+
+    const resolvedTaxRate = taxRate !== undefined
+      ? Math.max(0, Number(taxRate) || 0)
+      : (auth.tenant.defaultTaxRate !== undefined ? auth.tenant.defaultTaxRate : 18);
+
+    const taxAmount = tax !== undefined
+      ? Math.max(0, Number(tax) || 0)
+      : Number(((taxableAmount * resolvedTaxRate) / 100).toFixed(2));
+
+    const totalAmount = Number((taxableAmount + taxAmount).toFixed(2));
 
     const orderNumber = generateOrderNumber();
     const now = new Date();
@@ -148,6 +159,8 @@ export async function POST(req: NextRequest) {
       items: sanitizedItems,
       subtotal,
       tax: taxAmount,
+      taxRate: resolvedTaxRate,
+      taxName: taxName || auth.tenant.defaultTaxName || (resolvedTaxRate > 0 ? `GST ${resolvedTaxRate}%` : ''),
       discount: discountAmount,
       totalAmount,
       currency: auth.tenant.currency || '$',
@@ -201,11 +214,11 @@ export async function POST(req: NextRequest) {
       shippingCountry: auth.tenant.country || 'IN',
       shippingPhone: cleanPhone,
       // Tax Breakdown
-      tax1Name: taxAmount > 0 ? (auth.tenant.defaultTaxName || 'GST 18%') : '',
+      tax1Name: taxAmount > 0 ? (taxName || auth.tenant.defaultTaxName || `GST ${resolvedTaxRate}%`) : '',
       tax1Value: taxAmount,
       tax2Name: auth.tenant.defaultTax2Name || '',
       tax2Value: 0,
-      gstNumber: auth.tenant.showGstOnReceipt && auth.tenant.gstNumber ? auth.tenant.gstNumber.trim() : '',
+      gstNumber: auth.tenant.gstNumber ? auth.tenant.gstNumber.trim() : '',
       googleProfileUrl: auth.tenant.showGoogleReviewOnReceipt && auth.tenant.googleProfileUrl ? auth.tenant.googleProfileUrl.trim() : '',
     });
 

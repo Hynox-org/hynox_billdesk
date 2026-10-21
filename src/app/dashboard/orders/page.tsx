@@ -52,6 +52,8 @@ interface Order {
   items: OrderItem[];
   subtotal: number;
   tax: number;
+  taxRate?: number;
+  taxName?: string;
   discount: number;
   totalAmount: number;
   currency?: string;
@@ -134,6 +136,7 @@ interface TenantExportInfo {
   country?: string;
   defaultEmployee?: string;
   defaultTaxName?: string;
+  defaultTaxRate?: number;
   defaultTax2Name?: string;
   deviceId?: string;
 }
@@ -573,7 +576,11 @@ export default function OrdersPage() {
       const source = o.source || 'POS';
 
       const tax1Name =
-        o.tax1Name || (o.tax > 0 ? tenantInfo?.defaultTaxName || 'GST 18%' : '');
+        o.tax1Name ||
+        o.taxName ||
+        (o.tax > 0
+          ? (tenantInfo?.defaultTaxName || (o.taxRate !== undefined ? `GST ${o.taxRate}%` : 'GST 18%'))
+          : '');
       const tax1Value =
         o.tax1Value !== undefined && o.tax1Value > 0
           ? Number(o.tax1Value).toFixed(2)

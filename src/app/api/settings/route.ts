@@ -37,6 +37,7 @@ export async function GET() {
         country: tenant.country || '',
         defaultEmployee: tenant.defaultEmployee || '',
         defaultTaxName: tenant.defaultTaxName || 'GST 18%',
+        defaultTaxRate: tenant.defaultTaxRate !== undefined ? tenant.defaultTaxRate : 18,
         defaultTax2Name: tenant.defaultTax2Name || '',
         deviceId: tenant.deviceId || '',
         gstNumber: tenant.gstNumber || '',
@@ -82,6 +83,7 @@ export async function PUT(req: NextRequest) {
       country,
       defaultEmployee,
       defaultTaxName,
+      defaultTaxRate,
       defaultTax2Name,
       deviceId,
       gstNumber,
@@ -112,6 +114,7 @@ export async function PUT(req: NextRequest) {
     if (country !== undefined) tenantUpdate.country = country.trim();
     if (defaultEmployee !== undefined) tenantUpdate.defaultEmployee = defaultEmployee.trim();
     if (defaultTaxName !== undefined) tenantUpdate.defaultTaxName = defaultTaxName.trim();
+    if (defaultTaxRate !== undefined) tenantUpdate.defaultTaxRate = Math.max(0, Number(defaultTaxRate) || 0);
     if (defaultTax2Name !== undefined) tenantUpdate.defaultTax2Name = defaultTax2Name.trim();
     if (deviceId !== undefined) tenantUpdate.deviceId = deviceId.trim();
     if (gstNumber !== undefined) tenantUpdate.gstNumber = typeof gstNumber === 'string' ? gstNumber.trim() : '';

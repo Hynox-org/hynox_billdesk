@@ -25,6 +25,8 @@ export interface IOrder extends Document {
   items: IOrderItem[];
   subtotal: number;
   tax: number;
+  taxRate?: number;
+  taxName?: string;
   discount: number;
   totalAmount: number;
   currency: string;
@@ -133,6 +135,8 @@ const OrderSchema: Schema<IOrder> = new Schema(
     items: { type: [OrderItemSchema], required: true },
     subtotal: { type: Number, required: true },
     tax: { type: Number, default: 0 },
+    taxRate: { type: Number, default: 0 },
+    taxName: { type: String, default: '', trim: true },
     discount: { type: Number, default: 0 },
     totalAmount: { type: Number, required: true },
     currency: { type: String, default: '$' },

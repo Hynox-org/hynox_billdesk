@@ -85,6 +85,11 @@ export default function OrderCreationPage() {
   const [discountType, setDiscountType] = useState<'PERCENT' | 'FLAT'>('PERCENT');
   const [discountValue, setDiscountValue] = useState<string>('');
 
+  // Tax / GST State (Loaded from settings, modifiable in checkout)
+  const [isTaxEnabled, setIsTaxEnabled] = useState(true);
+  const [taxRate, setTaxRate] = useState<number | string>(18);
+  const [taxName, setTaxName] = useState('GST');
+
   // Post-Order Sharing Modal
   const [completedOrder, setCompletedOrder] = useState<{
     orderNumber: string;
@@ -99,6 +104,8 @@ export default function OrderCreationPage() {
     subtotal: number;
     discount: number;
     tax: number;
+    taxRate?: number;
+    taxName?: string;
     totalAmount: number;
     currency: string;
     paymentMethod: string;
@@ -119,6 +126,8 @@ export default function OrderCreationPage() {
     showGstOnReceipt?: boolean;
     googleProfileUrl?: string;
     showGoogleReviewOnReceipt?: boolean;
+    defaultTaxName?: string;
+    defaultTaxRate?: number;
   } | null>(null);
 
   // Load Catalog Items
@@ -143,6 +152,8 @@ export default function OrderCreationPage() {
           const authData = await authRes.json();
           if (authData.tenant?.currency) setCurrency(authData.tenant.currency);
           if (authData.tenant) {
+            const tRate = authData.tenant.defaultTaxRate !== undefined ? authData.tenant.defaultTaxRate : 18;
+            const tName = authData.tenant.defaultTaxName || 'GST';
             setTenantInfo({
               businessName: authData.tenant.businessName,
               businessType: authData.tenant.businessType,
@@ -150,7 +161,12 @@ export default function OrderCreationPage() {
               showGstOnReceipt: Boolean(authData.tenant.showGstOnReceipt),
               googleProfileUrl: authData.tenant.googleProfileUrl,
               showGoogleReviewOnReceipt: Boolean(authData.tenant.showGoogleReviewOnReceipt),
+              defaultTaxName: tName,
+              defaultTaxRate: tRate,
             });
+            setTaxRate(tRate);
+            setTaxName(tName);
+            setIsTaxEnabled(tRate > 0);
           }
         }
       } catch (err) {
@@ -262,6 +278,10 @@ export default function OrderCreationPage() {
     setCustomerName('');
     setDiscountValue('');
     setDiscountType('PERCENT');
+    if (tenantInfo?.defaultTaxRate !== undefined) {
+      setTaxRate(tenantInfo.defaultTaxRate);
+      setIsTaxEnabled(tenantInfo.defaultTaxRate > 0);
+    }
     setPaymentMethod('CASH');
     setOrderError(null);
     setActiveStep(1);
@@ -284,7 +304,10 @@ export default function OrderCreationPage() {
     discountAmount = Number(Math.min(subtotal, parsedDiscountNum).toFixed(2));
     parsedPercent = subtotal > 0 ? Number(((discountAmount / subtotal) * 100).toFixed(1)) : 0;
   }
-  const totalAmount = Number(Math.max(0, subtotal - discountAmount).toFixed(2));
+  const taxableSubtotal = Math.max(0, subtotal - discountAmount);
+  const activeTaxRate = isTaxEnabled ? Math.max(0, parseFloat(String(taxRate)) || 0) : 0;
+  const taxAmount = Number(((taxableSubtotal * activeTaxRate) / 100).toFixed(2));
+  const totalAmount = Number((taxableSubtotal + taxAmount).toFixed(2));
   const totalItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   // Submit Order & Dispatch WhatsApp Link
@@ -328,11 +351,15 @@ export default function OrderCreationPage() {
           customerName: customerName.trim() || 'Valued Customer',
           customerPhone: fullInternationalPhone,
           items: cart,
-          taxRate: 0,
+          subtotal: subtotal,
+          tax: taxAmount,
+          taxRate: activeTaxRate,
+          taxName: taxName,
           discount: discountAmount,
           discountAmount: discountAmount,
           discountPercent: parsedPercent,
           discountType,
+          totalAmount: totalAmount,
           paymentMethod: paymentMethod,
           paymentStatus: paymentStatus,
         }),
@@ -350,7 +377,9 @@ export default function OrderCreationPage() {
         items: data.order.items && data.order.items.length > 0 ? data.order.items : cart,
         subtotal: typeof data.order.subtotal === 'number' ? data.order.subtotal : subtotal,
         discount: typeof data.order.discount === 'number' ? data.order.discount : discountAmount,
-        tax: typeof data.order.tax === 'number' ? data.order.tax : 0,
+        tax: typeof data.order.tax === 'number' ? data.order.tax : taxAmount,
+        taxRate: typeof data.order.taxRate === 'number' ? data.order.taxRate : activeTaxRate,
+        taxName: data.order.taxName || data.order.tax1Name || taxName,
         totalAmount: typeof data.order.totalAmount === 'number' ? data.order.totalAmount : totalAmount,
         currency: currency,
         paymentMethod: data.order.paymentMethod || paymentMethod,
@@ -360,8 +389,8 @@ export default function OrderCreationPage() {
         phone: `${country.dialCode} ${subscriberDigits}`,
         pdfUrl: data.pdfUrl || `/api/receipts/${data.order.orderNumber}/pdf`,
         receiptUrl: data.receiptUrl || `/receipt/${data.order.orderNumber}`,
-        gstNumber: data.gstNumber,
-        googleProfileUrl: data.googleProfileUrl,
+        gstNumber: data.order.gstNumber || data.gstNumber || tenantInfo?.gstNumber || null,
+        googleProfileUrl: data.googleProfileUrl || tenantInfo?.googleProfileUrl || null,
       });
 
       // Clear active cart after successful creation
@@ -841,6 +870,82 @@ export default function OrderCreationPage() {
               )}
             </div>
 
+            {/* Tax / GST Section (Modifiable in Checkout Card) */}
+            <div className="pos-discount-section" style={{ marginTop: '10px' }}>
+              <div className="pos-discount-header">
+                <span className="pos-discount-title">
+                  <Percent size={13} />
+                  <span>Tax / GST</span>
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsTaxEnabled(!isTaxEnabled)}
+                    className={`pos-discount-toggle-btn ${isTaxEnabled ? 'active' : ''}`}
+                    title={isTaxEnabled ? 'Tax is applied' : 'Tax is exempted'}
+                    style={{ fontSize: '0.72rem', padding: '3px 8px' }}
+                  >
+                    {isTaxEnabled ? 'Applied' : 'Exempt'}
+                  </button>
+                </div>
+              </div>
+
+              {isTaxEnabled && (
+                <>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '6px' }}>
+                    <div className="pos-discount-input-wrapper" style={{ flex: 1 }}>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="any"
+                        placeholder="Tax %"
+                        value={taxRate}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === '') {
+                            setTaxRate('');
+                            return;
+                          }
+                          const num = Number(val);
+                          if (!isNaN(num) && num >= 0 && num <= 100) {
+                            setTaxRate(val);
+                          }
+                        }}
+                        className="form-input pos-discount-input has-right"
+                      />
+                      <span className="pos-discount-input-symbol pos-symbol-right">%</span>
+                    </div>
+
+                    {/* Quick Preset Pills for Fast 1-Tap Switching */}
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                      {[0, 5, 12, 18, 28].map((rate) => (
+                        <button
+                          key={rate}
+                          type="button"
+                          onClick={() => setTaxRate(rate)}
+                          className={`btn btn-secondary btn-sm`}
+                          style={{
+                            padding: '4px 7px',
+                            fontSize: '0.72rem',
+                            height: '34px',
+                            minWidth: '34px',
+                            fontWeight: Number(taxRate) === rate ? 700 : 500,
+                            borderColor: Number(taxRate) === rate ? 'var(--whatsapp)' : 'var(--border-subtle)',
+                            color: Number(taxRate) === rate ? 'var(--whatsapp)' : 'var(--text-secondary)',
+                            background: Number(taxRate) === rate ? 'var(--color-light-green)' : 'transparent',
+                          }}
+                        >
+                          {rate}%
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                </>
+              )}
+            </div>
+
             {/* Pricing Total Summary Box */}
             <div className="pos-summary-card">
               <div className="pos-summary-row">
@@ -854,6 +959,15 @@ export default function OrderCreationPage() {
                     Discount ({discountType === 'PERCENT' ? `${parsedPercent}%` : `${currency}${discountAmount.toFixed(2)}`}):
                   </span>
                   <span>-{currency}{discountAmount.toFixed(2)}</span>
+                </div>
+              )}
+
+              {activeTaxRate > 0 && (
+                <div className="pos-summary-row" style={{ color: 'var(--text-secondary)' }}>
+                  <span>
+                    {taxName || 'Tax'} ({activeTaxRate}%):
+                  </span>
+                  <span>+{currency}{taxAmount.toFixed(2)}</span>
                 </div>
               )}
 
@@ -1095,16 +1209,10 @@ export default function OrderCreationPage() {
                       </div>
                     )}
                     {completedOrder.tax > 0 && (
-                      <>
-                        <div className="pos-ref-receipt-calc-row">
-                          <span>CGST</span>
-                          <span>{completedOrder.currency}{(completedOrder.tax / 2).toFixed(2)}</span>
-                        </div>
-                        <div className="pos-ref-receipt-calc-row">
-                          <span>SGST</span>
-                          <span>{completedOrder.currency}{(completedOrder.tax / 2).toFixed(2)}</span>
-                        </div>
-                      </>
+                      <div className="pos-ref-receipt-calc-row">
+                        <span>{completedOrder.taxName ? `${completedOrder.taxName} (${completedOrder.taxRate ?? 18}%)` : `Tax (${completedOrder.taxRate ?? 18}%)`}</span>
+                        <span>+{completedOrder.currency}{completedOrder.tax.toFixed(2)}</span>
+                      </div>
                     )}
                   </div>
                 )}

@@ -16,6 +16,7 @@ export interface ITenant extends Document {
   country?: string;
   defaultEmployee?: string;
   defaultTaxName?: string;
+  defaultTaxRate?: number;
   defaultTax2Name?: string;
   deviceId?: string;
   gstNumber?: string;
@@ -48,6 +49,7 @@ const TenantSchema: Schema<ITenant> = new Schema(
     country: { type: String, default: '', trim: true },
     defaultEmployee: { type: String, default: '', trim: true },
     defaultTaxName: { type: String, default: 'GST 18%', trim: true },
+    defaultTaxRate: { type: Number, default: 18 },
     defaultTax2Name: { type: String, default: '', trim: true },
     deviceId: { type: String, default: '', trim: true },
     gstNumber: { type: String, default: '', trim: true },

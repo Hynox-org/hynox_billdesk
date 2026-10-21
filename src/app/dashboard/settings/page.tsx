@@ -50,6 +50,7 @@ interface SettingsData {
     country?: string;
     defaultEmployee?: string;
     defaultTaxName?: string;
+    defaultTaxRate?: number;
     defaultTax2Name?: string;
     deviceId?: string;
     gstNumber?: string;
@@ -86,6 +87,7 @@ export default function SettingsPage() {
   const [countryName, setCountryName] = useState('');
   const [defaultEmployee, setDefaultEmployee] = useState('');
   const [defaultTaxName, setDefaultTaxName] = useState('GST 18%');
+  const [defaultTaxRate, setDefaultTaxRate] = useState<number | string>(18);
   const [defaultTax2Name, setDefaultTax2Name] = useState('');
   const [deviceId, setDeviceId] = useState('');
   const [currency, setCurrency] = useState('$');
@@ -150,6 +152,7 @@ export default function SettingsPage() {
           setCountryName(json.tenant?.country || '');
           setDefaultEmployee(json.tenant?.defaultEmployee || '');
           setDefaultTaxName(json.tenant?.defaultTaxName || 'GST 18%');
+          setDefaultTaxRate(json.tenant?.defaultTaxRate !== undefined ? json.tenant.defaultTaxRate : 18);
           setDefaultTax2Name(json.tenant?.defaultTax2Name || '');
           setDeviceId(json.tenant?.deviceId || '');
           setCurrency(json.tenant?.currency || '$');
@@ -198,6 +201,7 @@ export default function SettingsPage() {
           country: countryName,
           defaultEmployee,
           defaultTaxName,
+          defaultTaxRate: Number(defaultTaxRate) || 0,
           defaultTax2Name,
           deviceId,
           currency,
@@ -230,6 +234,7 @@ export default function SettingsPage() {
             country: countryName,
             defaultEmployee,
             defaultTaxName,
+            defaultTaxRate: Number(defaultTaxRate) || 0,
             defaultTax2Name,
             deviceId,
             currency,
@@ -769,26 +774,33 @@ export default function SettingsPage() {
                       />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '10px' }}>
                       <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label className="form-label" style={{ fontSize: '0.78rem' }}>Tax 1 Label</label>
+                        <label className="form-label" style={{ fontSize: '0.78rem' }}>Default Tax Label</label>
                         <input
                           type="text"
                           className="form-input"
-                          placeholder="e.g. GST 18%, IGST 18%"
+                          placeholder="e.g. GST, VAT, Sales Tax"
                           value={defaultTaxName}
                           onChange={(e) => setDefaultTaxName(e.target.value)}
                         />
                       </div>
                       <div className="form-group" style={{ marginBottom: 0 }}>
-                        <label className="form-label" style={{ fontSize: '0.78rem' }}>Tax 2 Label (Optional)</label>
-                        <input
-                          type="text"
-                          className="form-input"
-                          placeholder="e.g. SGST 9%"
-                          value={defaultTax2Name}
-                          onChange={(e) => setDefaultTax2Name(e.target.value)}
-                        />
+                        <label className="form-label" style={{ fontSize: '0.78rem' }}>Default Tax Rate (%)</label>
+                        <div style={{ position: 'relative' }}>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="any"
+                            className="form-input"
+                            placeholder="18"
+                            value={defaultTaxRate}
+                            onChange={(e) => setDefaultTaxRate(e.target.value)}
+                            style={{ paddingRight: '28px' }}
+                          />
+                          <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>%</span>
+                        </div>
                       </div>
                     </div>
 

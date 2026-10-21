@@ -35,6 +35,8 @@ export interface ReceiptViewProps {
   items: ReceiptItemData[];
   subtotal: number;
   tax: number;
+  taxRate?: number;
+  taxName?: string;
   discount: number;
   totalAmount: number;
   currency: string;
@@ -63,6 +65,8 @@ export default function ReceiptView({
   items,
   subtotal,
   tax,
+  taxRate,
+  taxName,
   discount,
   totalAmount,
   currency,
@@ -351,13 +355,37 @@ export default function ReceiptView({
                 )}
 
                 {tax > 0 && (
-                  <div className="receipt-total-line">
-                    <span>TAX / GST</span>
-                    <span>
-                      {currency}
-                      {Number(tax || 0).toFixed(2)}
-                    </span>
-                  </div>
+                  <>
+                    {taxRate !== undefined && taxRate > 0 && showGst && gstNumber ? (
+                      <>
+                        <div className="receipt-total-line">
+                          <span>CGST ({(taxRate / 2).toFixed(1)}%)</span>
+                          <span>
+                            {currency}
+                            {(Number(tax || 0) / 2).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="receipt-total-line">
+                          <span>SGST ({(taxRate / 2).toFixed(1)}%)</span>
+                          <span>
+                            {currency}
+                            {(Number(tax || 0) / 2).toFixed(2)}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="receipt-total-line">
+                        <span>
+                          {taxName || 'TAX'}
+                          {taxRate !== undefined && taxRate > 0 ? ` (${taxRate}%)` : ''}
+                        </span>
+                        <span>
+                          {currency}
+                          {Number(tax || 0).toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 {/* Double Line Separator */}

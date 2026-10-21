@@ -53,6 +53,8 @@ export async function GET(req: NextRequest, context: RouteParams) {
       })),
       subtotal: order.subtotal,
       tax: order.tax,
+      taxRate: order.taxRate !== undefined ? order.taxRate : (tenant?.defaultTaxRate !== undefined ? tenant.defaultTaxRate : (order.tax > 0 ? 18 : 0)),
+      taxName: order.taxName || order.tax1Name || tenant?.defaultTaxName || 'GST',
       discount: order.discount,
       totalAmount: order.totalAmount,
       paymentStatus: order.paymentStatus,

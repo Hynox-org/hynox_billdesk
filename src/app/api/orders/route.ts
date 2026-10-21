@@ -65,8 +65,10 @@ export async function GET(req: NextRequest) {
         country: auth.tenant.country || '',
         defaultEmployee: auth.tenant.defaultEmployee || '',
         defaultTaxName: auth.tenant.defaultTaxName || 'GST 18%',
+        defaultTaxRate: auth.tenant.defaultTaxRate !== undefined ? auth.tenant.defaultTaxRate : 18,
         defaultTax2Name: auth.tenant.defaultTax2Name || '',
         deviceId: auth.tenant.deviceId || '',
+        gstNumber: auth.tenant.gstNumber || '',
       },
     });
   } catch (error: any) {

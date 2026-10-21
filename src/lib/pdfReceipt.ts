@@ -21,6 +21,8 @@ export interface ReceiptPdfData {
   items: ReceiptPdfItem[];
   subtotal: number;
   tax: number;
+  taxRate?: number;
+  taxName?: string;
   discount: number;
   totalAmount: number;
   paymentStatus?: string;
@@ -528,7 +530,16 @@ export async function generateReceiptPdf(data: ReceiptPdfData): Promise<Uint8Arr
   }
 
   if (data.tax > 0) {
-    renderTotalRow('TAX / GST', `${curr} ${data.tax.toFixed(2)}`);
+    if (data.taxRate !== undefined && data.taxRate > 0 && data.showGstOnReceipt && data.gstNumber) {
+      renderTotalRow(`CGST (${(data.taxRate / 2).toFixed(1)}%)`, `${curr} ${(data.tax / 2).toFixed(2)}`);
+      renderTotalRow(`SGST (${(data.taxRate / 2).toFixed(1)}%)`, `${curr} ${(data.tax / 2).toFixed(2)}`);
+    } else {
+      const taxLabel =
+        data.taxRate !== undefined && data.taxRate > 0
+          ? `${safePdfText(data.taxName || 'GST')} (${data.taxRate}%)`
+          : safePdfText(data.taxName || 'TAX / GST');
+      renderTotalRow(taxLabel, `${curr} ${data.tax.toFixed(2)}`);
+    }
   }
 
   // Double Line Separator

@@ -94,6 +94,8 @@ export default async function PublicReceiptPage(props: ReceiptPageProps) {
       items={serializedItems}
       subtotal={Number(order.subtotal || 0)}
       tax={Number(order.tax || 0)}
+      taxRate={order.taxRate !== undefined ? order.taxRate : (tenant?.defaultTaxRate !== undefined ? tenant.defaultTaxRate : (order.tax > 0 ? 18 : 0))}
+      taxName={order.taxName || order.tax1Name || tenant?.defaultTaxName || 'GST'}
       discount={Number(order.discount || 0)}
       totalAmount={Number(order.totalAmount || 0)}
       currency={currency}

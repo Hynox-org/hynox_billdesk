@@ -20,7 +20,7 @@ export default function PaywallPage() {
       });
   }, []);
 
-  const adminWhatsAppUrl = `https://wa.me/15550199?text=${encodeURIComponent(
+  const adminWhatsAppUrl = `https://wa.me/918870524355?text=${encodeURIComponent(
     `Hello BillDesk Super Admin, I would like to upgrade my business (${tenant?.businessName || 'My Store'}) to the Pro Subscription plan.`
   )}`;
 

@@ -103,24 +103,37 @@ export async function POST(req: NextRequest) {
 
     const { cleanPhone, url, rawText } = generateWhatsAppUrl({
       businessName: auth.tenant.businessName,
+      businessType: auth.tenant.businessType || '',
       businessPhone: auth.tenant.phone,
       businessAddress: auth.tenant.address,
       currency: auth.tenant.currency || '$',
       orderNumber: order.orderNumber,
       customerName: order.customerName,
       customerPhone: order.customerPhone,
-      items: order.items,
+      createdAt: order.createdAt,
+      items: (order.items || []).map((i: any) => ({
+        productName: i.productName,
+        quantity: i.quantity,
+        unitPrice: i.unitPrice,
+        lineTotal: i.lineTotal,
+        sku: i.sku || '',
+      })),
       subtotal: order.subtotal,
       tax: order.tax,
       discount: order.discount,
       totalAmount: order.totalAmount,
       paymentStatus: order.paymentStatus,
+      paymentMethod: order.paymentMethod,
+      paymentReference: order.paymentReference,
+      employee: order.employee || auth.tenant.defaultEmployee,
+      notes: order.notes,
       defaultCountryCode: auth.tenant.countryCode || '1',
       gstNumber: auth.tenant.gstNumber,
       showGstOnReceipt: Boolean(auth.tenant.showGstOnReceipt),
       googleProfileUrl: auth.tenant.googleProfileUrl,
       showGoogleReviewOnReceipt: Boolean(auth.tenant.showGoogleReviewOnReceipt),
       receiptUrl,
+      pdfUrl,
     });
 
     return NextResponse.json({

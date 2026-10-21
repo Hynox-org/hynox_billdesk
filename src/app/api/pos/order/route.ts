@@ -91,6 +91,8 @@ export async function POST(req: NextRequest) {
     const totalAmount = Number((subtotal + taxAmount - discountAmount).toFixed(2));
 
     const orderNumber = generateOrderNumber();
+    const now = new Date();
+    const isPaid = normalizedPaymentStatus !== 'PENDING';
 
     const envAppUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL;
     const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || 'localhost:3000';
@@ -102,29 +104,38 @@ export async function POST(req: NextRequest) {
     // Generate WhatsApp Receipt & deep link
     const { cleanPhone, url, rawText } = generateWhatsAppUrl({
       businessName: auth.tenant.businessName,
+      businessType: auth.tenant.businessType || '',
       businessPhone: auth.tenant.phone,
       businessAddress: auth.tenant.address,
       currency: auth.tenant.currency || '$',
       orderNumber,
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
-      items: sanitizedItems,
+      createdAt: now,
+      items: sanitizedItems.map((i: any) => ({
+        productName: i.productName,
+        quantity: i.quantity,
+        unitPrice: i.unitPrice,
+        lineTotal: i.lineTotal,
+        sku: i.sku || '',
+      })),
       subtotal,
       tax: taxAmount,
       discount: discountAmount,
       totalAmount,
       paymentStatus: normalizedPaymentStatus,
       paymentMethod,
+      paymentReference: body.paymentReference || `#${orderNumber}`,
+      employee: body.employee || auth.tenant.defaultEmployee || 'Cashier',
+      notes: body.notes || '',
       defaultCountryCode: auth.tenant.countryCode || '1',
       gstNumber: auth.tenant.gstNumber,
       showGstOnReceipt: Boolean(auth.tenant.showGstOnReceipt),
       googleProfileUrl: auth.tenant.googleProfileUrl,
       showGoogleReviewOnReceipt: Boolean(auth.tenant.showGoogleReviewOnReceipt),
       receiptUrl,
+      pdfUrl,
     });
-
-    const isPaid = normalizedPaymentStatus !== 'PENDING';
-    const now = new Date();
 
     // Save Order into Database with complete vendor and Shopify-standard export attributes
     const order = await Order.create({

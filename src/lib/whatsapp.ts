@@ -20,16 +20,21 @@ export interface ReceiptItem {
   quantity: number;
   unitPrice: number;
   lineTotal: number;
+  sku?: string;
 }
 
 export interface ReceiptOptions {
   businessName: string;
+  businessType?: string;
   businessPhone?: string;
   businessAddress?: string;
+  businessEmail?: string;
   currency: string;
   orderNumber: string;
   customerName?: string;
   customerPhone: string;
+  customerGst?: string;
+  createdAt?: Date | string;
   items: ReceiptItem[];
   subtotal: number;
   tax: number;
@@ -37,103 +42,53 @@ export interface ReceiptOptions {
   totalAmount: number;
   paymentStatus?: string;
   paymentMethod?: string;
+  paymentReference?: string;
+  employee?: string;
+  notes?: string;
   defaultCountryCode?: string;
   gstNumber?: string;
   showGstOnReceipt?: boolean;
   googleProfileUrl?: string;
   showGoogleReviewOnReceipt?: boolean;
   receiptUrl?: string;
+  pdfUrl?: string;
 }
 
 /**
- * Builds a deterministic, beautifully formatted WhatsApp text receipt
- * using standard WhatsApp markdown (*bold*, _italic_, etc.)
+ * Builds a clean, concise WhatsApp share message with greeting,
+ * invoice download link, and thanks.
  */
 export function buildWhatsAppReceiptText(options: ReceiptOptions): string {
   const {
     businessName,
-    businessPhone,
-    businessAddress,
-    currency,
     orderNumber,
     customerName,
-    items,
-    subtotal,
-    tax,
-    discount = 0,
-    totalAmount,
-    paymentStatus = 'PAID_CASH',
-    paymentMethod,
-    gstNumber,
-    showGstOnReceipt,
+    pdfUrl,
+    receiptUrl,
     googleProfileUrl,
     showGoogleReviewOnReceipt,
-    receiptUrl,
   } = options;
 
-  const dateStr = new Date().toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const downloadLink = (pdfUrl && pdfUrl.trim()) || (receiptUrl && receiptUrl.trim()) || '';
+  const customerGreeting = customerName && customerName.trim() ? customerName.trim() : 'Customer';
+  const cleanBusinessName = businessName && businessName.trim() ? businessName.trim() : 'our store';
 
-  const paymentLabels: Record<string, string> = {
-    CASH: 'Paid via Cash',
-    CARD: 'Paid via Card',
-    UPI: 'Paid via UPI / QR',
-    PAID_CASH: 'Paid via Cash',
-    PAID_ONLINE: 'Paid Online / Card / UPI',
-    PENDING: 'Payment Pending / Pay Later',
-    COD: 'Cash on Delivery',
-  };
+  const messageParts: string[] = [
+    `Dear ${customerGreeting},`,
+    `Thank you for your order with *${cleanBusinessName}*! (Order #${orderNumber})`,
+  ];
 
-  const paymentStr =
-    (paymentMethod && paymentLabels[paymentMethod]) ||
-    paymentLabels[paymentStatus] ||
-    paymentStatus;
-
-  const itemLines = items
-    .map(
-      (item) =>
-        `• *${item.productName}*\n  ${item.quantity} x ${currency}${item.unitPrice.toFixed(
-          2
-        )} = *${currency}${item.lineTotal.toFixed(2)}*`
-    )
-    .join('\n');
-
-  let breakdown = `Subtotal: ${currency}${subtotal.toFixed(2)}`;
-  if (tax > 0) {
-    breakdown += `\nTax: ${currency}${tax.toFixed(2)}`;
-  }
-  if (discount > 0) {
-    breakdown += `\nDiscount: -${currency}${discount.toFixed(2)}`;
+  if (downloadLink) {
+    messageParts.push(`Download your invoice:\n${downloadLink}`);
   }
 
-  const gstLine = showGstOnReceipt && gstNumber && gstNumber.trim() ? `GST: ${gstNumber.trim()}\n` : '';
-  const addressLine = businessAddress && businessAddress.trim() ? `Address: ${businessAddress.trim()}\n` : '';
-  const phoneLine = businessPhone && businessPhone.trim() ? `Contact: ${businessPhone.trim()}\n` : '';
-  const pdfLine = receiptUrl && receiptUrl.trim() ? `\nView / Download PDF Invoice:\n${receiptUrl.trim()}\n` : '';
-  const reviewLine =
-    showGoogleReviewOnReceipt && googleProfileUrl && googleProfileUrl.trim()
-      ? `\n*Review us on Google:*\n${googleProfileUrl.trim()}\n`
-      : '';
+  if (showGoogleReviewOnReceipt && googleProfileUrl && googleProfileUrl.trim()) {
+    messageParts.push(`Rate your experience on Google:\n${googleProfileUrl.trim()}`);
+  }
 
-  const receipt = `*RECEIPT: #${orderNumber}*
-*${businessName}*
-${addressLine}${phoneLine}${gstLine}Date: ${dateStr}
-Customer: ${customerName || 'Valued Customer'}
-━━━━━━━━━━━━━━━━━━━━
-${itemLines}
-━━━━━━━━━━━━━━━━━━━━
-${breakdown}
-*TOTAL: ${currency}${totalAmount.toFixed(2)}*
-━━━━━━━━━━━━━━━━━━━━
-Payment: ${paymentStr}${pdfLine}${reviewLine}
-_Thank you for your order!_`;
+  messageParts.push(`Thank you!\n*${cleanBusinessName}*`);
 
-  return receipt;
+  return messageParts.join('\n\n');
 }
 
 /**

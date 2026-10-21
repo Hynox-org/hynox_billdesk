@@ -37,27 +37,41 @@ export default async function PublicReceiptPage(props: ReceiptPageProps) {
 
   const envAppUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || '';
   const receiptUrl = `${envAppUrl}/receipt/${order.orderNumber}`;
+  const pdfUrl = `${envAppUrl}/api/receipts/${order.orderNumber}/pdf`;
 
   const { url: whatsappUrl } = generateWhatsAppUrl({
     businessName,
+    businessType: tenant?.businessType || '',
     businessPhone,
     businessAddress,
     currency,
     orderNumber: order.orderNumber,
     customerName: order.customerName,
     customerPhone: order.customerPhone,
-    items: order.items,
+    createdAt: order.createdAt,
+    items: (order.items || []).map((i: any) => ({
+      productName: i.productName,
+      quantity: i.quantity,
+      unitPrice: i.unitPrice,
+      lineTotal: i.lineTotal,
+      sku: i.sku || '',
+    })),
     subtotal: order.subtotal,
     tax: order.tax,
     discount: order.discount,
     totalAmount: order.totalAmount,
     paymentStatus: order.paymentStatus,
+    paymentMethod: order.paymentMethod,
+    paymentReference: order.paymentReference,
+    employee: order.employee || tenant?.defaultEmployee,
+    notes: order.notes,
     defaultCountryCode: tenant?.countryCode || '91',
     gstNumber,
     showGstOnReceipt: showGst,
     googleProfileUrl,
     showGoogleReviewOnReceipt: showGoogle,
     receiptUrl,
+    pdfUrl,
   });
 
   const serializedItems: ReceiptItemData[] = (order.items || []).map((i: any) => ({

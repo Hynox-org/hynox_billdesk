@@ -63,13 +63,19 @@ export function buildWhatsAppReceiptText(options: ReceiptOptions): string {
     businessName,
     orderNumber,
     customerName,
+    currency = '$',
+    totalAmount,
+    discount,
+    tax,
+    gstNumber,
+    showGstOnReceipt,
     pdfUrl,
     receiptUrl,
     googleProfileUrl,
     showGoogleReviewOnReceipt,
   } = options;
 
-  const downloadLink = (pdfUrl && pdfUrl.trim()) || (receiptUrl && receiptUrl.trim()) || '';
+  const downloadLink = (receiptUrl && receiptUrl.trim()) || (pdfUrl && pdfUrl.trim()) || '';
   const customerGreeting = customerName && customerName.trim() ? customerName.trim() : 'Customer';
   const cleanBusinessName = businessName && businessName.trim() ? businessName.trim() : 'our store';
 
@@ -78,15 +84,35 @@ export function buildWhatsAppReceiptText(options: ReceiptOptions): string {
     `Thank you for your order with *${cleanBusinessName}*! (Order #${orderNumber})`,
   ];
 
+  if (showGstOnReceipt && gstNumber && gstNumber.trim()) {
+    messageParts.push(`*GSTIN:* ${gstNumber.trim().toUpperCase()}`);
+  }
+
+  // Matching Order Summary
+  const summaryParts: string[] = [];
+  if (typeof totalAmount === 'number') {
+    summaryParts.push(`*Total Amount:* ${currency}${totalAmount.toFixed(2)}`);
+  }
+  if (typeof discount === 'number' && discount > 0) {
+    summaryParts.push(`*Discount:* -${currency}${discount.toFixed(2)}`);
+  }
+  if (typeof tax === 'number' && tax > 0) {
+    summaryParts.push(`*Tax / GST:* ${currency}${tax.toFixed(2)}`);
+  }
+
+  if (summaryParts.length > 0) {
+    messageParts.push(summaryParts.join('\n'));
+  }
+
   if (downloadLink) {
-    messageParts.push(`Download your invoice:\n${downloadLink}`);
+    messageParts.push(`View or download your digital receipt:\n${downloadLink}`);
   }
 
   if (showGoogleReviewOnReceipt && googleProfileUrl && googleProfileUrl.trim()) {
     messageParts.push(`Rate your experience on Google:\n${googleProfileUrl.trim()}`);
   }
 
-  messageParts.push(`Thank you!\n*${cleanBusinessName}*`);
+  messageParts.push(`Thank you for choosing us!\n*${cleanBusinessName}*`);
 
   return messageParts.join('\n\n');
 }
@@ -101,7 +127,7 @@ export function generateWhatsAppUrl(options: ReceiptOptions): {
 } {
   const cleanPhone = sanitizeWhatsAppPhone(
     options.customerPhone,
-    options.defaultCountryCode || '1'
+    options.defaultCountryCode || '91'
   );
   const rawText = buildWhatsAppReceiptText(options);
   const encodedText = encodeURIComponent(rawText);

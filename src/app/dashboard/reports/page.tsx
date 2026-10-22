@@ -138,7 +138,7 @@ export default function ReportsHubPage() {
       statValue: data?.topProducts?.[0]?.name || 'No sales yet',
       badge: data?.topProducts?.[0] ? `${data.topProducts[0].unitsSold} units sold` : '0 units',
       subMetrics: [
-        { label: 'Top Contributor', value: data?.topProducts?.[0] ? `${currency}${data.topProducts[0].totalRevenue.toFixed(2)}` : '$0.00' },
+        { label: 'Top Contributor', value: data?.topProducts?.[0] ? `${currency}${data.topProducts[0].totalRevenue.toFixed(2)}` : `${currency}0.00` },
         { label: 'Total Catalog', value: `${data?.inventoryHealth?.totalProducts || 0} items` },
         { label: 'Menu Share', value: data?.topProducts?.[0] ? `${data.topProducts[0].percentage}%` : '0%' },
       ],
@@ -155,7 +155,7 @@ export default function ReportsHubPage() {
       subMetrics: [
         { label: 'Recorded Channels', value: `${data?.paymentBreakdown?.length || 0} methods` },
         { label: 'Channel Bills', value: data?.paymentBreakdown?.[0] ? `${data.paymentBreakdown[0].count} orders` : '0' },
-        { label: 'Settled Amount', value: data?.paymentBreakdown?.[0] ? `${currency}${data.paymentBreakdown[0].total.toFixed(2)}` : '$0.00' },
+        { label: 'Settled Amount', value: data?.paymentBreakdown?.[0] ? `${currency}${data.paymentBreakdown[0].total.toFixed(2)}` : `${currency}0.00` },
       ],
     },
     {
@@ -188,7 +188,7 @@ export default function ReportsHubPage() {
       subMetrics: [
         { label: 'Repeat Buyers', value: `${data?.customerAnalytics?.repeatCustomers || 0}` },
         { label: 'Top Spender', value: data?.customerAnalytics?.topCustomers?.[0]?.name ? data.customerAnalytics.topCustomers[0].name.slice(0, 12) : '—' },
-        { label: 'Top Patron Total', value: data?.customerAnalytics?.topCustomers?.[0] ? `${currency}${data.customerAnalytics.topCustomers[0].totalSpent.toFixed(2)}` : '$0.00' },
+        { label: 'Top Patron Total', value: data?.customerAnalytics?.topCustomers?.[0] ? `${currency}${data.customerAnalytics.topCustomers[0].totalSpent.toFixed(2)}` : `${currency}0.00` },
       ],
     },
   ];

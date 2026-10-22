@@ -91,16 +91,22 @@ export async function POST(req: NextRequest) {
     const discountAmount = Math.min(subtotal, parsedDiscount);
     const taxableAmount = Math.max(0, subtotal - discountAmount);
 
-    const isTaxIncluded = Boolean(body.isTaxIncluded || body.taxType === 'INCLUDED');
+    const isTaxIncluded =
+      body.isTaxIncluded !== undefined
+        ? Boolean(body.isTaxIncluded)
+        : (body.taxType ? body.taxType === 'INCLUDED' : auth.tenant.defaultTaxType === 'INCLUDED');
     const taxType = isTaxIncluded ? 'INCLUDED' : 'EXCLUDED';
 
+    const tenantTaxEnabled = Boolean(auth.tenant.enableTaxOnCheckout);
     const resolvedTaxRate = taxRate !== undefined
       ? Math.max(0, Number(taxRate) || 0)
-      : (auth.tenant.defaultTaxRate !== undefined ? auth.tenant.defaultTaxRate : 18);
+      : (tenantTaxEnabled ? (auth.tenant.defaultTaxRate !== undefined ? auth.tenant.defaultTaxRate : 18) : 0);
 
     const taxAmount = tax !== undefined
       ? Math.max(0, Number(tax) || 0)
-      : Number(((taxableAmount * resolvedTaxRate) / 100).toFixed(2));
+      : (tenantTaxEnabled && resolvedTaxRate > 0
+          ? Number(((taxableAmount * resolvedTaxRate) / 100).toFixed(2))
+          : 0);
 
     const totalAmount = body.totalAmount !== undefined
       ? Number(body.totalAmount)
@@ -227,7 +233,7 @@ export async function POST(req: NextRequest) {
       tax1Value: taxAmount,
       tax2Name: auth.tenant.defaultTax2Name || '',
       tax2Value: 0,
-      gstNumber: auth.tenant.gstNumber ? auth.tenant.gstNumber.trim() : '',
+      gstNumber: auth.tenant.showGstOnReceipt && auth.tenant.gstNumber ? auth.tenant.gstNumber.trim() : '',
       googleProfileUrl: auth.tenant.showGoogleReviewOnReceipt && auth.tenant.googleProfileUrl ? auth.tenant.googleProfileUrl.trim() : '',
     });
 

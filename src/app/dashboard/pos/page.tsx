@@ -408,9 +408,8 @@ export default function OrderCreationPage() {
         rawReceipt: data.rawReceiptText,
         phone: `${country.dialCode} ${subscriberDigits}`,
         pdfUrl: data.pdfUrl || `/api/receipts/${data.order.orderNumber}/pdf`,
-        receiptUrl: data.receiptUrl || `/receipt/${data.order.orderNumber}`,
-        gstNumber: data.order.gstNumber || data.gstNumber || tenantInfo?.gstNumber || null,
-        googleProfileUrl: data.googleProfileUrl || tenantInfo?.googleProfileUrl || null,
+        gstNumber: data.order.gstNumber || data.gstNumber || (tenantInfo?.showGstOnReceipt ? tenantInfo?.gstNumber : null) || null,
+        googleProfileUrl: data.googleProfileUrl || (tenantInfo?.showGoogleReviewOnReceipt ? tenantInfo?.googleProfileUrl : null) || null,
       });
 
       // Clear active cart after successful creation
@@ -1267,9 +1266,9 @@ export default function OrderCreationPage() {
                     {completedOrder.tax > 0 && (
                       <div className="pos-ref-receipt-calc-row">
                         <span>
-                          {completedOrder.taxName
-                            ? `${completedOrder.taxName} (${completedOrder.taxRate ?? 18}%${completedOrder.isTaxIncluded ? ' incl.' : ''})`
-                            : `Tax (${completedOrder.taxRate ?? 18}%${completedOrder.isTaxIncluded ? ' incl.' : ''})`}
+                          {completedOrder.taxRate !== undefined && completedOrder.taxRate > 0
+                            ? `${completedOrder.taxName || 'Tax'} (${completedOrder.taxRate}%${completedOrder.isTaxIncluded ? ' incl.' : ''})`
+                            : `${completedOrder.taxName || 'Tax'}${completedOrder.isTaxIncluded ? ' (incl.)' : ''}`}
                         </span>
                         <span>
                           {completedOrder.isTaxIncluded ? '' : '+'}

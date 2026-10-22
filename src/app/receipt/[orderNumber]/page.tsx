@@ -1,5 +1,6 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import { connectToDatabase } from '@/lib/mongodb';
 import { Order } from '@/models/Order';
 import { Tenant } from '@/models/Tenant';
@@ -35,9 +36,13 @@ export default async function PublicReceiptPage(props: ReceiptPageProps) {
   const showGoogle = tenant ? Boolean(tenant.showGoogleReviewOnReceipt) : Boolean(order.googleProfileUrl);
   const googleProfileUrl = order.googleProfileUrl || (tenant ? tenant.googleProfileUrl : '');
 
-  const envAppUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || '';
-  const receiptUrl = `${envAppUrl}/receipt/${order.orderNumber}`;
-  const pdfUrl = `${envAppUrl}/api/receipts/${order.orderNumber}/pdf`;
+  const headerList = await headers();
+  const host = headerList.get('x-forwarded-host') || headerList.get('host') || 'localhost:3000';
+  const proto = headerList.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+  const envAppUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL;
+  const baseUrl = envAppUrl ? envAppUrl.replace(/\/+$/, '') : `${proto}://${host}`;
+  const receiptUrl = `${baseUrl}/receipt/${order.orderNumber}`;
+  const pdfUrl = `${baseUrl}/api/receipts/${order.orderNumber}/pdf`;
 
   const { url: whatsappUrl } = generateWhatsAppUrl({
     businessName,

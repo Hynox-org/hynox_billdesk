@@ -69,6 +69,9 @@ export async function GET(req: NextRequest) {
         defaultTax2Name: auth.tenant.defaultTax2Name || '',
         deviceId: auth.tenant.deviceId || '',
         gstNumber: auth.tenant.gstNumber || '',
+        showGstOnReceipt: Boolean(auth.tenant.showGstOnReceipt),
+        enableTaxOnCheckout: Boolean(auth.tenant.enableTaxOnCheckout),
+        defaultTaxType: auth.tenant.defaultTaxType || 'EXCLUDED',
       },
     });
   } catch (error: any) {

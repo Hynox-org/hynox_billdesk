@@ -214,6 +214,7 @@ export default function SettingsPage() {
           gstNumber,
           showGstOnReceipt,
           enableTaxOnCheckout,
+          defaultTaxType,
           googleProfileUrl,
           showGoogleReviewOnReceipt,
         }),

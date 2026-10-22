@@ -21,7 +21,8 @@ export async function GET(req: NextRequest) {
 
     const products = await Product.find(filter)
       .populate('categoryId', 'name')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     return NextResponse.json({ success: true, products, currency: auth.tenant.currency || '$' });
   } catch (error: any) {

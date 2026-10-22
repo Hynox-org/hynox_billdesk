@@ -50,6 +50,8 @@ const ProductSchema: Schema<IProduct> = new Schema(
 );
 
 ProductSchema.index({ tenantId: 1, name: 1 });
+ProductSchema.index({ tenantId: 1, createdAt: -1 });
+ProductSchema.index({ tenantId: 1, isAvailable: 1 });
 
 export const Product: Model<IProduct> =
   mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema);

@@ -49,20 +49,23 @@ export async function GET(req: NextRequest) {
       orderFilter.createdAt = { $gte: startDate };
     }
 
-    // Fetch current period orders
-    const orders = await Order.find(orderFilter).sort({ createdAt: -1 });
+    // Fetch current period orders, comparison orders, products, and categories in parallel
+    const [orders, prevOrders, allProducts, allCategories] = await Promise.all([
+      Order.find(orderFilter).sort({ createdAt: -1 }).lean(),
+      prevStartDate && prevEndDate
+        ? Order.find({
+            tenantId: auth.tenant._id,
+            createdAt: { $gte: prevStartDate, $lt: prevEndDate },
+          })
+            .select('totalAmount')
+            .lean()
+        : Promise.resolve([]),
+      Product.find({ tenantId: auth.tenant._id }).populate('categoryId', 'name').lean(),
+      Category.find({ tenantId: auth.tenant._id }).lean(),
+    ]);
 
-    // Fetch previous period orders for comparison
-    let prevRevenue = 0;
-    let prevCount = 0;
-    if (prevStartDate && prevEndDate) {
-      const prevOrders = await Order.find({
-        tenantId: auth.tenant._id,
-        createdAt: { $gte: prevStartDate, $lt: prevEndDate },
-      });
-      prevRevenue = prevOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
-      prevCount = prevOrders.length;
-    }
+    const prevRevenue = prevOrders.reduce((acc: number, o: any) => acc + (o.totalAmount || 0), 0);
+    const prevCount = prevOrders.length;
 
     // Calculate basic revenue stats
     const totalRevenue = orders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
@@ -228,11 +231,6 @@ export async function GET(req: NextRequest) {
     const topCustomers = [...allCustomers].sort((a, b) => b.totalSpent - a.totalSpent).slice(0, 10);
 
     // Products & Inventory Health
-    const [allProducts, allCategories] = await Promise.all([
-      Product.find({ tenantId: auth.tenant._id }).populate('categoryId', 'name'),
-      Category.find({ tenantId: auth.tenant._id }),
-    ]);
-
     const totalProducts = allProducts.length;
     const trackedProducts = allProducts.filter((p) => p.trackStock).length;
     const liveCounterProducts = totalProducts - trackedProducts;

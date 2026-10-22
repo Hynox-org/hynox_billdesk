@@ -18,12 +18,21 @@ export default async function PublicReceiptPage(props: ReceiptPageProps) {
   const cleanOrderNumber = decodeURIComponent(orderNumber).trim();
   await connectToDatabase();
 
-  const order = await Order.findOne({
-    orderNumber: { $regex: new RegExp(`^${cleanOrderNumber.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
-  });
+  const [headerList, order] = await Promise.all([
+    headers(),
+    Order.findOne({
+      $or: [{ orderNumber: cleanOrderNumber }, { orderNumber: cleanOrderNumber.toUpperCase() }],
+    })
+      .populate('tenantId')
+      .lean() as Promise<any>,
+  ]);
+
   if (!order) return notFound();
 
-  const tenant = await Tenant.findById(order.tenantId);
+  const tenant: any =
+    order.tenantId && typeof order.tenantId === 'object'
+      ? order.tenantId
+      : await Tenant.findById(order.tenantId).lean();
 
   const businessName = tenant?.businessName || 'Business Receipt';
   const businessAddress = tenant?.address || '';
@@ -36,7 +45,6 @@ export default async function PublicReceiptPage(props: ReceiptPageProps) {
   const showGoogle = tenant ? Boolean(tenant.showGoogleReviewOnReceipt) : Boolean(order.googleProfileUrl);
   const googleProfileUrl = order.googleProfileUrl || (tenant ? tenant.googleProfileUrl : '');
 
-  const headerList = await headers();
   const host = headerList.get('x-forwarded-host') || headerList.get('host') || 'localhost:3000';
   const proto = headerList.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
   const envAppUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL;

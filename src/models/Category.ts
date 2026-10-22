@@ -25,6 +25,7 @@ const CategorySchema: Schema<ICategory> = new Schema(
 );
 
 CategorySchema.index({ tenantId: 1, name: 1 }, { unique: true });
+CategorySchema.index({ tenantId: 1, displayOrder: 1, createdAt: 1 });
 
 export const Category: Model<ICategory> =
   mongoose.models.Category || mongoose.model<ICategory>('Category', CategorySchema);

@@ -11,7 +11,8 @@ export async function GET() {
     }
 
     const categories = await Category.find({ tenantId: auth.tenant._id })
-      .sort({ displayOrder: 1, createdAt: 1 });
+      .sort({ displayOrder: 1, createdAt: 1 })
+      .lean();
 
     return NextResponse.json({ success: true, categories });
   } catch (error: any) {

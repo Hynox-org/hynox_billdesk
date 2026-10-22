@@ -18,14 +18,19 @@ export async function GET(req: NextRequest, context: RouteParams) {
     await connectToDatabase();
 
     const cleanOrderNumber = decodeURIComponent(orderNumber).trim();
-    const order = await Order.findOne({
-      orderNumber: { $regex: new RegExp(`^${cleanOrderNumber.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
-    });
+    const order: any = await Order.findOne({
+      $or: [{ orderNumber: cleanOrderNumber }, { orderNumber: cleanOrderNumber.toUpperCase() }],
+    })
+      .populate('tenantId')
+      .lean();
     if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
-    const tenant = await Tenant.findById(order.tenantId);
+    const tenant: any =
+      order.tenantId && typeof order.tenantId === 'object'
+        ? order.tenantId
+        : await Tenant.findById(order.tenantId).lean();
 
     // Determine GST and Google Review from order snapshot or tenant settings
     const showGst = tenant ? Boolean(tenant.showGstOnReceipt) : Boolean(order.gstNumber);

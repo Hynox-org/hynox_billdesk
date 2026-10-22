@@ -82,21 +82,21 @@ export async function getAuthenticatedUserAndTenant(): Promise<{
   if (!session) return null;
 
   await connectToDatabase();
-  const user = await User.findById(session.userId);
+  const [user, tenantDoc] = await Promise.all([
+    User.findById(session.userId),
+    session.tenantId ? Tenant.findById(session.tenantId) : Promise.resolve(null),
+  ]);
   if (!user || !user.isActive) return null;
 
-  let tenant: ITenant | null = null;
+  let tenant: ITenant | null = tenantDoc;
   let trialInfo: TenantTrialInfo | null = null;
 
-  if (session.tenantId) {
-    tenant = await Tenant.findById(session.tenantId);
-    if (tenant) {
-      trialInfo = computeTrialInfo(tenant);
-      // Auto-sync status if expired
-      if (trialInfo.isExpired && tenant.status === 'ACTIVE') {
-        tenant.status = 'EXPIRED';
-        await tenant.save();
-      }
+  if (tenant) {
+    trialInfo = computeTrialInfo(tenant);
+    // Auto-sync status if expired
+    if (trialInfo.isExpired && tenant.status === 'ACTIVE') {
+      tenant.status = 'EXPIRED';
+      await tenant.save();
     }
   }
 

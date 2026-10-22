@@ -222,6 +222,7 @@ const OrderSchema: Schema<IOrder> = new Schema(
 
 OrderSchema.index({ tenantId: 1, createdAt: -1 });
 OrderSchema.index({ tenantId: 1, orderNumber: 1 });
+OrderSchema.index({ orderNumber: 1 });
 
 if (process.env.NODE_ENV !== 'production' && mongoose.models && mongoose.models.Order) {
   delete (mongoose.models as any).Order;

@@ -16,24 +16,25 @@ export async function GET(req: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
     const skip = (page - 1) * limit;
 
-    const [orders, totalCount] = await Promise.all([
-      Order.find({ tenantId: auth.tenant._id })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit),
-      Order.countDocuments({ tenantId: auth.tenant._id }),
-    ]);
-
-    // Calculate Today's stats
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
-    const todayOrders = await Order.find({
-      tenantId: auth.tenant._id,
-      createdAt: { $gte: startOfToday },
-    });
+    const [orders, totalCount, todayOrders] = await Promise.all([
+      Order.find({ tenantId: auth.tenant._id })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Order.countDocuments({ tenantId: auth.tenant._id }),
+      Order.find({
+        tenantId: auth.tenant._id,
+        createdAt: { $gte: startOfToday },
+      })
+        .select('totalAmount')
+        .lean(),
+    ]);
 
-    const todayRevenue = todayOrders.reduce((acc, o) => acc + (o.totalAmount || 0), 0);
+    const todayRevenue = todayOrders.reduce((acc: number, o: any) => acc + (o.totalAmount || 0), 0);
     const todayCount = todayOrders.length;
     const avgOrder = todayCount > 0 ? todayRevenue / todayCount : 0;
 

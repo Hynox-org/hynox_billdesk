@@ -20,11 +20,13 @@ import {
   Trash2,
   AlertTriangle,
   ChevronRight,
+  ChevronDown,
   Plus,
   ExternalLink,
   CheckSquare,
   Square,
   Filter,
+  Info,
 } from 'lucide-react';
 
 interface OrderItem {
@@ -243,6 +245,7 @@ export default function OrdersPage() {
 
   // Selection & Action States
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isSelectMode, setIsSelectMode] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   // Delete Confirmation Modal
@@ -383,6 +386,14 @@ export default function OrdersPage() {
     setCustomEndDate('');
   };
 
+  // Hold-to-select (Long Press) ref tracking
+  const holdTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const isHoldTriggeredRef = React.useRef(false);
+  const touchStartPosRef = React.useRef<{ x: number; y: number } | null>(null);
+
+  const isSelectionActive = selectedIds.length > 0;
+  const isSelectModeActive = isSelectMode || isSelectionActive;
+
   // Selection Handlers
   const handleToggleSelect = (orderId: string) => {
     setSelectedIds((prev) =>
@@ -390,21 +401,72 @@ export default function OrdersPage() {
     );
   };
 
-  const handleToggleSelectAll = () => {
-    if (selectedIds.length === filteredOrders.length) {
+  const handleToggleSelectMode = () => {
+    if (isSelectModeActive) {
+      setIsSelectMode(false);
       setSelectedIds([]);
     } else {
+      setIsSelectMode(true);
+    }
+  };
+
+  const handleToggleSelectAll = () => {
+    if (selectedIds.length === filteredOrders.length && filteredOrders.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setIsSelectMode(true);
       setSelectedIds(filteredOrders.map((o) => o._id));
     }
   };
 
-  const isSelectionActive = selectedIds.length > 0;
+  const startHold = (order: Order, clientX?: number, clientY?: number) => {
+    isHoldTriggeredRef.current = false;
+    if (clientX !== undefined && clientY !== undefined) {
+      touchStartPosRef.current = { x: clientX, y: clientY };
+    }
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+    }
+    holdTimerRef.current = setTimeout(() => {
+      isHoldTriggeredRef.current = true;
+      setIsSelectMode(true);
+      setSelectedIds((prev) =>
+        prev.includes(order._id) ? prev.filter((id) => id !== order._id) : [...prev, order._id]
+      );
+      if (typeof window !== 'undefined' && window.navigator && 'vibrate' in window.navigator) {
+        try {
+          window.navigator.vibrate(40);
+        } catch (_) {}
+      }
+    }, 500);
+  };
+
+  const cancelHold = () => {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+    touchStartPosRef.current = null;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartPosRef.current || !e.touches[0]) return;
+    const dx = Math.abs(e.touches[0].clientX - touchStartPosRef.current.x);
+    const dy = Math.abs(e.touches[0].clientY - touchStartPosRef.current.y);
+    if (dx > 8 || dy > 8) {
+      cancelHold();
+    }
+  };
 
   // Single Order Click Handler:
-  // If multi-select is active, toggles selection.
+  // If multi-select is active or hold was just triggered, toggles selection.
   // Otherwise, navigates directly to the dedicated individual receipt page!
   const handleOrderClick = (order: Order) => {
-    if (isSelectionActive) {
+    if (isHoldTriggeredRef.current) {
+      isHoldTriggeredRef.current = false;
+      return;
+    }
+    if (isSelectModeActive) {
       handleToggleSelect(order._id);
       return;
     }
@@ -951,7 +1013,7 @@ export default function OrdersPage() {
       {/* Filter Toolbar */}
       <div className="orders-filter-container" style={{ marginBottom: '16px' }}>
         <div className="orders-filter-top-row">
-          <div className="orders-search-wrapper" style={{ flex: 1 }}>
+          <div className="orders-search-wrapper">
             <Search
               size={16}
               style={{
@@ -967,8 +1029,7 @@ export default function OrdersPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by order #, customer name, phone, or item..."
-              className="form-input"
-              style={{ paddingLeft: '36px', height: '38px', fontSize: '0.85rem' }}
+              className="form-input orders-search-input"
             />
             {searchQuery && (
               <button
@@ -990,33 +1051,34 @@ export default function OrdersPage() {
             )}
           </div>
 
-          <div style={{ minWidth: '170px' }}>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="form-input"
-              style={{ height: '38px', fontSize: '0.85rem' }}
-            >
-              <option value="ALL">All Payment Statuses</option>
-              <option value="PAID">All Paid</option>
-              <option value="CASH">Paid via Cash</option>
-              <option value="ONLINE">Paid via Card / UPI</option>
-              <option value="PENDING">Payment Pending</option>
-            </select>
-          </div>
+          <div className="orders-status-group">
+            <div className="orders-status-wrapper">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="orders-filter-select"
+              >
+                <option value="ALL">All Payment Statuses</option>
+                <option value="PAID">All Paid</option>
+                <option value="CASH">Paid via Cash</option>
+                <option value="ONLINE">Paid via Card / UPI</option>
+                <option value="PENDING">Payment Pending</option>
+              </select>
+              <ChevronDown size={15} className="orders-select-chevron" />
+            </div>
 
-          {activeFiltersCount > 0 && (
-            <button
-              type="button"
-              onClick={handleResetFilters}
-              className="btn btn-secondary btn-sm"
-              style={{ height: '38px', gap: '6px' }}
-              title="Reset all filters"
-            >
-              <RotateCcw size={13} />
-              <span>Reset ({activeFiltersCount})</span>
-            </button>
-          )}
+            {activeFiltersCount > 0 && (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="btn btn-secondary btn-sm orders-reset-btn"
+                title="Reset all filters"
+              >
+                <RotateCcw size={13} />
+                <span>Reset ({activeFiltersCount})</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Date Preset Buttons */}
@@ -1054,14 +1116,28 @@ export default function OrdersPage() {
           </div>
 
           {filteredOrders.length > 0 && (
-            <button
-              type="button"
-              onClick={handleToggleSelectAll}
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '0.76rem', padding: '4px 10px', height: '30px' }}
-            >
-              {selectedIds.length === filteredOrders.length ? 'Deselect All' : 'Select All'}
-            </button>
+            <div className="orders-selection-actions-bar">
+              <button
+                type="button"
+                onClick={handleToggleSelectMode}
+                className={`btn btn-sm ${isSelectModeActive ? 'btn-primary' : 'btn-secondary'} orders-select-toggle-btn`}
+                title={isSelectModeActive ? 'Exit selection mode' : 'Toggle selection mode for orders'}
+              >
+                <CheckSquare size={13} />
+                <span>{isSelectModeActive ? 'Done' : 'Select'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleToggleSelectAll}
+                className="btn btn-secondary btn-sm orders-select-all-btn"
+                title="Select or deselect all matching orders"
+              >
+                {selectedIds.length === filteredOrders.length && filteredOrders.length > 0
+                  ? 'Deselect All'
+                  : 'Select All'}
+              </button>
+            </div>
           )}
         </div>
 
@@ -1101,6 +1177,30 @@ export default function OrdersPage() {
           </div>
         )}
       </div>
+
+      {/* Small info hint above orders listing */}
+      {filteredOrders.length > 0 && !loading && (
+        <div className={`orders-hold-hint-bar ${isSelectModeActive ? 'is-active' : ''}`}>
+          <div className="orders-hold-hint-content">
+            <Info size={14} className="orders-hold-hint-icon" />
+            <span>
+              {isSelectModeActive
+                ? `Selection mode active: Tap any order to select or deselect (${selectedIds.length} of ${filteredOrders.length} selected).`
+                : 'Hold any order to select, or use the Select button above to choose orders.'}
+            </span>
+          </div>
+          {isSelectModeActive && (
+            <button
+              type="button"
+              onClick={handleToggleSelectMode}
+              className="orders-hold-hint-close-btn"
+              title="Clear selection and exit"
+            >
+              Exit
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Main Orders Content: Desktop Table & Simplified Mobile List */}
       <div className="glass-panel" style={{ padding: '0px', overflow: 'hidden', borderRadius: '16px' }}>
@@ -1212,12 +1312,24 @@ export default function OrdersPage() {
                         <tr
                           key={o._id}
                           onClick={() => handleOrderClick(o)}
+                          onMouseDown={(e) => {
+                            if (e.button === 0) startHold(o, e.clientX, e.clientY);
+                          }}
+                          onMouseMove={(e) => {
+                            if (touchStartPosRef.current) {
+                              const dx = Math.abs(e.clientX - touchStartPosRef.current.x);
+                              const dy = Math.abs(e.clientY - touchStartPosRef.current.y);
+                              if (dx > 8 || dy > 8) cancelHold();
+                            }
+                          }}
+                          onMouseUp={cancelHold}
+                          onMouseLeave={cancelHold}
                           className={`orders-clickable-row ${isSelected ? 'selected-row' : ''}`}
                           style={{
                             borderBottom: '1px solid var(--border-subtle)',
                             cursor: 'pointer',
                           }}
-                          title="Click to view digital receipt page"
+                          title={isSelectModeActive ? 'Click to toggle selection' : 'Click to view digital receipt, or hold to select'}
                         >
                           <td
                             style={{ padding: '14px', textAlign: 'center' }}
@@ -1377,11 +1489,31 @@ export default function OrdersPage() {
                   <div
                     key={o._id}
                     onClick={() => handleOrderClick(o)}
+                    onTouchStart={(e) => {
+                      if (e.touches[0]) {
+                        startHold(o, e.touches[0].clientX, e.touches[0].clientY);
+                      }
+                    }}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={cancelHold}
+                    onTouchCancel={cancelHold}
+                    onMouseDown={(e) => {
+                      if (e.button === 0) startHold(o, e.clientX, e.clientY);
+                    }}
+                    onMouseMove={(e) => {
+                      if (touchStartPosRef.current) {
+                        const dx = Math.abs(e.clientX - touchStartPosRef.current.x);
+                        const dy = Math.abs(e.clientY - touchStartPosRef.current.y);
+                        if (dx > 8 || dy > 8) cancelHold();
+                      }
+                    }}
+                    onMouseUp={cancelHold}
+                    onMouseLeave={cancelHold}
                     className={`order-mobile-row ${isSelected ? 'selected' : ''}`}
                   >
                     {/* Left: Checkbox (if multi-select) + Main Info */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
-                      {isSelectionActive && (
+                      {isSelectModeActive && (
                         <div onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
@@ -1538,7 +1670,10 @@ export default function OrdersPage() {
 
           <button
             type="button"
-            onClick={() => setSelectedIds([])}
+            onClick={() => {
+              setSelectedIds([]);
+              setIsSelectMode(false);
+            }}
             className="btn btn-secondary btn-sm"
             style={{ fontSize: '0.78rem', padding: '4px 10px' }}
           >

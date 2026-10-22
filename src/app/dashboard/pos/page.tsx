@@ -89,6 +89,7 @@ export default function OrderCreationPage() {
   const [isTaxEnabled, setIsTaxEnabled] = useState(false);
   const [taxRate, setTaxRate] = useState<number | string>(18);
   const [taxName, setTaxName] = useState('GST');
+  const [taxType, setTaxType] = useState<'EXCLUDED' | 'INCLUDED'>('EXCLUDED');
 
   // Post-Order Sharing Modal
   const [completedOrder, setCompletedOrder] = useState<{
@@ -106,6 +107,8 @@ export default function OrderCreationPage() {
     tax: number;
     taxRate?: number;
     taxName?: string;
+    taxType?: 'EXCLUDED' | 'INCLUDED';
+    isTaxIncluded?: boolean;
     totalAmount: number;
     currency: string;
     paymentMethod: string;
@@ -129,6 +132,7 @@ export default function OrderCreationPage() {
     defaultTaxName?: string;
     defaultTaxRate?: number;
     enableTaxOnCheckout?: boolean;
+    defaultTaxType?: 'EXCLUDED' | 'INCLUDED';
   } | null>(null);
 
   // Load Catalog Items
@@ -156,6 +160,7 @@ export default function OrderCreationPage() {
             const tRate = authData.tenant.defaultTaxRate !== undefined ? authData.tenant.defaultTaxRate : 18;
             const tName = authData.tenant.defaultTaxName || 'GST';
             const checkoutTaxEnabled = Boolean(authData.tenant.enableTaxOnCheckout);
+            const defTaxType = authData.tenant.defaultTaxType || 'EXCLUDED';
             setTenantInfo({
               businessName: authData.tenant.businessName,
               businessType: authData.tenant.businessType,
@@ -166,10 +171,12 @@ export default function OrderCreationPage() {
               defaultTaxName: tName,
               defaultTaxRate: tRate,
               enableTaxOnCheckout: checkoutTaxEnabled,
+              defaultTaxType: defTaxType,
             });
             setTaxRate(tRate);
             setTaxName(tName);
             setIsTaxEnabled(checkoutTaxEnabled);
+            setTaxType(defTaxType);
           }
         }
       } catch (err) {
@@ -284,6 +291,7 @@ export default function OrderCreationPage() {
     if (tenantInfo?.defaultTaxRate !== undefined) {
       setTaxRate(tenantInfo.defaultTaxRate);
       setIsTaxEnabled(Boolean(tenantInfo.enableTaxOnCheckout));
+      setTaxType(tenantInfo.defaultTaxType || 'EXCLUDED');
     }
     setPaymentMethod('CASH');
     setOrderError(null);
@@ -309,8 +317,13 @@ export default function OrderCreationPage() {
   }
   const taxableSubtotal = Math.max(0, subtotal - discountAmount);
   const activeTaxRate = isTaxEnabled ? Math.max(0, parseFloat(String(taxRate)) || 0) : 0;
-  const taxAmount = Number(((taxableSubtotal * activeTaxRate) / 100).toFixed(2));
-  const totalAmount = Number((taxableSubtotal + taxAmount).toFixed(2));
+  const isTaxIncluded = taxType === 'INCLUDED';
+  const taxAmount = isTaxEnabled && activeTaxRate > 0
+    ? Number(((taxableSubtotal * activeTaxRate) / 100).toFixed(2))
+    : 0;
+  const totalAmount = isTaxIncluded
+    ? Number(taxableSubtotal.toFixed(2))
+    : Number((taxableSubtotal + taxAmount).toFixed(2));
   const totalItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   // Submit Order & Dispatch WhatsApp Link
@@ -358,6 +371,8 @@ export default function OrderCreationPage() {
           tax: taxAmount,
           taxRate: activeTaxRate,
           taxName: taxName,
+          taxType: taxType,
+          isTaxIncluded: isTaxIncluded,
           discount: discountAmount,
           discountAmount: discountAmount,
           discountPercent: parsedPercent,
@@ -383,6 +398,8 @@ export default function OrderCreationPage() {
         tax: typeof data.order.tax === 'number' ? data.order.tax : taxAmount,
         taxRate: typeof data.order.taxRate === 'number' ? data.order.taxRate : activeTaxRate,
         taxName: data.order.taxName || data.order.tax1Name || taxName,
+        taxType: data.order.taxType || taxType,
+        isTaxIncluded: data.order.isTaxIncluded !== undefined ? data.order.isTaxIncluded : isTaxIncluded,
         totalAmount: typeof data.order.totalAmount === 'number' ? data.order.totalAmount : totalAmount,
         currency: currency,
         paymentMethod: data.order.paymentMethod || paymentMethod,
@@ -945,6 +962,35 @@ export default function OrderCreationPage() {
                     </div>
                   </div>
 
+                  {/* Tax Included / Excluded Calculation Toggle */}
+                  <div className="pos-tax-calc-mode-container">
+                    <div className="pos-tax-calc-mode-header">
+                      <span className="pos-tax-calc-mode-label">Tax Calculation:</span>
+                      <span className="pos-tax-calc-mode-hint">
+                        {taxType === 'EXCLUDED'
+                          ? 'Subtotal + Tax = Total'
+                          : 'Subtotal = Total (Tax included)'}
+                      </span>
+                    </div>
+                    <div className="pos-tax-calc-mode-switch">
+                      <button
+                        type="button"
+                        onClick={() => setTaxType('EXCLUDED')}
+                        className={`pos-tax-calc-btn ${taxType === 'EXCLUDED' ? 'active' : ''}`}
+                        title="Excluded Tax: Tax is added on top of subtotal (Subtotal + Tax = Total)"
+                      >
+                        Excluded Tax
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTaxType('INCLUDED')}
+                        className={`pos-tax-calc-btn ${taxType === 'INCLUDED' ? 'active' : ''}`}
+                        title="Included Tax: Tax is included in item prices (Subtotal = Total)"
+                      >
+                        Included Tax
+                      </button>
+                    </div>
+                  </div>
                 </>
               )}
             </div>
@@ -968,9 +1014,13 @@ export default function OrderCreationPage() {
               {activeTaxRate > 0 && (
                 <div className="pos-summary-row" style={{ color: 'var(--text-secondary)' }}>
                   <span>
-                    {taxName || 'Tax'} ({activeTaxRate}%):
+                    {taxName || 'Tax'} ({activeTaxRate}%{isTaxIncluded ? ' included' : ''}):
                   </span>
-                  <span>+{currency}{taxAmount.toFixed(2)}</span>
+                  <span>
+                    {isTaxIncluded ? '' : '+'}
+                    {currency}{taxAmount.toFixed(2)}
+                    {isTaxIncluded ? ' (Incl.)' : ''}
+                  </span>
                 </div>
               )}
 
@@ -1216,8 +1266,17 @@ export default function OrderCreationPage() {
                     )}
                     {completedOrder.tax > 0 && (
                       <div className="pos-ref-receipt-calc-row">
-                        <span>{completedOrder.taxName ? `${completedOrder.taxName} (${completedOrder.taxRate ?? 18}%)` : `Tax (${completedOrder.taxRate ?? 18}%)`}</span>
-                        <span>+{completedOrder.currency}{completedOrder.tax.toFixed(2)}</span>
+                        <span>
+                          {completedOrder.taxName
+                            ? `${completedOrder.taxName} (${completedOrder.taxRate ?? 18}%${completedOrder.isTaxIncluded ? ' incl.' : ''})`
+                            : `Tax (${completedOrder.taxRate ?? 18}%${completedOrder.isTaxIncluded ? ' incl.' : ''})`}
+                        </span>
+                        <span>
+                          {completedOrder.isTaxIncluded ? '' : '+'}
+                          {completedOrder.currency}
+                          {completedOrder.tax.toFixed(2)}
+                          {completedOrder.isTaxIncluded ? ' (Incl.)' : ''}
+                        </span>
                       </div>
                     )}
                   </div>

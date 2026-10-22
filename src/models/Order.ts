@@ -27,6 +27,8 @@ export interface IOrder extends Document {
   tax: number;
   taxRate?: number;
   taxName?: string;
+  taxType?: 'INCLUDED' | 'EXCLUDED';
+  isTaxIncluded?: boolean;
   discount: number;
   totalAmount: number;
   currency: string;
@@ -137,6 +139,8 @@ const OrderSchema: Schema<IOrder> = new Schema(
     tax: { type: Number, default: 0 },
     taxRate: { type: Number, default: 0 },
     taxName: { type: String, default: '', trim: true },
+    taxType: { type: String, enum: ['INCLUDED', 'EXCLUDED'], default: 'EXCLUDED' },
+    isTaxIncluded: { type: Boolean, default: false },
     discount: { type: Number, default: 0 },
     totalAmount: { type: Number, required: true },
     currency: { type: String, default: '$' },

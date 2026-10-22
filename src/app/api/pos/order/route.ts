@@ -10,7 +10,7 @@ function generateOrderNumber(): string {
   const dateCode = `${now.getFullYear().toString().slice(-2)}${(now.getMonth() + 1)
     .toString()
     .padStart(2, '0')}`;
-  return `ORD-${dateCode}-${randomSuffix}`;
+  return `ORD_${dateCode}_${randomSuffix}`;
 }
 
 export async function POST(req: NextRequest) {
@@ -91,6 +91,9 @@ export async function POST(req: NextRequest) {
     const discountAmount = Math.min(subtotal, parsedDiscount);
     const taxableAmount = Math.max(0, subtotal - discountAmount);
 
+    const isTaxIncluded = Boolean(body.isTaxIncluded || body.taxType === 'INCLUDED');
+    const taxType = isTaxIncluded ? 'INCLUDED' : 'EXCLUDED';
+
     const resolvedTaxRate = taxRate !== undefined
       ? Math.max(0, Number(taxRate) || 0)
       : (auth.tenant.defaultTaxRate !== undefined ? auth.tenant.defaultTaxRate : 18);
@@ -99,7 +102,11 @@ export async function POST(req: NextRequest) {
       ? Math.max(0, Number(tax) || 0)
       : Number(((taxableAmount * resolvedTaxRate) / 100).toFixed(2));
 
-    const totalAmount = Number((taxableAmount + taxAmount).toFixed(2));
+    const totalAmount = body.totalAmount !== undefined
+      ? Number(body.totalAmount)
+      : (isTaxIncluded
+          ? Number(taxableAmount.toFixed(2))
+          : Number((taxableAmount + taxAmount).toFixed(2)));
 
     const orderNumber = generateOrderNumber();
     const now = new Date();
@@ -161,6 +168,8 @@ export async function POST(req: NextRequest) {
       tax: taxAmount,
       taxRate: resolvedTaxRate,
       taxName: taxName || auth.tenant.defaultTaxName || (resolvedTaxRate > 0 ? `GST ${resolvedTaxRate}%` : ''),
+      taxType,
+      isTaxIncluded,
       discount: discountAmount,
       totalAmount,
       currency: auth.tenant.currency || '$',

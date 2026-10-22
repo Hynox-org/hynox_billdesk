@@ -23,6 +23,8 @@ export interface ReceiptPdfData {
   tax: number;
   taxRate?: number;
   taxName?: string;
+  isTaxIncluded?: boolean;
+  taxType?: string;
   discount: number;
   totalAmount: number;
   paymentStatus?: string;
@@ -530,7 +532,13 @@ export async function generateReceiptPdf(data: ReceiptPdfData): Promise<Uint8Arr
   }
 
   if (data.tax > 0) {
-    if (data.taxRate !== undefined && data.taxRate > 0 && data.showGstOnReceipt && data.gstNumber) {
+    if (data.isTaxIncluded) {
+      const taxLabel =
+        data.taxRate !== undefined && data.taxRate > 0
+          ? `${safePdfText(data.taxName || 'GST')} (${data.taxRate}% INCL.)`
+          : safePdfText(data.taxName || 'TAX (INCL.)');
+      renderTotalRow(taxLabel, `${curr} ${data.tax.toFixed(2)} (INCL)`);
+    } else if (data.taxRate !== undefined && data.taxRate > 0 && data.showGstOnReceipt && data.gstNumber) {
       renderTotalRow(`CGST (${(data.taxRate / 2).toFixed(1)}%)`, `${curr} ${(data.tax / 2).toFixed(2)}`);
       renderTotalRow(`SGST (${(data.taxRate / 2).toFixed(1)}%)`, `${curr} ${(data.tax / 2).toFixed(2)}`);
     } else {

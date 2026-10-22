@@ -43,6 +43,7 @@ export async function GET() {
         gstNumber: tenant.gstNumber || '',
         showGstOnReceipt: Boolean(tenant.showGstOnReceipt),
         enableTaxOnCheckout: Boolean(tenant.enableTaxOnCheckout),
+        defaultTaxType: tenant.defaultTaxType || 'EXCLUDED',
         googleProfileUrl: tenant.googleProfileUrl || '',
         showGoogleReviewOnReceipt: Boolean(tenant.showGoogleReviewOnReceipt),
         plan: tenant.plan,
@@ -90,6 +91,7 @@ export async function PUT(req: NextRequest) {
       gstNumber,
       showGstOnReceipt,
       enableTaxOnCheckout,
+      defaultTaxType,
       googleProfileUrl,
       showGoogleReviewOnReceipt,
     } = body;
@@ -122,6 +124,7 @@ export async function PUT(req: NextRequest) {
     if (gstNumber !== undefined) tenantUpdate.gstNumber = typeof gstNumber === 'string' ? gstNumber.trim() : '';
     if (showGstOnReceipt !== undefined) tenantUpdate.showGstOnReceipt = Boolean(showGstOnReceipt);
     if (enableTaxOnCheckout !== undefined) tenantUpdate.enableTaxOnCheckout = Boolean(enableTaxOnCheckout);
+    if (defaultTaxType !== undefined) tenantUpdate.defaultTaxType = defaultTaxType === 'INCLUDED' ? 'INCLUDED' : 'EXCLUDED';
     if (googleProfileUrl !== undefined) tenantUpdate.googleProfileUrl = typeof googleProfileUrl === 'string' ? googleProfileUrl.trim() : '';
     if (showGoogleReviewOnReceipt !== undefined) tenantUpdate.showGoogleReviewOnReceipt = Boolean(showGoogleReviewOnReceipt);
 

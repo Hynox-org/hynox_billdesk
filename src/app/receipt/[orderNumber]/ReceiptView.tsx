@@ -37,6 +37,8 @@ export interface ReceiptViewProps {
   tax: number;
   taxRate?: number;
   taxName?: string;
+  isTaxIncluded?: boolean;
+  taxType?: string;
   discount: number;
   totalAmount: number;
   currency: string;
@@ -67,6 +69,8 @@ export default function ReceiptView({
   tax,
   taxRate,
   taxName,
+  isTaxIncluded,
+  taxType,
   discount,
   totalAmount,
   currency,
@@ -356,7 +360,18 @@ export default function ReceiptView({
 
                 {tax > 0 && (
                   <>
-                    {taxRate !== undefined && taxRate > 0 && showGst && gstNumber ? (
+                    {isTaxIncluded ? (
+                      <div className="receipt-total-line">
+                        <span>
+                          {taxName || 'TAX'}
+                          {taxRate !== undefined && taxRate > 0 ? ` (${taxRate}% included)` : ' (included)'}
+                        </span>
+                        <span>
+                          {currency}
+                          {Number(tax || 0).toFixed(2)} (Incl.)
+                        </span>
+                      </div>
+                    ) : taxRate !== undefined && taxRate > 0 && showGst && gstNumber ? (
                       <>
                         <div className="receipt-total-line">
                           <span>CGST ({(taxRate / 2).toFixed(1)}%)</span>
@@ -380,7 +395,7 @@ export default function ReceiptView({
                           {taxRate !== undefined && taxRate > 0 ? ` (${taxRate}%)` : ''}
                         </span>
                         <span>
-                          {currency}
+                          +{currency}
                           {Number(tax || 0).toFixed(2)}
                         </span>
                       </div>

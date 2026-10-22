@@ -33,6 +33,7 @@ export async function GET() {
             gstNumber: tenant.gstNumber || '',
             showGstOnReceipt: Boolean(tenant.showGstOnReceipt),
             enableTaxOnCheckout: Boolean(tenant.enableTaxOnCheckout),
+            defaultTaxType: tenant.defaultTaxType || 'EXCLUDED',
             googleProfileUrl: tenant.googleProfileUrl || '',
             showGoogleReviewOnReceipt: Boolean(tenant.showGoogleReviewOnReceipt),
             status: tenant.status,

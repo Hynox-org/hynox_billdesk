@@ -56,6 +56,7 @@ interface SettingsData {
     gstNumber?: string;
     showGstOnReceipt?: boolean;
     enableTaxOnCheckout?: boolean;
+    defaultTaxType?: 'EXCLUDED' | 'INCLUDED';
     googleProfileUrl?: string;
     showGoogleReviewOnReceipt?: boolean;
     plan: 'FREE_TRIAL' | 'PRO';
@@ -95,6 +96,7 @@ export default function SettingsPage() {
   const [gstNumber, setGstNumber] = useState('');
   const [showGstOnReceipt, setShowGstOnReceipt] = useState(false);
   const [enableTaxOnCheckout, setEnableTaxOnCheckout] = useState(false);
+  const [defaultTaxType, setDefaultTaxType] = useState<'EXCLUDED' | 'INCLUDED'>('EXCLUDED');
   const [googleProfileUrl, setGoogleProfileUrl] = useState('');
   const [showGoogleReviewOnReceipt, setShowGoogleReviewOnReceipt] = useState(false);
   const [savingBusiness, setSavingBusiness] = useState(false);
@@ -161,6 +163,7 @@ export default function SettingsPage() {
           setGstNumber(json.tenant?.gstNumber || '');
           setShowGstOnReceipt(Boolean(json.tenant?.showGstOnReceipt));
           setEnableTaxOnCheckout(Boolean(json.tenant?.enableTaxOnCheckout));
+          setDefaultTaxType(json.tenant?.defaultTaxType || 'EXCLUDED');
           setGoogleProfileUrl(json.tenant?.googleProfileUrl || '');
           setShowGoogleReviewOnReceipt(Boolean(json.tenant?.showGoogleReviewOnReceipt));
           setFullName(json.user?.fullName || '');
@@ -245,6 +248,7 @@ export default function SettingsPage() {
             gstNumber,
             showGstOnReceipt,
             enableTaxOnCheckout,
+            defaultTaxType,
             googleProfileUrl,
             showGoogleReviewOnReceipt,
           },
@@ -870,6 +874,50 @@ export default function SettingsPage() {
                         </span>
                       </div>
                     </label>
+
+                    {/* Default Tax Mode (Excluded vs Included) */}
+                    {enableTaxOnCheckout && (
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '10px',
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          background: 'rgba(0, 0, 0, 0.02)',
+                          border: '1px solid var(--border-subtle)',
+                          flexWrap: 'wrap',
+                        }}
+                      >
+                        <div style={{ flex: 1, minWidth: '180px' }}>
+                          <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-main)', display: 'block' }}>
+                            Default Tax Mode
+                          </span>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
+                            {defaultTaxType === 'EXCLUDED'
+                              ? 'Excluded Tax: Subtotal + Tax = Total'
+                              : 'Included Tax: Subtotal = Total (Tax included in item prices)'}
+                          </span>
+                        </div>
+                        <div className="pos-tax-calc-mode-switch" style={{ minWidth: '220px' }}>
+                          <button
+                            type="button"
+                            onClick={() => setDefaultTaxType('EXCLUDED')}
+                            className={`pos-tax-calc-btn ${defaultTaxType === 'EXCLUDED' ? 'active' : ''}`}
+                          >
+                            Excluded Tax
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDefaultTaxType('INCLUDED')}
+                            className={`pos-tax-calc-btn ${defaultTaxType === 'INCLUDED' ? 'active' : ''}`}
+                          >
+                            Included Tax
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Google Profile Link Card */}

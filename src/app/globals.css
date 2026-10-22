@@ -797,6 +797,74 @@ div[data-nextjs-route-announcer] {
   text-align: right;
 }
 
+/* POS Tax Included / Excluded Toggle */
+.pos-tax-calc-mode-container {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px dashed var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pos-tax-calc-mode-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pos-tax-calc-mode-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.pos-tax-calc-mode-hint {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.pos-tax-calc-mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--bg-input);
+  border: 1px solid var(--border-medium);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 4px;
+}
+
+.pos-tax-calc-btn {
+  padding: 6px 10px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-muted);
+  transition: all 0.15s ease;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.pos-tax-calc-btn:hover:not(.active) {
+  color: var(--text-main);
+  background: var(--bg-card-hover);
+}
+
+.pos-tax-calc-btn.active {
+  background: var(--primary);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 1px 4px var(--primary-glow);
+}
+
 /* Summary Card */
 .pos-summary-card {
   background: var(--bg-input);
@@ -4714,6 +4782,78 @@ nextjs-portal,
   position: relative;
 }
 
+.orders-search-input {
+  width: 100%;
+  height: 42px;
+  min-height: 42px;
+  padding-left: 38px;
+  padding-right: 36px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  border-radius: 10px;
+}
+
+.orders-status-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.orders-status-wrapper {
+  min-width: 190px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.orders-filter-select {
+  width: 100%;
+  height: 42px;
+  min-height: 42px;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 8px 36px 8px 14px;
+  color: var(--text-main);
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: normal;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  box-sizing: border-box;
+}
+
+.orders-filter-select:focus {
+  border-color: var(--whatsapp);
+  box-shadow: 0 0 0 3px var(--whatsapp-glow);
+}
+
+.orders-select-chevron {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--primary);
+  pointer-events: none;
+}
+
+.orders-reset-btn {
+  height: 42px;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
 .orders-preset-group {
   display: flex;
   align-items: center;
@@ -4770,6 +4910,88 @@ nextjs-portal,
   border-radius: 12px;
   margin-bottom: 16px;
   flex-wrap: wrap;
+}
+
+/* Orders Hold & Selection Hint Bar */
+.orders-hold-hint-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  margin-bottom: 14px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.orders-hold-hint-bar.is-active {
+  background: var(--color-light-green);
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.orders-hold-hint-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.orders-hold-hint-icon {
+  flex-shrink: 0;
+  color: var(--primary);
+}
+
+.orders-hold-hint-close-btn {
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  border-radius: 6px;
+  padding: 2px 10px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.orders-hold-hint-close-btn:hover {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.orders-selection-actions-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.orders-select-toggle-btn {
+  font-size: 0.78rem;
+  padding: 5px 12px;
+  height: 32px;
+  gap: 5px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.orders-select-all-btn {
+  font-size: 0.78rem;
+  padding: 5px 12px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
 }
 
 .orders-table-desktop {
@@ -4862,6 +5084,87 @@ nextjs-portal,
     display: flex;
     flex-direction: column;
     gap: 10px;
+  }
+}
+
+@media (max-width: 640px) {
+  .orders-filter-container {
+    padding: 14px;
+    gap: 12px;
+    border-radius: 14px;
+  }
+
+  .orders-filter-top-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .orders-search-wrapper {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .orders-status-group {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .orders-status-wrapper {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .orders-filter-select {
+    height: 46px;
+    min-height: 46px;
+    font-size: 16px !important;
+    padding: 8px 38px 8px 14px;
+    line-height: normal;
+    box-sizing: border-box;
+  }
+
+  .orders-search-input {
+    height: 46px;
+    min-height: 46px;
+    font-size: 16px !important;
+    padding: 8px 36px 8px 38px;
+    line-height: normal;
+    box-sizing: border-box;
+  }
+
+  .orders-reset-btn {
+    height: 46px;
+    min-height: 46px;
+    padding: 0 14px;
+    font-size: 0.85rem;
+    box-sizing: border-box;
+  }
+
+  .orders-hold-hint-bar {
+    padding: 8px 12px;
+    font-size: 0.78rem;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .orders-selection-actions-bar {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .orders-select-toggle-btn,
+  .orders-select-all-btn {
+    flex: 1;
+    justify-content: center;
+    height: 36px;
+    font-size: 0.82rem;
   }
 }
 

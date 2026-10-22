@@ -21,6 +21,7 @@ import {
   Calendar,
   CheckCircle2,
   Settings,
+  BarChart3,
 } from 'lucide-react';
 
 interface AnalyticsData {
@@ -157,8 +158,90 @@ export default function VendorDashboardPage() {
     );
   }
 
-  // Calculate maximum revenue day for the timeline sparkline
+  // Visualization calculations & sparkline data
+  const revenueTrendPoints = data?.dailyTimeline?.map((d) => d.revenue) || [0];
+  const ordersTrendPoints = data?.dailyTimeline?.map((d) => d.orders) || [0];
   const maxDayRevenue = Math.max(1, ...(data?.dailyTimeline?.map((d) => d.revenue) || [1]));
+  const maxDayOrders = Math.max(1, ...(data?.dailyTimeline?.map((d) => d.orders) || [1]));
+  const totalTimelineRev = data?.dailyTimeline?.reduce((sum, d) => sum + d.revenue, 0) || 0;
+  const avgDayRevenue = data?.dailyTimeline && data.dailyTimeline.length > 0 ? totalTimelineRev / data.dailyTimeline.length : 0;
+  const avgLinePercent = Math.min(90, Math.max(10, Math.round((avgDayRevenue / maxDayRevenue) * 100)));
+
+  // Sparkline area & path computation
+  const getAreaSparkline = (points: number[], width = 220, height = 44) => {
+    if (!points || points.length === 0) return { linePath: '', areaPath: '', lastX: 0, lastY: 0 };
+    const max = Math.max(...points, 1);
+    const min = Math.min(...points, 0);
+    const range = max - min || 1;
+    const padding = 4;
+    const availHeight = height - padding * 2;
+
+    const coords = points.map((val, idx) => {
+      const x = points.length === 1 ? width / 2 : (idx / (points.length - 1)) * width;
+      const y = height - padding - ((val - min) / range) * availHeight;
+      return { x, y };
+    });
+
+    if (coords.length === 1) {
+      return {
+        linePath: `M 0,${coords[0].y} L ${width},${coords[0].y}`,
+        areaPath: `M 0,${coords[0].y} L ${width},${coords[0].y} L ${width},${height} L 0,${height} Z`,
+        lastX: coords[0].x,
+        lastY: coords[0].y,
+      };
+    }
+
+    const linePath = coords.reduce((acc, pt, i) => `${acc} ${i === 0 ? 'M' : 'L'} ${pt.x.toFixed(1)},${pt.y.toFixed(1)}`, '');
+    const areaPath = `${linePath} L ${width},${height} L 0,${height} Z`;
+    const lastPt = coords[coords.length - 1] || { x: width, y: height / 2 };
+
+    return { linePath, areaPath, lastX: lastPt.x, lastY: lastPt.y };
+  };
+
+  const { linePath, areaPath, lastX, lastY } = getAreaSparkline(revenueTrendPoints.slice(-14), 220, 44);
+
+  // Circular Retention Gauge for Customer Reach
+  const renderRetentionRing = (pct: number) => {
+    const clampedPct = Math.min(100, Math.max(0, pct));
+    const radius = 20;
+    const circumference = 2 * Math.PI * radius; // ~125.66
+    const strokeDashoffset = circumference - (clampedPct / 100) * circumference;
+
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <svg width="52" height="52" viewBox="0 0 52 52" style={{ transform: 'rotate(-90deg)', flexShrink: 0 }}>
+          <circle
+            cx="26"
+            cy="26"
+            r={radius}
+            fill="transparent"
+            stroke="var(--color-light-green)"
+            strokeWidth="5"
+          />
+          <circle
+            cx="26"
+            cy="26"
+            r={radius}
+            fill="transparent"
+            stroke="var(--primary)"
+            strokeWidth="5"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+          />
+        </svg>
+        <div>
+          <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1 }}>
+            {clampedPct}%
+          </div>
+          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+            Repeat Customer Rate
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="dashboard-page-container">
@@ -261,6 +344,19 @@ export default function VendorDashboardPage() {
           <ArrowRight size={16} className="dashboard-shortcut-arrow" />
         </Link>
 
+        <Link href="/dashboard/reports" className="dashboard-shortcut-card">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div className="dashboard-shortcut-icon">
+              <BarChart3 size={22} />
+            </div>
+            <div>
+              <div className="dashboard-shortcut-title">Business Reports</div>
+              <div className="dashboard-shortcut-desc">Specialized statements &amp; audits</div>
+            </div>
+          </div>
+          <ArrowRight size={16} className="dashboard-shortcut-arrow" />
+        </Link>
+
         <Link href="/dashboard/settings" className="dashboard-shortcut-card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <div className="dashboard-shortcut-icon">
@@ -275,125 +371,310 @@ export default function VendorDashboardPage() {
         </Link>
       </section>
 
-      {/* 3. Primary KPI Performance Stats (4 Cards) */}
+      {/* 3. Primary KPI Performance Stats (Redesigned 4 Stat Panels) */}
       <section className="dashboard-kpi-grid" aria-label="Key Performance Indicators">
         {/* Card 1: Total Revenue */}
-        <Link href="/dashboard/reports/revenue" className="dashboard-kpi-card">
+        <div className="dashboard-kpi-card is-static">
           <div>
             <div className="dashboard-kpi-top">
-              <span className="dashboard-kpi-label">Gross Revenue</span>
-              <span className="dashboard-kpi-badge">
-                <TrendingUp size={12} />
-                Sales
-              </span>
-            </div>
-            <div className="dashboard-kpi-value accent-primary">
-              {currency}{data?.revenueSummary?.totalRevenue?.toFixed(2) || '0.00'}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="dashboard-kpi-icon-pill">
+                  <TrendingUp size={18} />
+                </div>
+                <div>
+                  <div className="dashboard-kpi-label">Gross Revenue</div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Realized sales turnover</div>
+                </div>
+              </div>
               {renderGrowthPill(data?.revenueSummary?.revenueGrowth ?? 0)}
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>vs previous period</span>
             </div>
-            <div style={{ marginTop: '12px', fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
+
+            <div className="dashboard-kpi-value-row">
+              <div className="dashboard-kpi-value accent-primary">
+                {currency}{data?.revenueSummary?.totalRevenue?.toFixed(2) || '0.00'}
+              </div>
+            </div>
+
+            {/* Embedded SVG Area Sparkline */}
+            <div className="dashboard-kpi-viz-container">
+              <svg width="100%" height="44" viewBox="0 0 220 44" preserveAspectRatio="none" style={{ overflow: 'visible' }}>
+                <defs>
+                  <linearGradient id="kpi-rev-grad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.28" />
+                    <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+                {areaPath && <path d={areaPath} fill="url(#kpi-rev-grad)" />}
+                {linePath && <path d={linePath} fill="none" stroke="var(--primary)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />}
+                {lastX > 0 && <circle cx={lastX} cy={lastY} r="3.5" fill="var(--primary)" stroke="var(--bg-card)" strokeWidth="2" />}
+              </svg>
+            </div>
+          </div>
+
+          <div className="dashboard-kpi-submetrics">
+            <div className="dashboard-kpi-submetrics-item">
+              <span className="dashboard-kpi-dot" />
               <span>Subtotal: <strong style={{ color: 'var(--text-main)' }}>{currency}{data?.revenueSummary?.totalSubtotal?.toFixed(2) || '0.00'}</strong></span>
+            </div>
+            <div className="dashboard-kpi-submetrics-item">
+              <span className="dashboard-kpi-dot secondary" />
               <span>Tax: <strong style={{ color: 'var(--text-main)' }}>{currency}{data?.revenueSummary?.totalTax?.toFixed(2) || '0.00'}</strong></span>
             </div>
           </div>
-          <div className="dashboard-kpi-footer">
-            <span>View Revenue Analytics</span>
-            <ChevronRight size={15} />
-          </div>
-        </Link>
+        </div>
 
         {/* Card 2: Total Orders */}
-        <Link href="/dashboard/reports/orders" className="dashboard-kpi-card">
+        <div className="dashboard-kpi-card is-static">
           <div>
             <div className="dashboard-kpi-top">
-              <span className="dashboard-kpi-label">Total Orders</span>
-              <span className="dashboard-kpi-badge">
-                <ShoppingBag size={12} />
-                Volume
-              </span>
-            </div>
-            <div className="dashboard-kpi-value">
-              {data?.revenueSummary?.orderCount || 0}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="dashboard-kpi-icon-pill">
+                  <ShoppingBag size={18} />
+                </div>
+                <div>
+                  <div className="dashboard-kpi-label">Total Orders</div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Completed counter bills</div>
+                </div>
+              </div>
               {renderGrowthPill(data?.revenueSummary?.ordersGrowth ?? 0)}
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>processed orders</span>
             </div>
-            <div style={{ marginTop: '12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-              Peak hour: <strong style={{ color: 'var(--text-main)' }}>{data?.peakHour ? `${data.peakHour.hourLabel} (${data.peakHour.orders} bills)` : 'Evenly spaced'}</strong>
+
+            <div className="dashboard-kpi-value-row">
+              <div className="dashboard-kpi-value">
+                {data?.revenueSummary?.orderCount || 0}
+              </div>
+            </div>
+
+            {/* Embedded Micro Bar Chart */}
+            <div className="dashboard-kpi-viz-container">
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', width: '100%', height: '44px', padding: '2px 0' }}>
+                {ordersTrendPoints.slice(-14).map((cnt, idx) => {
+                  const pct = Math.max(12, Math.round((cnt / maxDayOrders) * 100));
+                  const isPeak = cnt > 0 && cnt === maxDayOrders;
+                  return (
+                    <div key={idx} style={{ flex: 1, height: '100%', display: 'flex', alignItems: 'flex-end' }}>
+                      <div
+                        style={{
+                          width: '100%',
+                          height: `${pct}%`,
+                          borderRadius: '3px 3px 1px 1px',
+                          background: isPeak ? 'var(--primary)' : 'var(--color-light-green)',
+                          transition: 'height 0.25s ease',
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
-          <div className="dashboard-kpi-footer">
-            <span>View Orders Report</span>
-            <ChevronRight size={15} />
+
+          <div className="dashboard-kpi-submetrics">
+            <div className="dashboard-kpi-submetrics-item" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <Clock size={13} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+              <span>Peak: <strong style={{ color: 'var(--text-main)' }}>{data?.peakHour ? data.peakHour.hourLabel : 'Evenly spaced'}</strong></span>
+            </div>
+            <div className="dashboard-kpi-submetrics-item" style={{ flexShrink: 0 }}>
+              <span className="dashboard-kpi-dot" />
+              <span><strong>{data?.peakHour?.orders || 0}</strong> bills</span>
+            </div>
           </div>
-        </Link>
+        </div>
 
         {/* Card 3: Average Order Value (AOV) */}
-        <Link href="/dashboard/reports/revenue" className="dashboard-kpi-card">
+        <div className="dashboard-kpi-card is-static">
           <div>
             <div className="dashboard-kpi-top">
-              <span className="dashboard-kpi-label">Average Order Value</span>
-              <span className="dashboard-kpi-badge">
-                <Award size={12} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="dashboard-kpi-icon-pill">
+                  <Award size={18} />
+                </div>
+                <div>
+                  <div className="dashboard-kpi-label">Average Ticket (AOV)</div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Average spend per receipt</div>
+                </div>
+              </div>
+              <span className="dashboard-kpi-growth neutral">
                 AOV
               </span>
             </div>
-            <div className="dashboard-kpi-value">
-              {currency}{data?.revenueSummary?.averageOrderValue?.toFixed(2) || '0.00'}
+
+            <div className="dashboard-kpi-value-row">
+              <div className="dashboard-kpi-value">
+                {currency}{data?.revenueSummary?.averageOrderValue?.toFixed(2) || '0.00'}
+              </div>
             </div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-              Average basket size per counter receipt
-            </div>
-            <div style={{ marginTop: '12px', fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
-              <span>Total discounts:</span>
-              <strong style={{ color: 'var(--text-main)' }}>{currency}{data?.revenueSummary?.totalDiscount?.toFixed(2) || '0.00'}</strong>
+
+            {/* Visual Efficiency Ratio Meter */}
+            <div className="dashboard-kpi-viz-container">
+              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
+                  <span>Net Basket Realization</span>
+                  <strong style={{ color: 'var(--primary)' }}>
+                    {data?.revenueSummary?.totalSubtotal && data.revenueSummary.totalSubtotal > 0
+                      ? `${Math.max(0, 100 - Number(((data.revenueSummary.totalDiscount / data.revenueSummary.totalSubtotal) * 100).toFixed(0)))}%`
+                      : '100%'}
+                  </strong>
+                </div>
+                <div style={{ width: '100%', height: '8px', borderRadius: '9999px', background: 'var(--color-light-green)', display: 'flex', overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      width: `${data?.revenueSummary?.totalSubtotal && data.revenueSummary.totalSubtotal > 0
+                        ? Math.max(10, 100 - Number(((data.revenueSummary.totalDiscount / data.revenueSummary.totalSubtotal) * 100).toFixed(0)))
+                        : 100}%`,
+                      background: 'var(--primary)',
+                      height: '100%',
+                    }}
+                  />
+                  <div
+                    style={{
+                      width: `${data?.revenueSummary?.totalSubtotal && data.revenueSummary.totalSubtotal > 0
+                        ? Math.min(90, Number(((data.revenueSummary.totalDiscount / data.revenueSummary.totalSubtotal) * 100).toFixed(0)))
+                        : 0}%`,
+                      background: '#f59e0b',
+                      height: '100%',
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
-          <div className="dashboard-kpi-footer">
-            <span>View Ticket Size Trends</span>
-            <ChevronRight size={15} />
+
+          <div className="dashboard-kpi-submetrics">
+            <div className="dashboard-kpi-submetrics-item">
+              <span className="dashboard-kpi-dot" />
+              <span>Discounts: <strong style={{ color: 'var(--text-main)' }}>{currency}{data?.revenueSummary?.totalDiscount?.toFixed(2) || '0.00'}</strong></span>
+            </div>
+            <div className="dashboard-kpi-submetrics-item">
+              <span className="dashboard-kpi-dot secondary" />
+              <span>Basket Rate: <strong style={{ color: 'var(--text-main)' }}>Stable</strong></span>
+            </div>
           </div>
-        </Link>
+        </div>
 
         {/* Card 4: Customer Base & Retention */}
-        <Link href="/dashboard/reports/customers" className="dashboard-kpi-card">
+        <div className="dashboard-kpi-card is-static">
           <div>
             <div className="dashboard-kpi-top">
-              <span className="dashboard-kpi-label">Customer Reach</span>
-              <span className="dashboard-kpi-badge">
-                <Users size={12} />
-                Patrons
-              </span>
-            </div>
-            <div className="dashboard-kpi-value">
-              {data?.customerAnalytics?.totalCustomers || 0}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="dashboard-kpi-icon-pill">
+                  <Users size={18} />
+                </div>
+                <div>
+                  <div className="dashboard-kpi-label">Customer Reach</div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Unique store shoppers</div>
+                </div>
+              </div>
               <span className="dashboard-kpi-growth positive">
-                {data?.customerAnalytics?.repeatRate || 0}% Repeat Rate
+                {data?.customerAnalytics?.repeatRate || 0}% Repeat
               </span>
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>loyalty engagement</span>
             </div>
-            <div style={{ marginTop: '12px', fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
-              <span>Repeat buyers: <strong style={{ color: 'var(--text-main)' }}>{data?.customerAnalytics?.repeatCustomers || 0}</strong></span>
-              <span>Top spender: <strong style={{ color: 'var(--text-main)' }}>{data?.customerAnalytics?.topCustomers?.[0]?.name ? data.customerAnalytics.topCustomers[0].name.slice(0, 10) : '—'}</strong></span>
+
+            <div className="dashboard-kpi-value-row">
+              <div className="dashboard-kpi-value">
+                {data?.customerAnalytics?.totalCustomers || 0}
+              </div>
+            </div>
+
+            {/* Circular Retention Ring */}
+            <div className="dashboard-kpi-viz-container">
+              {renderRetentionRing(data?.customerAnalytics?.repeatRate || 0)}
             </div>
           </div>
-          <div className="dashboard-kpi-footer">
-            <span>View Customer Directory</span>
-            <ChevronRight size={15} />
+
+          <div className="dashboard-kpi-submetrics">
+            <div className="dashboard-kpi-submetrics-item">
+              <span className="dashboard-kpi-dot" />
+              <span>Repeat: <strong style={{ color: 'var(--text-main)' }}>{data?.customerAnalytics?.repeatCustomers || 0} patrons</strong></span>
+            </div>
+            <div className="dashboard-kpi-submetrics-item" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span className="dashboard-kpi-dot secondary" />
+              <span>Top: <strong style={{ color: 'var(--text-main)' }}>{data?.customerAnalytics?.topCustomers?.[0]?.name ? data.customerAnalytics.topCustomers[0].name.slice(0, 10) : '—'}</strong></span>
+            </div>
           </div>
-        </Link>
+        </div>
       </section>
 
-      {/* 4. Deep Operational Analytics (2x2 Grid) */}
+      {/* 4. Deep Operational Analytics (4 Redesigned Visual Panels) */}
       <section className="dashboard-analytics-grid" aria-label="Deep Operational Analytics">
-        {/* Card A: Top Ranked Products */}
-        <Link href="/dashboard/reports/products" className="dashboard-analytics-card">
+        {/* Panel 1: Daily Sales Activity & Cadence */}
+        <div className="dashboard-analytics-card is-static">
+          <div>
+            <div className="dashboard-analytics-card-header">
+              <div className="dashboard-analytics-header-left">
+                <div className="dashboard-analytics-icon-wrap">
+                  <Calendar size={22} />
+                </div>
+                <div>
+                  <h2 className="dashboard-analytics-title">Daily Sales Cadence &amp; Velocity</h2>
+                  <p className="dashboard-analytics-subtitle">Progression, peaks, and daily run-rate over time</p>
+                </div>
+              </div>
+              <span className="dashboard-kpi-badge">
+                Peak: {currency}{maxDayRevenue.toFixed(2)}
+              </span>
+            </div>
+
+            {data?.dailyTimeline && data.dailyTimeline.length > 0 ? (
+              <div className="dashboard-timeline-chart-container">
+                <div className="dashboard-timeline-bars-frame">
+                  {/* Dashed Average Benchmark Line */}
+                  <div className="dashboard-timeline-benchmark-line" style={{ bottom: `${avgLinePercent}%` }}>
+                    <span className="dashboard-timeline-benchmark-tag">Avg: {currency}{avgDayRevenue.toFixed(0)}</span>
+                  </div>
+
+                  {data.dailyTimeline.slice(-14).map((d) => {
+                    const heightPercent = Math.max(10, Math.round((d.revenue / maxDayRevenue) * 100));
+                    const isAboveAvg = d.revenue >= avgDayRevenue && d.revenue > 0;
+                    return (
+                      <div
+                        key={d.date}
+                        className="dashboard-timeline-bar-col"
+                        title={`${d.label}: ${currency}${d.revenue.toFixed(2)} (${d.orders} bills)`}
+                      >
+                        <div
+                          className={`dashboard-timeline-bar-fill ${isAboveAvg ? 'active' : ''}`}
+                          style={{ height: `${heightPercent}%` }}
+                        />
+                        <span className="dashboard-timeline-bar-label">
+                          {d.label.split(' ')[0]}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="dashboard-timeline-stats-cluster">
+                  <div className="dashboard-timeline-stat-chip">
+                    <div className="dashboard-timeline-stat-chip-label">Peak Daily High</div>
+                    <div className="dashboard-timeline-stat-chip-val" style={{ color: 'var(--primary)' }}>
+                      {currency}{maxDayRevenue.toFixed(2)}
+                    </div>
+                  </div>
+                  <div className="dashboard-timeline-stat-chip">
+                    <div className="dashboard-timeline-stat-chip-label">Daily Average Run Rate</div>
+                    <div className="dashboard-timeline-stat-chip-val">
+                      {currency}{avgDayRevenue.toFixed(2)}
+                    </div>
+                  </div>
+                  <div className="dashboard-timeline-stat-chip">
+                    <div className="dashboard-timeline-stat-chip-label">Active Trade Days</div>
+                    <div className="dashboard-timeline-stat-chip-val">
+                      {data.dailyTimeline.filter((d) => d.revenue > 0).length} of {data.dailyTimeline.length}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
+                No daily activity recorded for this selected period.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Panel 2: Top Ranked Products */}
+        <div className="dashboard-analytics-card is-static">
           <div>
             <div className="dashboard-analytics-card-header">
               <div className="dashboard-analytics-header-left">
@@ -402,48 +683,55 @@ export default function VendorDashboardPage() {
                 </div>
                 <div>
                   <h2 className="dashboard-analytics-title">Menu Champions &amp; Top Products</h2>
-                  <p className="dashboard-analytics-subtitle">Highest volume and revenue generators</p>
+                  <p className="dashboard-analytics-subtitle">Highest volume and revenue contributors</p>
                 </div>
               </div>
-              <span className="dashboard-kpi-badge">Top Sellers</span>
+              <span className="dashboard-kpi-badge">
+                {data?.topProducts?.length || 0} Ranked Items
+              </span>
             </div>
 
             {data?.topProducts && data.topProducts.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                {data.topProducts.slice(0, 4).map((p, idx) => (
-                  <div key={p.name} className="dashboard-ranked-item">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                      <span className="dashboard-rank-pill">#{idx + 1}</span>
-                      <div style={{ minWidth: 0 }}>
-                        <div className="dashboard-ranked-name" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {p.name}
+              <div className="dashboard-ranked-list">
+                {data.topProducts.slice(0, 4).map((p, idx) => {
+                  const medalClass = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : 'standard';
+                  return (
+                    <div key={p.name} className="dashboard-ranked-card">
+                      <div className="dashboard-ranked-card-top">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                          <span className={`dashboard-medal-badge ${medalClass}`}>#{idx + 1}</span>
+                          <div className="dashboard-ranked-title-wrap">
+                            <div className="dashboard-ranked-title">{p.name}</div>
+                            <div className="dashboard-ranked-metric-pill">
+                              {p.unitsSold} units sold &bull; {p.percentage}% of gross sales
+                            </div>
+                          </div>
                         </div>
-                        <div className="dashboard-ranked-qty">
-                          {p.unitsSold} units sold ({p.percentage}% of total sales)
+                        <div className="dashboard-ranked-rev-val">
+                          {currency}{p.totalRevenue.toFixed(2)}
                         </div>
                       </div>
+
+                      <div className="dashboard-ranked-share-track">
+                        <div
+                          className="dashboard-ranked-share-fill"
+                          style={{ width: `${Math.min(100, Math.max(6, p.percentage))}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="dashboard-ranked-stats">
-                      <div className="dashboard-ranked-rev">{currency}{p.totalRevenue.toFixed(2)}</div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
-              <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
+              <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
                 No product sales recorded yet in this timeframe.
               </div>
             )}
           </div>
+        </div>
 
-          <div className="dashboard-kpi-footer">
-            <span>Open Comprehensive Product Report</span>
-            <ChevronRight size={16} />
-          </div>
-        </Link>
-
-        {/* Card B: Payment Settlements & Methods */}
-        <Link href="/dashboard/reports/payments" className="dashboard-analytics-card">
+        {/* Panel 3: Payment Settlements & Channels */}
+        <div className="dashboard-analytics-card is-static">
           <div>
             <div className="dashboard-analytics-card-header">
               <div className="dashboard-analytics-header-left">
@@ -452,54 +740,69 @@ export default function VendorDashboardPage() {
                 </div>
                 <div>
                   <h2 className="dashboard-analytics-title">Payment Settlements &amp; Channels</h2>
-                  <p className="dashboard-analytics-subtitle">Counter cash vs digital &amp; online collections</p>
+                  <p className="dashboard-analytics-subtitle">Counter cash vs digital UPI &amp; online reconciliations</p>
                 </div>
               </div>
-              <span className="dashboard-kpi-badge">Collections</span>
+              <span className="dashboard-kpi-badge">
+                Total: {currency}{data?.revenueSummary?.totalRevenue?.toFixed(2) || '0.00'}
+              </span>
             </div>
 
             {data?.paymentBreakdown && data.paymentBreakdown.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                {data.paymentBreakdown.map((pm) => (
-                  <div key={pm.method} className="dashboard-payment-row">
-                    <div className="dashboard-payment-label-row">
-                      <span className="dashboard-payment-name">{pm.label} ({pm.count} bills)</span>
-                      <span className="dashboard-payment-total">
-                        {currency}{pm.total.toFixed(2)} &bull; {pm.percentage}%
-                      </span>
-                    </div>
-                    <div className="dashboard-progress-track">
+              <div className="dashboard-payment-overview">
+                {/* Unified Segmented Strip */}
+                <div className="dashboard-payment-unified-strip">
+                  {data.paymentBreakdown.map((pm) => {
+                    const color =
+                      pm.method === 'PAID_CASH'
+                        ? 'var(--primary)'
+                        : pm.method === 'PAID_ONLINE'
+                        ? '#0284c7'
+                        : pm.method === 'COD'
+                        ? '#d97706'
+                        : '#e11d48';
+                    return (
                       <div
-                        className="dashboard-progress-fill"
+                        key={pm.method}
+                        className="dashboard-payment-strip-segment"
                         style={{
-                          width: `${Math.min(100, pm.percentage)}%`,
-                          background:
-                            pm.method === 'PAID_CASH'
-                              ? 'var(--primary)'
-                              : pm.method === 'PAID_ONLINE'
-                              ? '#0284c7'
-                              : '#d97706',
+                          width: `${Math.max(2, pm.percentage)}%`,
+                          background: color,
                         }}
+                        title={`${pm.label}: ${pm.percentage}% (${currency}${pm.total.toFixed(2)})`}
                       />
+                    );
+                  })}
+                </div>
+
+                {/* 2x2 Grid of Channel Cards */}
+                <div className="dashboard-payment-channels-grid">
+                  {data.paymentBreakdown.map((pm) => (
+                    <div key={pm.method} className="dashboard-payment-channel-card">
+                      <div className="dashboard-payment-channel-card-top">
+                        <span className="dashboard-payment-channel-name">{pm.label}</span>
+                        <span className="dashboard-payment-channel-pct">{pm.percentage}%</span>
+                      </div>
+                      <div className="dashboard-payment-channel-amt">
+                        {currency}{pm.total.toFixed(2)}
+                      </div>
+                      <div className="dashboard-payment-channel-bills">
+                        {pm.count} counter receipt{pm.count === 1 ? '' : 's'}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             ) : (
-              <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
+              <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
                 No payment activity recorded yet.
               </div>
             )}
           </div>
+        </div>
 
-          <div className="dashboard-kpi-footer">
-            <span>Open Payment Settlements Report</span>
-            <ChevronRight size={16} />
-          </div>
-        </Link>
-
-        {/* Card C: Inventory & Stock Health */}
-        <Link href="/dashboard/reports/inventory" className="dashboard-analytics-card">
+        {/* Panel 4: Catalog & Stock Health */}
+        <div className="dashboard-analytics-card is-static">
           <div>
             <div className="dashboard-analytics-card-header">
               <div className="dashboard-analytics-header-left">
@@ -508,7 +811,7 @@ export default function VendorDashboardPage() {
                 </div>
                 <div>
                   <h2 className="dashboard-analytics-title">Catalog &amp; Inventory Health</h2>
-                  <p className="dashboard-analytics-subtitle">Live stock counters, low items &amp; restock alerts</p>
+                  <p className="dashboard-analytics-subtitle">Stock counters, threshold levels &amp; restock alerts</p>
                 </div>
               </div>
               {(data?.inventoryHealth?.lowStockCount ?? 0) > 0 || (data?.inventoryHealth?.outOfStockCount ?? 0) > 0 ? (
@@ -518,115 +821,274 @@ export default function VendorDashboardPage() {
               )}
             </div>
 
-            <div className="dashboard-stock-grid">
-              <div className="dashboard-stock-box">
-                <div className="dashboard-stock-num">{data?.inventoryHealth?.totalProducts || 0}</div>
-                <div className="dashboard-stock-title">Total Catalog Products</div>
-              </div>
-
-              <div className="dashboard-stock-box">
-                <div className="dashboard-stock-num" style={{ color: 'var(--primary)' }}>
-                  {data?.inventoryHealth?.liveCounterProducts || 0}
+            <div className="dashboard-inventory-redesign">
+              {/* 3-Card Health Level Matrix */}
+              <div className="dashboard-inventory-tri-grid">
+                <div className="dashboard-inventory-tri-card safe">
+                  <div className="dashboard-inventory-tri-num safe">
+                    {data?.inventoryHealth?.inStockCount ??
+                      Math.max(
+                        0,
+                        (data?.inventoryHealth?.totalProducts || 0) -
+                          ((data?.inventoryHealth?.lowStockCount || 0) + (data?.inventoryHealth?.outOfStockCount || 0))
+                      )}
+                  </div>
+                  <div className="dashboard-inventory-tri-label">In Stock Safe</div>
                 </div>
-                <div className="dashboard-stock-title">Fast POS Items</div>
-              </div>
 
-              <div className="dashboard-stock-box">
-                <div className="dashboard-stock-num" style={{ color: (data?.inventoryHealth?.lowStockCount ?? 0) > 0 ? '#b91c1c' : 'var(--text-main)' }}>
-                  {data?.inventoryHealth?.lowStockCount || 0}
+                <div className="dashboard-inventory-tri-card warning">
+                  <div className="dashboard-inventory-tri-num warning">
+                    {data?.inventoryHealth?.lowStockCount || 0}
+                  </div>
+                  <div className="dashboard-inventory-tri-label">Low Stock (&le;5)</div>
                 </div>
-                <div className="dashboard-stock-title">Low Stock (&le; 5 units)</div>
-              </div>
 
-              <div className="dashboard-stock-box">
-                <div className="dashboard-stock-num" style={{ color: (data?.inventoryHealth?.outOfStockCount ?? 0) > 0 ? '#b91c1c' : 'var(--text-main)' }}>
-                  {data?.inventoryHealth?.outOfStockCount || 0}
-                </div>
-                <div className="dashboard-stock-title">Out of Stock</div>
-              </div>
-            </div>
-
-            {(data?.inventoryHealth?.lowStockCount ?? 0) > 0 || (data?.inventoryHealth?.outOfStockCount ?? 0) > 0 ? (
-              <div className="dashboard-alert-banner">
-                <AlertCircle size={18} style={{ flexShrink: 0 }} />
-                <span>
-                  {(data?.inventoryHealth?.outOfStockCount ?? 0) > 0
-                    ? `${data?.inventoryHealth?.outOfStockCount} item(s) are completely out of stock.`
-                    : `${data?.inventoryHealth?.lowStockCount} item(s) are running low on inventory.`}
-                </span>
-              </div>
-            ) : (
-              <div className="dashboard-alert-banner-ok">
-                <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
-                <span>All tracked catalog items are currently within safe inventory thresholds.</span>
-              </div>
-            )}
-          </div>
-
-          <div className="dashboard-kpi-footer">
-            <span>Open Inventory Health Manager</span>
-            <ChevronRight size={16} />
-          </div>
-        </Link>
-
-        {/* Card D: Daily Sales Timeline Activity */}
-        <Link href="/dashboard/reports/revenue" className="dashboard-analytics-card">
-          <div>
-            <div className="dashboard-analytics-card-header">
-              <div className="dashboard-analytics-header-left">
-                <div className="dashboard-analytics-icon-wrap">
-                  <Calendar size={22} />
-                </div>
-                <div>
-                  <h2 className="dashboard-analytics-title">Daily Sales Activity Timeline</h2>
-                  <p className="dashboard-analytics-subtitle">Progression and revenue distribution over time</p>
+                <div className="dashboard-inventory-tri-card danger">
+                  <div className="dashboard-inventory-tri-num danger">
+                    {data?.inventoryHealth?.outOfStockCount || 0}
+                  </div>
+                  <div className="dashboard-inventory-tri-label">Out of Stock</div>
                 </div>
               </div>
-              <span className="dashboard-kpi-badge">Timeline</span>
-            </div>
 
-            {data?.dailyTimeline && data.dailyTimeline.length > 0 ? (
-              <div>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', height: '110px', padding: '10px 0 6px', overflowX: 'auto' }}>
-                  {data.dailyTimeline.slice(-14).map((d) => {
-                    const heightPercent = Math.max(8, Math.round((d.revenue / maxDayRevenue) * 100));
-                    return (
-                      <div key={d.date} style={{ flex: 1, minWidth: '18px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }} title={`${d.label}: ${currency}${d.revenue.toFixed(2)} (${d.orders} orders)`}>
-                        <div
-                          style={{
-                            width: '100%',
-                            height: `${heightPercent}%`,
-                            background: d.revenue > 0 ? 'var(--primary)' : 'var(--color-light-green)',
-                            borderRadius: '4px 4px 2px 2px',
-                            transition: 'height 0.3s ease',
-                          }}
-                        />
-                        <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                          {d.label.split(' ')[0]}
+              {/* Counter vs Tracked Inventory Distribution */}
+              <div className="dashboard-inventory-split-bar-box">
+                <div className="dashboard-inventory-split-labels">
+                  <span>Fast Counter Items: <strong>{data?.inventoryHealth?.liveCounterProducts || 0}</strong></span>
+                  <span>Tracked Inventory: <strong>{data?.inventoryHealth?.trackedProducts || 0}</strong></span>
+                </div>
+                <div className="dashboard-inventory-split-track">
+                  <div
+                    style={{
+                      width: `${data?.inventoryHealth?.totalProducts
+                        ? Math.max(10, Math.round(((data.inventoryHealth.liveCounterProducts || 0) / data.inventoryHealth.totalProducts) * 100))
+                        : 50}%`,
+                      background: 'var(--primary)',
+                      height: '100%',
+                    }}
+                  />
+                  <div
+                    style={{
+                      flex: 1,
+                      background: 'var(--color-light-green)',
+                      height: '100%',
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Critical Alert Banner / Ticker */}
+              {(data?.inventoryHealth?.lowStockCount ?? 0) > 0 || (data?.inventoryHealth?.outOfStockCount ?? 0) > 0 ? (
+                <div className="dashboard-alert-banner" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <AlertCircle size={17} style={{ flexShrink: 0 }} />
+                    <span>
+                      {(data?.inventoryHealth?.outOfStockCount ?? 0) > 0
+                        ? `${data?.inventoryHealth?.outOfStockCount} item(s) are completely out of stock.`
+                        : `${data?.inventoryHealth?.lowStockCount} item(s) have reached reorder thresholds.`}
+                    </span>
+                  </div>
+                  {(data?.inventoryHealth?.outOfStockList?.length || 0) > 0 && (
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '2px' }}>
+                      {data?.inventoryHealth?.outOfStockList?.slice(0, 3).map((item) => (
+                        <span key={item._id} className="dashboard-critical-item-chip">
+                          <strong>{item.name}</strong>: 0 units
                         </span>
-                      </div>
-                    );
-                  })}
+                      ))}
+                    </div>
+                  )}
                 </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  <span>Recent 14-day sales cadence</span>
-                  <span>Highest day: <strong style={{ color: 'var(--primary)' }}>{currency}{maxDayRevenue.toFixed(2)}</strong></span>
+              ) : (
+                <div className="dashboard-alert-banner-ok">
+                  <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
+                  <span>All tracked catalog items are currently within safe operational inventory levels.</span>
                 </div>
-              </div>
-            ) : (
-              <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
-                No daily activity recorded for this selected period.
-              </div>
-            )}
+              )}
+            </div>
           </div>
-
-          <div className="dashboard-kpi-footer">
-            <span>Explore Full Daily Revenue Breakdown</span>
-            <ChevronRight size={16} />
-          </div>
-        </Link>
+        </div>
       </section>
+
+      {/* 5. Grouped Business Reports & Statements Hub Directory */}
+      {/* <section className="dashboard-reports-section" aria-label="Grouped Business Reports Hub">
+        <div className="dashboard-reports-header">
+          <div className="dashboard-reports-header-left">
+            <div className="dashboard-reports-icon">
+              <BarChart3 size={22} />
+            </div>
+            <div>
+              <h2 className="dashboard-reports-title">Business Reports &amp; Statements Directory</h2>
+              <p className="dashboard-reports-subtitle">
+                Access deep financial breakdowns, counter traffic patterns, and itemized catalog reports
+              </p>
+            </div>
+          </div>
+          <Link href="/dashboard/reports" className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>Open Reports Hub</span>
+            <ArrowRight size={14} />
+          </Link>
+        </div>
+
+        <div className="dashboard-reports-grid">
+          <Link href="/dashboard/reports/revenue" className="dashboard-report-tile">
+            <div>
+              <div className="dashboard-report-tile-top">
+                <div className="dashboard-report-tile-icon">
+                  <TrendingUp size={20} />
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div className="dashboard-report-tile-name">Revenue &amp; Financials</div>
+                  <div className="dashboard-report-tile-desc">Tax collections, net sales, subtotal &amp; discount audit</div>
+                </div>
+              </div>
+              <div style={{ marginTop: '12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                Gross Sales: <strong style={{ color: 'var(--text-main)' }}>{currency}{data?.revenueSummary?.totalRevenue?.toFixed(2) || '0.00'}</strong>
+              </div>
+            </div>
+            <div className="dashboard-report-tile-bottom">
+              <span className="dashboard-report-tile-stat">
+                {data?.revenueSummary?.revenueGrowth && data.revenueSummary.revenueGrowth >= 0 ? '+' : ''}{data?.revenueSummary?.revenueGrowth ?? 0}%
+              </span>
+              <span className="dashboard-report-tile-action">
+                <span>View Statement</span>
+                <ArrowRight size={14} />
+              </span>
+            </div>
+          </Link>
+
+          <Link href="/dashboard/reports/orders" className="dashboard-report-tile">
+            <div>
+              <div className="dashboard-report-tile-top">
+                <div className="dashboard-report-tile-icon">
+                  <ShoppingBag size={20} />
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div className="dashboard-report-tile-name">Order Volume &amp; Rush Hours</div>
+                  <div className="dashboard-report-tile-desc">Hourly order velocity, counter rush peak &amp; ticket sizes</div>
+                </div>
+              </div>
+              <div style={{ marginTop: '12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                Volume: <strong style={{ color: 'var(--text-main)' }}>{data?.revenueSummary?.orderCount || 0} processed bills</strong>
+              </div>
+            </div>
+            <div className="dashboard-report-tile-bottom">
+              <span className="dashboard-report-tile-stat">
+                {data?.peakHour ? data.peakHour.hourLabel : 'Hourly'}
+              </span>
+              <span className="dashboard-report-tile-action">
+                <span>View Hourly Report</span>
+                <ArrowRight size={14} />
+              </span>
+            </div>
+          </Link>
+
+          <Link href="/dashboard/reports/products" className="dashboard-report-tile">
+            <div>
+              <div className="dashboard-report-tile-top">
+                <div className="dashboard-report-tile-icon">
+                  <Award size={20} />
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div className="dashboard-report-tile-name">Menu Champions &amp; Products</div>
+                  <div className="dashboard-report-tile-desc">Units sold ranking, top revenue driver &amp; menu performance</div>
+                </div>
+              </div>
+              <div style={{ marginTop: '12px', fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                Leader: <strong style={{ color: 'var(--text-main)' }}>{data?.topProducts?.[0]?.name || 'Catalog items'}</strong>
+              </div>
+            </div>
+            <div className="dashboard-report-tile-bottom">
+              <span className="dashboard-report-tile-stat">
+                {data?.topProducts?.[0] ? `${data.topProducts[0].unitsSold} sold` : 'Rankings'}
+              </span>
+              <span className="dashboard-report-tile-action">
+                <span>View Rankings</span>
+                <ArrowRight size={14} />
+              </span>
+            </div>
+          </Link>
+
+          <Link href="/dashboard/reports/payments" className="dashboard-report-tile">
+            <div>
+              <div className="dashboard-report-tile-top">
+                <div className="dashboard-report-tile-icon">
+                  <CreditCard size={20} />
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div className="dashboard-report-tile-name">Payment Settlements</div>
+                  <div className="dashboard-report-tile-desc">Counter cash reconciliation vs digital UPI collections</div>
+                </div>
+              </div>
+              <div style={{ marginTop: '12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                Top Channel: <strong style={{ color: 'var(--text-main)' }}>{data?.paymentBreakdown?.[0]?.label || 'Recorded channels'}</strong>
+              </div>
+            </div>
+            <div className="dashboard-report-tile-bottom">
+              <span className="dashboard-report-tile-stat">
+                {data?.paymentBreakdown?.[0] ? `${data.paymentBreakdown[0].percentage}%` : 'Settlements'}
+              </span>
+              <span className="dashboard-report-tile-action">
+                <span>View Reconciliation</span>
+                <ArrowRight size={14} />
+              </span>
+            </div>
+          </Link>
+
+          <Link href="/dashboard/reports/inventory" className="dashboard-report-tile">
+            <div>
+              <div className="dashboard-report-tile-top">
+                <div className="dashboard-report-tile-icon">
+                  <Package size={20} />
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div className="dashboard-report-tile-name">Catalog &amp; Inventory Health</div>
+                  <div className="dashboard-report-tile-desc">Live counter stock balances, restock alerts &amp; low stock units</div>
+                </div>
+              </div>
+              <div style={{ marginTop: '12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                Catalog Size: <strong style={{ color: 'var(--text-main)' }}>{data?.inventoryHealth?.totalProducts || 0} items</strong>
+              </div>
+            </div>
+            <div className="dashboard-report-tile-bottom">
+              <span className="dashboard-report-tile-stat" style={{ color: ((data?.inventoryHealth?.lowStockCount ?? 0) + (data?.inventoryHealth?.outOfStockCount ?? 0)) > 0 ? '#b91c1c' : 'var(--primary)' }}>
+                {((data?.inventoryHealth?.lowStockCount ?? 0) + (data?.inventoryHealth?.outOfStockCount ?? 0)) > 0
+                  ? `${(data?.inventoryHealth?.lowStockCount ?? 0) + (data?.inventoryHealth?.outOfStockCount ?? 0)} alerts`
+                  : 'Healthy'}
+              </span>
+              <span className="dashboard-report-tile-action">
+                <span>View Stock Manager</span>
+                <ArrowRight size={14} />
+              </span>
+            </div>
+          </Link>
+
+          <Link href="/dashboard/reports/customers" className="dashboard-report-tile">
+            <div>
+              <div className="dashboard-report-tile-top">
+                <div className="dashboard-report-tile-icon">
+                  <Users size={20} />
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div className="dashboard-report-tile-name">Customer Directory &amp; Loyalty</div>
+                  <div className="dashboard-report-tile-desc">Repeat customer retention rates, patron directory &amp; top spenders</div>
+                </div>
+              </div>
+              <div style={{ marginTop: '12px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                Patrons: <strong style={{ color: 'var(--text-main)' }}>{data?.customerAnalytics?.totalCustomers || 0} registered</strong>
+              </div>
+            </div>
+            <div className="dashboard-report-tile-bottom">
+              <span className="dashboard-report-tile-stat">
+                {data?.customerAnalytics?.repeatRate || 0}% Repeat
+              </span>
+              <span className="dashboard-report-tile-action">
+                <span>View Directory</span>
+                <ArrowRight size={14} />
+              </span>
+            </div>
+          </Link>
+        </div>
+      </section> */}
 
       {/* 5. Recent Orders Live Feed */}
       <section className="dashboard-recent-orders-card" aria-label="Recent Orders Feed">

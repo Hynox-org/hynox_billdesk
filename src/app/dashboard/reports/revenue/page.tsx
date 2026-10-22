@@ -55,20 +55,33 @@ export default function RevenueReportPage() {
       {/* Back button & Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
         <div>
-          <Link
-            href="/dashboard"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '0.85rem',
-              color: 'var(--text-muted)',
-              textDecoration: 'none',
-              marginBottom: '8px',
-            }}
-          >
-            <ArrowLeft size={16} /> Back to Dashboard
-          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <Link
+              href="/dashboard/reports"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                fontSize: '0.85rem',
+                color: 'var(--primary)',
+                fontWeight: 600,
+                textDecoration: 'none',
+              }}
+            >
+              <ArrowLeft size={15} /> Reports Hub
+            </Link>
+            <span style={{ color: 'var(--border-medium)', fontSize: '0.8rem' }}>/</span>
+            <Link
+              href="/dashboard"
+              style={{
+                fontSize: '0.82rem',
+                color: 'var(--text-muted)',
+                textDecoration: 'none',
+              }}
+            >
+              Dashboard
+            </Link>
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{

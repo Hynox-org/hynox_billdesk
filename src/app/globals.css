@@ -5901,7 +5901,7 @@ nextjs-portal,
 /* 2. Operational Action Shortcuts */
 .dashboard-shortcuts-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 14px;
 }
 
@@ -5967,6 +5967,11 @@ nextjs-portal,
 }
 
 /* 3. Primary KPI Cards Grid (4 stat cards) */
+/* ============================================================
+   REDESIGNED ANALYTICS & KPI SYSTEM
+   ============================================================ */
+
+/* 3. Primary KPI Grid (4 Cards) */
 .dashboard-kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -5974,19 +5979,26 @@ nextjs-portal,
 }
 
 .dashboard-kpi-card {
-  padding: 20px;
+  padding: 20px 22px;
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  border-radius: 18px;
+  border-radius: 20px;
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   text-decoration: none;
+  position: relative;
+  overflow: hidden;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.dashboard-kpi-card:hover {
+.dashboard-kpi-card.is-static {
+  cursor: default;
+  user-select: auto;
+}
+
+.dashboard-kpi-card.is-static:hover {
   border-color: var(--border-medium);
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
@@ -5996,38 +6008,47 @@ nextjs-portal,
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 12px;
 }
 
-.dashboard-kpi-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 0.72rem;
-  font-weight: 700;
+.dashboard-kpi-icon-pill {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
   background: var(--color-light-green);
   color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   border: 1px solid var(--border-subtle);
 }
 
 .dashboard-kpi-label {
-  font-size: 0.85rem;
+  font-size: 0.76rem;
   font-weight: 700;
   color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.dashboard-kpi-value-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
 }
 
 .dashboard-kpi-value {
-  font-size: 2.1rem;
+  font-size: 2.15rem;
   font-weight: 800;
   color: var(--text-main);
   line-height: 1.1;
-  letter-spacing: -0.02em;
-  margin-bottom: 8px;
+  letter-spacing: -0.03em;
 }
 
 .dashboard-kpi-value.accent-primary {
@@ -6038,32 +6059,70 @@ nextjs-portal,
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
   padding: 3px 8px;
-  border-radius: 6px;
+  border-radius: 9999px;
+  white-space: nowrap;
 }
 
 .dashboard-kpi-growth.positive {
   background: var(--color-light-green);
   color: var(--primary);
+  border: 1px solid var(--border-subtle);
 }
 
 .dashboard-kpi-growth.negative {
   background: rgba(220, 38, 38, 0.1);
   color: #b91c1c;
+  border: 1px solid rgba(220, 38, 38, 0.2);
 }
 
-.dashboard-kpi-footer {
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-subtle);
+.dashboard-kpi-growth.neutral {
+  background: var(--color-soft-white);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+}
+
+/* Micro Visualizations inside KPI cards */
+.dashboard-kpi-viz-container {
+  margin: 12px 0 10px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+}
+
+/* Sub-metrics pill bar */
+.dashboard-kpi-submetrics {
+  background: var(--color-soft-white);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 8px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--primary);
+  gap: 10px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 10px;
+}
+
+.dashboard-kpi-submetrics-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dashboard-kpi-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
+}
+
+.dashboard-kpi-dot.secondary {
+  background: var(--text-muted);
 }
 
 /* 4. Deep Operational Analytics Grid (2x2) */
@@ -6074,19 +6133,26 @@ nextjs-portal,
 }
 
 .dashboard-analytics-card {
-  padding: 22px;
+  padding: 24px;
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  border-radius: 20px;
+  border-radius: 22px;
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   text-decoration: none;
   transition: all 0.22s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.dashboard-analytics-card:hover {
+.dashboard-analytics-card.is-static {
+  cursor: default;
+  user-select: auto;
+}
+
+.dashboard-analytics-card.is-static:hover {
   border-color: var(--border-medium);
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
@@ -6096,15 +6162,15 @@ nextjs-portal,
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 18px;
-  padding-bottom: 14px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
   border-bottom: 1px solid var(--border-subtle);
 }
 
 .dashboard-analytics-header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .dashboard-analytics-icon-wrap {
@@ -6117,10 +6183,11 @@ nextjs-portal,
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  border: 1px solid var(--border-subtle);
 }
 
 .dashboard-analytics-title {
-  font-size: 1.05rem;
+  font-size: 1.08rem;
   font-weight: 800;
   color: var(--text-main);
   margin: 0;
@@ -6129,31 +6196,145 @@ nextjs-portal,
 .dashboard-analytics-subtitle {
   font-size: 0.8rem;
   color: var(--text-secondary);
-  margin: 0;
-  margin-top: 2px;
+  margin: 2px 0 0;
 }
 
-/* Product list ranked items */
-.dashboard-ranked-item {
+/* Timeline Chart & Cadence Styling */
+.dashboard-timeline-chart-container {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px dashed var(--border-subtle);
+  flex-direction: column;
   gap: 12px;
 }
 
-.dashboard-ranked-item:last-child {
-  border-bottom: none;
+.dashboard-timeline-bars-frame {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 130px;
+  padding: 20px 0 8px;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
-.dashboard-rank-pill {
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
+.dashboard-timeline-benchmark-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--border-medium);
+  pointer-events: none;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.dashboard-timeline-benchmark-tag {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  padding: 0 4px;
+  margin-top: -8px;
+}
+
+.dashboard-timeline-bar-col {
+  flex: 1;
+  min-width: 16px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  position: relative;
+}
+
+.dashboard-timeline-bar-fill {
+  width: 100%;
+  border-radius: 6px 6px 2px 2px;
   background: var(--color-light-green);
-  color: var(--primary);
-  font-size: 0.75rem;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dashboard-timeline-bar-fill.active {
+  background: var(--primary);
+  box-shadow: 0 2px 8px var(--primary-glow);
+}
+
+.dashboard-timeline-bar-col:hover .dashboard-timeline-bar-fill {
+  filter: brightness(0.92);
+  transform: scaleY(1.03);
+}
+
+.dashboard-timeline-bar-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.dashboard-timeline-stats-cluster {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.dashboard-timeline-stat-chip {
+  background: var(--color-soft-white);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.dashboard-timeline-stat-chip-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.dashboard-timeline-stat-chip-val {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-top: 2px;
+}
+
+/* Product Leaderboard Styling */
+.dashboard-ranked-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dashboard-ranked-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--color-soft-white);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.dashboard-ranked-card:hover {
+  border-color: var(--border-medium);
+}
+
+.dashboard-ranked-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dashboard-medal-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  font-size: 0.74rem;
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -6161,122 +6342,242 @@ nextjs-portal,
   flex-shrink: 0;
 }
 
-.dashboard-ranked-name {
-  font-weight: 700;
-  font-size: 0.92rem;
-  color: var(--text-main);
+.dashboard-medal-badge.gold {
+  background: rgba(234, 179, 8, 0.15);
+  color: #b45309;
+  border: 1px solid rgba(234, 179, 8, 0.35);
 }
 
-.dashboard-ranked-stats {
-  text-align: right;
-  flex-shrink: 0;
+.dashboard-medal-badge.silver {
+  background: rgba(148, 163, 184, 0.2);
+  color: #475569;
+  border: 1px solid rgba(148, 163, 184, 0.35);
 }
 
-.dashboard-ranked-rev {
-  font-weight: 800;
-  font-size: 0.95rem;
-  color: var(--text-main);
+.dashboard-medal-badge.bronze {
+  background: rgba(217, 119, 6, 0.15);
+  color: #b45309;
+  border: 1px solid rgba(217, 119, 6, 0.3);
 }
 
-.dashboard-ranked-qty {
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-}
-
-/* Payment breakdown rows */
-.dashboard-payment-row {
-  margin-bottom: 14px;
-}
-
-.dashboard-payment-row:last-child {
-  margin-bottom: 0;
-}
-
-.dashboard-payment-label-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.88rem;
-  margin-bottom: 6px;
-}
-
-.dashboard-payment-name {
-  font-weight: 700;
-  color: var(--text-main);
-}
-
-.dashboard-payment-total {
-  font-weight: 800;
-  color: var(--text-main);
-}
-
-.dashboard-progress-track {
-  width: 100%;
-  height: 8px;
+.dashboard-medal-badge.standard {
   background: var(--color-light-green);
+  color: var(--primary);
+  border: 1px solid var(--border-subtle);
+}
+
+.dashboard-ranked-title-wrap {
+  min-width: 0;
+  flex: 1;
+}
+
+.dashboard-ranked-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard-ranked-metric-pill {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.dashboard-ranked-rev-val {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--primary);
+  white-space: nowrap;
+}
+
+.dashboard-ranked-share-track {
+  width: 100%;
+  height: 6px;
   border-radius: 9999px;
+  background: var(--border-subtle);
   overflow: hidden;
 }
 
-.dashboard-progress-fill {
+.dashboard-ranked-share-fill {
   height: 100%;
   border-radius: 9999px;
-  transition: width 0.4s ease;
+  background: var(--primary);
+  transition: width 0.3s ease;
 }
 
-/* Inventory Health Stats Grid */
-.dashboard-stock-grid {
+/* Payment Settlements Breakdown */
+.dashboard-payment-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dashboard-payment-unified-strip {
+  width: 100%;
+  height: 12px;
+  border-radius: 9999px;
+  overflow: hidden;
+  display: flex;
+  background: var(--color-soft-white);
+  border: 1px solid var(--border-subtle);
+}
+
+.dashboard-payment-strip-segment {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.dashboard-payment-channels-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
-  margin-bottom: 16px;
 }
 
-.dashboard-stock-box {
+.dashboard-payment-channel-card {
+  padding: 14px;
   background: var(--color-soft-white);
   border: 1px solid var(--border-subtle);
   border-radius: 14px;
-  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.dashboard-stock-num {
-  font-size: 1.5rem;
+.dashboard-payment-channel-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dashboard-payment-channel-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.dashboard-payment-channel-pct {
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background: var(--color-light-green);
+  color: var(--primary);
+}
+
+.dashboard-payment-channel-amt {
+  font-size: 1.15rem;
   font-weight: 800;
   color: var(--text-main);
-  line-height: 1.2;
+  line-height: 1.1;
 }
 
-.dashboard-stock-title {
+.dashboard-payment-channel-bills {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+/* Inventory Health Redesign */
+.dashboard-inventory-redesign {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dashboard-inventory-tri-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.dashboard-inventory-tri-card {
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--color-soft-white);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+}
+
+.dashboard-inventory-tri-card.safe {
+  border-color: rgba(8, 127, 91, 0.25);
+  background: var(--color-light-green);
+}
+
+.dashboard-inventory-tri-card.warning {
+  border-color: rgba(245, 158, 11, 0.3);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.dashboard-inventory-tri-card.danger {
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.dashboard-inventory-tri-num {
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.dashboard-inventory-tri-num.safe {
+  color: var(--primary);
+}
+
+.dashboard-inventory-tri-num.warning {
+  color: #b45309;
+}
+
+.dashboard-inventory-tri-num.danger {
+  color: #b91c1c;
+}
+
+.dashboard-inventory-tri-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.03em;
+}
+
+.dashboard-inventory-split-bar-box {
+  padding: 12px 14px;
+  background: var(--color-soft-white);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+}
+
+.dashboard-inventory-split-labels {
+  display: flex;
+  justify-content: space-between;
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--text-secondary);
-  margin-top: 2px;
+  margin-bottom: 6px;
 }
 
-.dashboard-alert-banner {
-  background: rgba(220, 38, 38, 0.08);
-  border: 1px solid rgba(220, 38, 38, 0.25);
-  border-radius: 12px;
-  padding: 10px 14px;
+.dashboard-inventory-split-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--border-subtle);
   display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #991b1b;
-  font-size: 0.82rem;
-  font-weight: 600;
+  overflow: hidden;
 }
 
-.dashboard-alert-banner-ok {
-  background: var(--color-light-green);
-  border: 1px solid var(--border-subtle);
-  border-radius: 12px;
-  padding: 10px 14px;
+.dashboard-critical-item-chip {
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: var(--primary);
-  font-size: 0.82rem;
-  font-weight: 600;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(220, 38, 38, 0.06);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  font-size: 0.8rem;
 }
 
 /* 5. Recent Orders Feed */
@@ -6431,6 +6732,154 @@ nextjs-portal,
 }
 
 /* ============================================================
+   GROUPED REPORTS DIRECTORY (DASHBOARD & REPORTS HUB)
+   ============================================================ */
+.dashboard-reports-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.dashboard-reports-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.dashboard-reports-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-reports-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--color-light-green);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dashboard-reports-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.dashboard-reports-subtitle {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin: 2px 0 0;
+}
+
+.dashboard-reports-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.dashboard-report-tile {
+  background: var(--color-card-subtle, var(--bg-card));
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dashboard-report-tile:hover {
+  border-color: var(--border-medium);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.dashboard-report-tile-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.dashboard-report-tile-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--color-light-green);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.dashboard-report-tile:hover .dashboard-report-tile-icon {
+  transform: scale(1.06);
+}
+
+.dashboard-report-tile-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.3;
+}
+
+.dashboard-report-tile-desc {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
+.dashboard-report-tile-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 0.8rem;
+}
+
+.dashboard-report-tile-stat {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--color-light-green);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.dashboard-report-tile-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.dashboard-report-tile:hover .dashboard-report-tile-action {
+  text-decoration: underline;
+}
+
+/* ============================================================
    RESPONSIVE BREAKPOINTS FOR DASHBOARD
    ============================================================ */
 
@@ -6446,6 +6895,10 @@ nextjs-portal,
 
   .dashboard-analytics-grid {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-reports-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -6503,6 +6956,38 @@ nextjs-portal,
 
   .dashboard-recent-orders-card {
     padding: 16px;
+  }
+
+  .dashboard-reports-section {
+    padding: 16px;
+  }
+
+  .dashboard-reports-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .dashboard-timeline-stats-cluster {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .dashboard-payment-channels-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .dashboard-inventory-tri-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .dashboard-inventory-tri-card {
+    padding: 10px 8px;
+  }
+
+  .dashboard-inventory-tri-num {
+    font-size: 1.25rem;
   }
 
   /* Swap desktop table to mobile row cards */

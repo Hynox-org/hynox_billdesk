@@ -15,8 +15,9 @@ import {
   AlertTriangle,
   Sparkles,
   ShieldAlert,
-  ChevronRight,
   LockKeyhole,
+  BarChart3,
+  ChevronRight,
 } from 'lucide-react';
 import CountryDropdown from '@/components/CountryDropdown';
 
@@ -96,7 +97,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const tenant = auth?.tenant;
   const isPaywallPage = pathname === '/dashboard/paywall';
-  const isDashboard = pathname === '/dashboard' || pathname.startsWith('/dashboard/reports');
+  const isDashboard = pathname === '/dashboard';
+  const isReports = pathname.startsWith('/dashboard/reports');
   const isPOS = pathname === '/dashboard/pos';
   const isCatalog = pathname === '/dashboard/catalog';
   const isOrders = pathname === '/dashboard/orders';
@@ -178,6 +180,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Link href="/dashboard/orders" className={`btn btn-sm ${isOrders ? 'btn-primary' : 'btn-secondary'}`}>
               <Receipt size={15} />
               <span>Orders</span>
+            </Link>
+            <Link href="/dashboard/reports" className={`btn btn-sm ${isReports ? 'btn-primary' : 'btn-secondary'}`}>
+              <BarChart3 size={15} />
+              <span>Reports</span>
             </Link>
             <Link href="/dashboard/settings" className={`btn btn-sm ${isSettings ? 'btn-primary' : 'btn-secondary'}`}>
               <Settings size={15} />

@@ -319,7 +319,9 @@ export default function OrderCreationPage() {
   const activeTaxRate = isTaxEnabled ? Math.max(0, parseFloat(String(taxRate)) || 0) : 0;
   const isTaxIncluded = taxType === 'INCLUDED';
   const taxAmount = isTaxEnabled && activeTaxRate > 0
-    ? Number(((taxableSubtotal * activeTaxRate) / 100).toFixed(2))
+    ? (isTaxIncluded
+        ? Number((taxableSubtotal - (taxableSubtotal / (1 + (activeTaxRate / 100)))).toFixed(2))
+        : Number(((taxableSubtotal * activeTaxRate) / 100).toFixed(2)))
     : 0;
   const totalAmount = isTaxIncluded
     ? Number(taxableSubtotal.toFixed(2))

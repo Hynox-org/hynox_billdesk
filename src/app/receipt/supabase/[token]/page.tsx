@@ -1,7 +1,9 @@
 import { headers } from 'next/headers';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { getAuthenticatedUserAndTenant } from '@/lib/auth';
 import { getPublicReceiptByIdentifier } from '@/lib/supabase';
 import ReceiptView, { ReceiptItemData } from '../../[orderNumber]/ReceiptView';
+import ReceiptUnauthorizedView from '@/components/ReceiptUnauthorizedView';
 
 interface ReceiptPageProps {
   params: Promise<{ token: string }>;
@@ -42,6 +44,12 @@ export default async function SupabaseReceiptPage({ params }: ReceiptPageProps) 
   const displayOrderNumber = order.order_number || clean;
   const receiptUrl = `${base}/receipt/${encodeURIComponent(displayOrderNumber)}`;
   const pdfUrl = `${base}/api/receipts/${encodeURIComponent(displayOrderNumber)}/pdf`;
+
+  // Security Gate: Only authenticated store owners and staff can view the interactive receipt actions
+  const auth = await getAuthenticatedUserAndTenant();
+  if (!auth?.user) {
+    return <ReceiptUnauthorizedView orderNumber={displayOrderNumber} pdfUrl={pdfUrl} />;
+  }
   const customerPhone = String(order.customer_phone || '').replace(/\D/g, '');
 
   const customerGreeting = order.customer_name ? `Dear ${order.customer_name},` : 'Hello,';

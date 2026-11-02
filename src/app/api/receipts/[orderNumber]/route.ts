@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPublicReceiptByIdentifier } from '@/lib/supabase';
 import { generateWhatsAppUrl } from '@/lib/whatsapp';
+import { getAuthenticatedUserAndTenant } from '@/lib/auth';
 
 export async function GET(
   req: NextRequest,
@@ -11,6 +12,18 @@ export async function GET(
     const clean = decodeURIComponent(rawParam || '').trim();
     if (!clean) {
       return NextResponse.json({ error: 'Order number or token is required' }, { status: 400 });
+    }
+
+    // If accessed directly in a browser (e.g. cutting off /pdf), redirect to the proper receipt UI page
+    const acceptsHtml = req.headers.get('accept')?.includes('text/html');
+    if (acceptsHtml) {
+      return NextResponse.redirect(new URL(`/receipt/${encodeURIComponent(clean)}`, req.url));
+    }
+
+    // For programmatic API access, require store authentication
+    const auth = await getAuthenticatedUserAndTenant();
+    if (!auth?.user) {
+      return NextResponse.json({ error: 'Unauthorized: Store authentication required' }, { status: 401 });
     }
 
     const order = await getPublicReceiptByIdentifier(clean);

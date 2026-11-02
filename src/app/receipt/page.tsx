@@ -1,7 +1,9 @@
 import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
+import { getAuthenticatedUserAndTenant } from '@/lib/auth';
 import { getPublicReceiptByIdentifier } from '@/lib/supabase';
 import ReceiptView, { ReceiptItemData } from './[orderNumber]/ReceiptView';
+import ReceiptUnauthorizedView from '@/components/ReceiptUnauthorizedView';
 
 interface ReceiptQueryProps {
   searchParams: Promise<{
@@ -12,6 +14,10 @@ interface ReceiptQueryProps {
 }
 
 export default async function ReceiptQueryPage({ searchParams }: ReceiptQueryProps) {
+  const auth = await getAuthenticatedUserAndTenant();
+  if (!auth?.user) {
+    return <ReceiptUnauthorizedView />;
+  }
   const query = await searchParams;
   const identifier = query.token || query.orderNumber || query.order_number || '';
   const clean = decodeURIComponent(identifier).trim();

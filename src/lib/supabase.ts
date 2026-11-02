@@ -66,6 +66,15 @@ export async function getPublicReceiptByIdentifier(identifier: string) {
   try {
     const byOrderNum = await getPublicReceiptByOrderNumber(clean);
     if (byOrderNum) return byOrderNum;
+
+    // Cross-prefix fallback (ORD- <-> INV-)
+    if (clean.toUpperCase().startsWith('ORD-')) {
+      const altOrderNum = await getPublicReceiptByOrderNumber(clean.replace(/^ORD-/i, 'INV-'));
+      if (altOrderNum) return altOrderNum;
+    } else if (clean.toUpperCase().startsWith('INV-')) {
+      const altOrderNum = await getPublicReceiptByOrderNumber(clean.replace(/^INV-/i, 'ORD-'));
+      if (altOrderNum) return altOrderNum;
+    }
   } catch {
     // Fall through
   }

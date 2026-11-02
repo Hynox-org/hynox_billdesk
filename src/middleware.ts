@@ -11,7 +11,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon') ||
     pathname.startsWith('/api/auth/') ||
-    pathname.startsWith('/api/receipts/') ||
+    (pathname.startsWith('/api/receipts/') && pathname.endsWith('/pdf')) ||
     pathname === '/receipt' ||
     pathname.startsWith('/receipt/') ||
     pathname.startsWith('/api/test-email') ||
@@ -31,6 +31,15 @@ export function middleware(request: NextRequest) {
   const isAdminRoute = pathname.startsWith('/admin') || pathname.startsWith('/api/admin');
 
   if (!token && !hasSupabaseToken) {
+    if (pathname.startsWith('/api/receipts/') && !pathname.endsWith('/pdf')) {
+      const orderNum = pathname.replace('/api/receipts/', '').split('/')[0];
+      const acceptsHtml = request.headers.get('accept')?.includes('text/html');
+      if (acceptsHtml) {
+        return NextResponse.redirect(new URL(`/receipt/${orderNum}`, request.url));
+      }
+      return NextResponse.json({ error: 'Unauthorized: Store authentication required' }, { status: 401 });
+    }
+
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

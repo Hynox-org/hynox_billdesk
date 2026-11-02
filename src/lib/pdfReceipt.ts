@@ -131,8 +131,8 @@ export async function generateReceiptPdf(data: ReceiptPdfData): Promise<Uint8Arr
   const doc = await PDFDocument.create();
 
   // Standard 80mm thermal receipt paper roll width: 280 points (~3.88 inches)
-  const pageWidth = 280;
-  const margin = 16;
+  const pageWidth = 226.77; // Exactly 80mm thermal roll (80 * 72 / 25.4 pt)
+  const margin = 10;
   const contentWidth = pageWidth - margin * 2;
   const leftX = margin;
   const rightX = pageWidth - margin;
@@ -400,10 +400,10 @@ export async function generateReceiptPdf(data: ReceiptPdfData): Promise<Uint8Arr
   // PRICE (right aligned at 210)
   // TOTAL (right aligned at 264)
   page.drawText('QTY', { x: leftX, y: currentY, size: 7.5, font: courierBold, color: colorSecondary });
-  page.drawText('ITEM DESCRIPTION', { x: leftX + 26, y: currentY, size: 7.5, font: courierBold, color: colorSecondary });
+  page.drawText('ITEM DESCRIPTION', { x: leftX + 18, y: currentY, size: 7.5, font: courierBold, color: colorSecondary });
 
   const priceHeaderWidth = courierBold.widthOfTextAtSize('PRICE', 7.5);
-  page.drawText('PRICE', { x: rightX - 52 - priceHeaderWidth, y: currentY, size: 7.5, font: courierBold, color: colorSecondary });
+  page.drawText('PRICE', { x: rightX - 42 - priceHeaderWidth, y: currentY, size: 7.5, font: courierBold, color: colorSecondary });
 
   const totalHeaderWidth = courierBold.widthOfTextAtSize('TOTAL', 7.5);
   page.drawText('TOTAL', { x: rightX - totalHeaderWidth, y: currentY, size: 7.5, font: courierBold, color: colorSecondary });
@@ -430,11 +430,11 @@ export async function generateReceiptPdf(data: ReceiptPdfData): Promise<Uint8Arr
     });
 
     const rawName = safePdfText(item.productName) || 'Item';
-    const maxChars = 20;
+    const maxChars = 16;
 
     if (rawName.length <= maxChars) {
       page.drawText(rawName, {
-        x: leftX + 26,
+        x: leftX + 18,
         y: currentY,
         size: 8,
         font: courierBold,
@@ -446,7 +446,7 @@ export async function generateReceiptPdf(data: ReceiptPdfData): Promise<Uint8Arr
       const line2 = rawName.slice(maxChars, maxChars * 2);
 
       page.drawText(line1, {
-        x: leftX + 26,
+        x: leftX + 18,
         y: currentY,
         size: 8,
         font: courierBold,
@@ -455,7 +455,7 @@ export async function generateReceiptPdf(data: ReceiptPdfData): Promise<Uint8Arr
 
       currentY -= 9.5;
       page.drawText(line2, {
-        x: leftX + 26,
+        x: leftX + 18,
         y: currentY,
         size: 7.5,
         font: courier,
@@ -465,7 +465,7 @@ export async function generateReceiptPdf(data: ReceiptPdfData): Promise<Uint8Arr
 
     const priceW = courier.widthOfTextAtSize(priceStr, 8);
     page.drawText(priceStr, {
-      x: rightX - 52 - priceW,
+      x: rightX - 42 - priceW,
       y: currentY,
       size: 8,
       font: courier,
@@ -486,7 +486,7 @@ export async function generateReceiptPdf(data: ReceiptPdfData): Promise<Uint8Arr
     if (item.sku) {
       const skuStr = `[SKU: ${safePdfText(item.sku)}]`;
       page.drawText(skuStr, {
-        x: leftX + 26,
+        x: leftX + 18,
         y: currentY,
         size: 6.5,
         font: courier,
@@ -613,11 +613,11 @@ export async function generateReceiptPdf(data: ReceiptPdfData): Promise<Uint8Arr
     2, 2, 1, 3, 1, 1, 2, 1, 2, 3, 1, 2, 1, 1, 2, 2, 3, 1, 2, 1, 2, 1, 3, 2,
   ];
   const barcodeHeight = 24;
-  const barcodeTotalWidth = barPattern.reduce((acc, w) => acc + w + 0.8, 0);
+  const barcodeTotalWidth = barPattern.reduce((acc, w) => acc + w * 0.75 + 0.6, 0);
   let bx = (pageWidth - barcodeTotalWidth) / 2;
 
   for (let i = 0; i < barPattern.length; i++) {
-    const barWidth = barPattern[i] * 0.95;
+    const barWidth = barPattern[i] * 0.75;
     if (i % 2 === 0) {
       page.drawRectangle({
         x: bx,
@@ -627,7 +627,7 @@ export async function generateReceiptPdf(data: ReceiptPdfData): Promise<Uint8Arr
         color: colorBlack,
       });
     }
-    bx += barWidth + 0.8;
+    bx += barWidth + 0.6;
   }
 
   currentY -= barcodeHeight + 10;
@@ -675,7 +675,7 @@ export async function generateReceiptPdf(data: ReceiptPdfData): Promise<Uint8Arr
   // --------------------------------------------------------------------------
   // SECTION 7: Thermal Footer & Brand Tagline
   // --------------------------------------------------------------------------
-  const thankYou = '*** THANK YOU FOR YOUR VISIT! ***';
+  const thankYou = '*** THANK YOU FOR YOUR BUSINESS ***';
   const thankYouW = courierBold.widthOfTextAtSize(thankYou, 8);
   page.drawText(thankYou, {
     x: (pageWidth - thankYouW) / 2,
@@ -686,7 +686,7 @@ export async function generateReceiptPdf(data: ReceiptPdfData): Promise<Uint8Arr
   });
   currentY -= 11;
 
-  const retainText = 'Please retain this receipt for your records';
+  const retainText = 'PLEASE VISIT AGAIN';
   const retainW = courier.widthOfTextAtSize(retainText, 7);
   page.drawText(retainText, {
     x: (pageWidth - retainW) / 2,
@@ -697,7 +697,7 @@ export async function generateReceiptPdf(data: ReceiptPdfData): Promise<Uint8Arr
   });
   currentY -= 11;
 
-  const brandText = 'Powered by HYNOX Billing';
+  const brandText = 'POWERED BY HYNOX BILLING';
   const brandW = courier.widthOfTextAtSize(brandText, 6.5);
   page.drawText(brandText, {
     x: (pageWidth - brandW) / 2,

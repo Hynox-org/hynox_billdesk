@@ -108,6 +108,16 @@ export default function RegisterPage() {
         body: JSON.stringify({
           email: formData.email.trim().toLowerCase(),
           type: 'REGISTER',
+          password: formData.password,
+          metadata: {
+            full_name: formData.fullName.trim(),
+            business_name: formData.businessName.trim(),
+            business_type: formData.businessType,
+            phone: formData.phone.trim(),
+            address: formData.address.trim(),
+            currency: formData.currency,
+            country_code: country.dialCode.replace(/\D/g, ''),
+          },
         }),
       });
 
@@ -139,6 +149,16 @@ export default function RegisterPage() {
         body: JSON.stringify({
           email: formData.email.trim().toLowerCase(),
           type: 'REGISTER',
+          password: formData.password,
+          metadata: {
+            full_name: formData.fullName.trim(),
+            business_name: formData.businessName.trim(),
+            business_type: formData.businessType,
+            phone: formData.phone.trim(),
+            address: formData.address.trim(),
+            currency: formData.currency,
+            country_code: country.dialCode.replace(/\D/g, ''),
+          },
         }),
       });
 

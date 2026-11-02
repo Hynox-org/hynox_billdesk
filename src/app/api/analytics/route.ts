@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUserAndTenant } from '@/lib/auth';
-import { Order } from '@/models/Order';
-import { Product } from '@/models/Product';
-import { Category } from '@/models/Category';
+import { rowsFromSupabase } from '@/lib/supabase-mappers';
 
 export async function GET(req: NextRequest) {
   try {
@@ -44,25 +42,23 @@ export async function GET(req: NextRequest) {
       prevEndDate = new Date(startDate);
     }
 
-    const orderFilter: Record<string, any> = { tenantId: auth.tenant._id };
-    if (startDate) {
-      orderFilter.createdAt = { $gte: startDate };
-    }
-
-    // Fetch current period orders, comparison orders, products, and categories in parallel
-    const [orders, prevOrders, allProducts, allCategories] = await Promise.all([
-      Order.find(orderFilter).sort({ createdAt: -1 }).lean(),
-      prevStartDate && prevEndDate
-        ? Order.find({
-            tenantId: auth.tenant._id,
-            createdAt: { $gte: prevStartDate, $lt: prevEndDate },
-          })
-            .select('totalAmount')
-            .lean()
-        : Promise.resolve([]),
-      Product.find({ tenantId: auth.tenant._id }).populate('categoryId', 'name').lean(),
-      Category.find({ tenantId: auth.tenant._id }).lean(),
+    let ordersQuery = auth.supabase.from('orders').select('*').order('created_at', { ascending: false });
+    if (startDate) ordersQuery = ordersQuery.gte('created_at', startDate.toISOString());
+    let previousQuery = auth.supabase.from('orders').select('total_amount');
+    if (prevStartDate && prevEndDate) previousQuery = previousQuery.gte('created_at', prevStartDate.toISOString()).lt('created_at', prevEndDate.toISOString());
+    else previousQuery = previousQuery.limit(0);
+    const [ordersResult, previousResult, productsResult, categoriesResult] = await Promise.all([
+      ordersQuery, previousQuery,
+      auth.supabase.from('products').select('*, category:categories(id,name)'),
+      auth.supabase.from('categories').select('*'),
     ]);
+    if (ordersResult.error || previousResult.error || productsResult.error || categoriesResult.error)
+      throw new Error(ordersResult.error?.message || previousResult.error?.message || productsResult.error?.message || categoriesResult.error?.message);
+    const orders: any[] = rowsFromSupabase(ordersResult.data);
+    const prevOrders: any[] = rowsFromSupabase(previousResult.data);
+    const allProducts: any[] = rowsFromSupabase(productsResult.data).map((product: any) => ({ ...product,
+      categoryId: product.category ? { _id: product.category.id, ...product.category } : product.categoryId }));
+    const allCategories: any[] = rowsFromSupabase(categoriesResult.data);
 
     const prevRevenue = prevOrders.reduce((acc: number, o: any) => acc + (o.totalAmount || 0), 0);
     const prevCount = prevOrders.length;
@@ -148,7 +144,7 @@ export async function GET(req: NextRequest) {
     // Product & Category Sales Performance
     const productStatsMap = new Map<string, { productId?: string; name: string; unitsSold: number; totalRevenue: number }>();
     orders.forEach((o) => {
-      o.items?.forEach((item) => {
+      o.items?.forEach((item: any) => {
         const key = item.productName || 'Unknown Item';
         const existing = productStatsMap.get(key) || {
           productId: item.productId?.toString(),
@@ -214,12 +210,12 @@ export async function GET(req: NextRequest) {
         phone: o.customerPhone || '—',
         ordersCount: 0,
         totalSpent: 0,
-        lastOrderDate: o.createdAt.toISOString(),
+        lastOrderDate: (typeof o.createdAt === 'string' ? o.createdAt : new Date(o.createdAt).toISOString()),
       };
       existing.ordersCount += 1;
       existing.totalSpent = Number((existing.totalSpent + (o.totalAmount || 0)).toFixed(2));
       if (new Date(o.createdAt) > new Date(existing.lastOrderDate)) {
-        existing.lastOrderDate = o.createdAt.toISOString();
+        existing.lastOrderDate = (typeof o.createdAt === 'string' ? o.createdAt : new Date(o.createdAt).toISOString());
       }
       customerMap.set(key, existing);
     });
@@ -258,7 +254,7 @@ export async function GET(req: NextRequest) {
     });
 
     orders.forEach((o) => {
-      o.items?.forEach((item) => {
+      o.items?.forEach((item: any) => {
         if (item.productId) {
           const matchedProd = allProducts.find((p) => p._id.toString() === item.productId?.toString());
           if (matchedProd) {

@@ -1,151 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb';
-import { User } from '@/models/User';
-import { Otp, OtpType } from '@/models/Otp';
-import { sendEmail, buildBrandedEmailHtml } from '@/lib/email';
+import { createPublicClient } from '@/lib/supabase';
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { email, type } = body as { email?: string; type?: OtpType };
-
-    if (!email || !email.trim()) {
-      return NextResponse.json({ error: 'Email address is required' }, { status: 400 });
-    }
-
-    if (!type || !['REGISTER', 'RESET_PASSWORD', 'FORGOT_PASSWORD'].includes(type)) {
-      return NextResponse.json({ error: 'Valid verification type is required' }, { status: 400 });
-    }
-
-    const normalizedEmail = email.toLowerCase().trim();
-
-    // Basic email format check
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(normalizedEmail)) {
+    const { email, type, password, metadata } = await req.json();
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail))
       return NextResponse.json({ error: 'Invalid email address format' }, { status: 400 });
-    }
-
-    await connectToDatabase();
-
-    // Context-specific validations
-    const existingUser = await User.findOne({ email: normalizedEmail });
-
+    const supabase = createPublicClient();
+    let error: { message: string } | null = null;
     if (type === 'REGISTER') {
-      if (existingUser) {
-        return NextResponse.json(
-          { error: 'An account with this email address already exists. Please log in.' },
-          { status: 409 }
-        );
+      if (!password || String(password).length < 6) return NextResponse.json({ error: 'Password must be at least 6 characters long' }, { status: 400 });
+      ({ error } = await supabase.auth.signUp({ email: normalizedEmail, password, options: { data: metadata || {} } }));
+      if (error && error.message.toLowerCase().includes('already registered')) {
+        const resendResult = await supabase.auth.resend({ type: 'signup', email: normalizedEmail });
+        if (!resendResult.error) {
+          error = null;
+        }
       }
     } else if (type === 'FORGOT_PASSWORD') {
-      if (!existingUser) {
-        return NextResponse.json(
-          { error: 'No account was found with this email address.' },
-          { status: 404 }
-        );
-      }
-    } else if (type === 'RESET_PASSWORD') {
-      if (!existingUser) {
-        return NextResponse.json(
-          { error: 'Account not found.' },
-          { status: 404 }
-        );
-      }
+      ({ error } = await supabase.auth.resetPasswordForEmail(normalizedEmail));
+    } else {
+      return NextResponse.json({ error: 'Password-change verification must be requested while signed in' }, { status: 400 });
     }
-
-    // Rate-limiting check: Ensure at least 45 seconds between requests
-    const recentOtp = await Otp.findOne({
-      email: normalizedEmail,
-      type,
-      createdAt: { $gt: new Date(Date.now() - 45 * 1000) },
-    });
-
-    if (recentOtp) {
-      return NextResponse.json(
-        { error: 'Please wait 45 seconds before requesting another verification code.' },
-        { status: 429 }
-      );
-    }
-
-    // Generate 6-digit numeric OTP
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-
-    // Remove any previous active OTPs of this type for this email
-    await Otp.deleteMany({ email: normalizedEmail, type });
-
-    // Store new OTP
-    await Otp.create({
-      email: normalizedEmail,
-      otp: otpCode,
-      type,
-      expiresAt,
-    });
-
-    // Content configuration based on type
-    let subject = 'HYNOX Billing - Email Verification Code';
-    let title = 'Verify Your Email';
-    let actionDesc = 'verify your email and complete your vendor account registration.';
-
-    if (type === 'FORGOT_PASSWORD') {
-      subject = 'HYNOX Billing - Password Reset Code';
-      title = 'Reset Your Password';
-      actionDesc = 'reset your account password. If you did not request this, you can safely ignore this email.';
-    } else if (type === 'RESET_PASSWORD') {
-      subject = 'HYNOX Billing - Security Verification Code';
-      title = 'Password Change Request';
-      actionDesc = 'confirm your password change in your store settings. If you did not perform this action, please secure your account immediately.';
-    }
-
-    const htmlContent = buildBrandedEmailHtml({
-      title,
-      preheader: `Your verification code is ${otpCode}`,
-      contentHtml: `
-        <h2 style="color: #ffffff; margin-top: 0; font-size: 20px;">${title}</h2>
-        <p style="color: #cbd5e1; font-size: 15px;">
-          Use the following 6-digit verification code to ${actionDesc}
-        </p>
-
-        <div style="background: rgba(37, 211, 102, 0.08); border: 1px solid rgba(37, 211, 102, 0.3); border-radius: 12px; padding: 24px; text-align: center; margin: 28px 0;">
-          <div style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #25D366; font-family: monospace;">
-            ${otpCode}
-          </div>
-          <p style="color: #94a3b8; font-size: 13px; margin: 10px 0 0 0;">
-            This code will expire in <strong>10 minutes</strong>.
-          </p>
-        </div>
-
-        <p style="color: #64748b; font-size: 13px; margin-top: 24px;">
-          Never share this code with anyone. HYNOX Billing staff will never ask for your verification code.
-        </p>
-      `,
-      footerNote: 'This is an automated security verification message from HYNOX Billing.',
-    });
-
-    const emailResult = await sendEmail({
-      to: { email: normalizedEmail, name: existingUser?.fullName || 'Valued User' },
-      subject,
-      htmlContent,
-      textContent: `Your HYNOX Billing verification code is ${otpCode}. It expires in 10 minutes.`,
-    });
-
-    if (!emailResult.success) {
-      console.error('[OTP Send Error]:', emailResult.error);
-      return NextResponse.json(
-        { error: 'Failed to dispatch verification email. Please check your email address or try again.' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: `Verification code dispatched to ${normalizedEmail}`,
-    });
-  } catch (err: any) {
-    console.error('[OTP Route Error]:', err);
-    return NextResponse.json(
-      { error: err.message || 'Internal server error while sending verification code' },
-      { status: 500 }
-    );
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ success: true, message: `Verification code dispatched to ${normalizedEmail}` });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Failed to send verification code' }, { status: 500 });
   }
 }

@@ -2,7 +2,7 @@
 
 > Multi-Tenant Cloud POS & Instant WhatsApp E-Receipt SaaS Platform.
 
-Built with **Next.js (App Router)**, **TypeScript**, **MongoDB Atlas (Mongoose)**, and **Vanilla CSS**. Designed with rich aesthetics, curated green color palettes, full dark/light theme support, and responsive floating bottom navigation for mobile and tablet devices.
+Built with **Next.js (App Router)**, **TypeScript**, **Supabase**, and **Vanilla CSS**. Designed with rich aesthetics, curated green color palettes, full dark/light theme support, and responsive floating bottom navigation for mobile and tablet devices.
 
 ---
 
@@ -31,7 +31,7 @@ Built with **Next.js (App Router)**, **TypeScript**, **MongoDB Atlas (Mongoose)*
 
 - **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript
-- **Database**: MongoDB Atlas via Mongoose
+- **Database and Auth**: Supabase Postgres, Auth, and Row Level Security
 - **Styling**: Vanilla CSS (Custom tokens, glassmorphism, responsive breakpoints)
 - **Icons**: Lucide React
 - **Authentication**: JWT HTTP-Only Cookies & Bcrypt.js
@@ -43,7 +43,7 @@ Built with **Next.js (App Router)**, **TypeScript**, **MongoDB Atlas (Mongoose)*
 ### 1. Prerequisites
 
 - [Node.js](https://nodejs.org/) (v18.18+ or v20+)
-- MongoDB Atlas Cluster (or local MongoDB instance)
+- Access to the shared HYNOX Supabase project
 
 ### 2. Installation
 
@@ -66,24 +66,14 @@ cp .env.example .env
 Configure your variables in `.env`:
 
 ```env
-MONGODB_URI="mongodb+srv://<username>:<password>@<cluster>.mongodb.net"
-MONGODB_DB_NAME="whatsapp_saas"
+NEXT_PUBLIC_SUPABASE_URL="https://<project-ref>.supabase.co"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="sb_publishable_..."
 JWT_SECRET="your_secure_random_jwt_secret_token"
 ```
 
-> **Note for MongoDB Atlas**: Ensure your IP address (or `0.0.0.0/0`) is added to your MongoDB Atlas cluster's **Network Access** list.
+### 4. Database and Super Admin
 
-### 4. Initialize Database & Super Admin
-
-Run the database setup script to purge dummy data and create the primary Super Admin account:
-
-```bash
-npm run db:fresh
-```
-
-Default Super Admin Credentials created:
-- **Email**: `admin@saas.com`
-- **Password**: `admin123456`
+Schema migrations and Super Admin provisioning are managed in Supabase. Destructive browser-accessible database reset and seed endpoints are disabled.
 
 ### 5. Run Development Server
 

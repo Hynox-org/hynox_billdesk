@@ -1,9 +1,7 @@
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
-import { connectToDatabase } from './mongodb';
-import { Tenant, ITenant } from '@/models/Tenant';
-import { User, IUser } from '@/models/User';
+import { ACCESS_COOKIE, REFRESH_COOKIE, createPublicClient, createUserClient, throwIfError } from './supabase';
+import { fromSupabase } from './supabase-mappers';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'whatsapp_saas_default_secret_key_change_me';
 const COOKIE_NAME = 'wa_saas_token';
@@ -17,21 +15,19 @@ export interface AuthSession {
   businessName?: string;
 }
 
+export interface ProfileRecord extends Record<string, any> {
+  _id: string; id: string; tenantId?: string; fullName: string; email: string;
+  role: 'SUPER_ADMIN' | 'VENDOR'; isActive: boolean;
+}
+
+export interface TenantRecord extends Record<string, any> {
+  _id: string; id: string; plan: 'FREE_TRIAL' | 'PRO';
+  status: 'ACTIVE' | 'SUSPENDED' | 'EXPIRED'; trialEndsAt: string;
+}
+
 export interface TenantTrialInfo {
-  isExpired: boolean;
-  daysRemaining: number;
-  isPro: boolean;
-  plan: 'FREE_TRIAL' | 'PRO';
-  status: 'ACTIVE' | 'SUSPENDED' | 'EXPIRED';
-  trialEndsAt: Date;
-}
-
-export function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 10);
-}
-
-export function comparePassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash);
+  isExpired: boolean; daysRemaining: number; isPro: boolean;
+  plan: 'FREE_TRIAL' | 'PRO'; status: 'ACTIVE' | 'SUSPENDED' | 'EXPIRED'; trialEndsAt: Date;
 }
 
 export function signAuthToken(payload: AuthSession): string {
@@ -39,68 +35,86 @@ export function signAuthToken(payload: AuthSession): string {
 }
 
 export function verifyAuthToken(token: string): AuthSession | null {
-  try {
-    return jwt.verify(token, JWT_SECRET) as AuthSession;
-  } catch {
-    return null;
-  }
+  try { return jwt.verify(token, JWT_SECRET) as AuthSession; } catch { return null; }
 }
 
 export async function getSession(): Promise<AuthSession | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(COOKIE_NAME)?.value;
-  if (!token) return null;
-  return verifyAuthToken(token);
+  const token = (await cookies()).get(COOKIE_NAME)?.value;
+  return token ? verifyAuthToken(token) : null;
 }
 
-export function computeTrialInfo(tenant: ITenant): TenantTrialInfo {
+export function computeTrialInfo(tenant: TenantRecord): TenantTrialInfo {
   const isPro = tenant.plan === 'PRO' && tenant.status !== 'SUSPENDED';
-  const now = new Date().getTime();
-  const endsAt = new Date(tenant.trialEndsAt).getTime();
-  const diffMs = endsAt - now;
-  const daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-
-  const isExpired = !isPro && diffMs <= 0;
-
-  return {
-    isExpired,
-    daysRemaining: isPro ? 999 : daysRemaining,
-    isPro,
-    plan: tenant.plan,
-    status: isExpired ? 'EXPIRED' : tenant.status,
-    trialEndsAt: tenant.trialEndsAt,
-  };
+  const trialEndsAt = new Date(tenant.trialEndsAt);
+  const daysRemaining = Math.max(0, Math.ceil((trialEndsAt.getTime() - Date.now()) / 86400000));
+  const isExpired = !isPro && daysRemaining === 0;
+  return { isExpired, daysRemaining: isPro ? 999 : daysRemaining, isPro, plan: tenant.plan,
+    status: isExpired ? 'EXPIRED' : tenant.status, trialEndsAt };
 }
 
-export async function getAuthenticatedUserAndTenant(): Promise<{
-  session: AuthSession;
-  user: IUser;
-  tenant: ITenant | null;
-  trialInfo: TenantTrialInfo | null;
-} | null> {
+async function authenticatedClient() {
+  const cookieStore = await cookies();
+  let accessToken = cookieStore.get(ACCESS_COOKIE)?.value;
+  if (!accessToken) return null;
+  let client = createUserClient(accessToken);
+  let { data: { user } } = await client.auth.getUser(accessToken);
+  if (!user) {
+    const refreshToken = cookieStore.get(REFRESH_COOKIE)?.value;
+    if (!refreshToken) return null;
+    const { data, error } = await createPublicClient().auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+    if (error || !data.session) return null;
+    accessToken = data.session.access_token;
+    client = createUserClient(accessToken);
+    user = data.user;
+    try {
+      cookieStore.set(ACCESS_COOKIE, accessToken, authCookieOptions(data.session.expires_in));
+      cookieStore.set(REFRESH_COOKIE, data.session.refresh_token, authCookieOptions(15 * 86400));
+    } catch {}
+  }
+  return { client, user };
+}
+
+export async function getAuthenticatedUserAndTenant() {
+  const auth = await authenticatedClient();
+  if (!auth?.user) return null;
+
   const session = await getSession();
-  if (!session) return null;
+  if (session && session.userId !== auth.user.id) return null;
 
-  await connectToDatabase();
-  const [user, tenantDoc] = await Promise.all([
-    User.findById(session.userId),
-    session.tenantId ? Tenant.findById(session.tenantId) : Promise.resolve(null),
-  ]);
-  if (!user || !user.isActive) return null;
+  const { data: profileRow, error: profileError } = await auth.client
+    .from('profiles')
+    .select('*')
+    .eq('id', auth.user.id)
+    .single();
 
-  let tenant: ITenant | null = tenantDoc;
-  let trialInfo: TenantTrialInfo | null = null;
-
-  if (tenant) {
-    trialInfo = computeTrialInfo(tenant);
-    // Auto-sync status if expired
-    if (trialInfo.isExpired && tenant.status === 'ACTIVE') {
-      tenant.status = 'EXPIRED';
-      await tenant.save();
-    }
+  if (profileError || !profileRow || !profileRow.is_active) return null;
+  const user = fromSupabase<ProfileRecord>(profileRow)!;
+  let tenant: TenantRecord | null = null;
+  if (user.tenantId) {
+    const { data, error } = await auth.client.from('tenants').select('*').eq('id', user.tenantId).single();
+    throwIfError(error);
+    tenant = fromSupabase<TenantRecord>(data);
+  }
+  const trialInfo = tenant ? computeTrialInfo(tenant) : null;
+  if (tenant && trialInfo?.isExpired && tenant.status === 'ACTIVE') {
+    await auth.client.from('tenants').update({ status: 'EXPIRED' }).eq('id', tenant.id);
+    tenant.status = 'EXPIRED';
   }
 
-  return { session, user, tenant, trialInfo };
+  const currentSession: AuthSession = session || {
+    userId: user.id,
+    email: user.email,
+    fullName: user.fullName,
+    role: user.role,
+    tenantId: tenant?.id,
+    businessName: tenant?.businessName,
+  };
+
+  return { session: currentSession, user, tenant, trialInfo, supabase: auth.client };
+}
+
+export function authCookieOptions(maxAge: number) {
+  return { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' as const, path: '/', maxAge };
 }
 
 export { COOKIE_NAME };

@@ -55,6 +55,7 @@ export interface ReceiptViewProps {
   businessPhone?: string;
   whatsappUrl: string;
   receiptUrl: string;
+  pdfUrl?: string;
 }
 
 export default function ReceiptView({
@@ -87,6 +88,7 @@ export default function ReceiptView({
   businessPhone,
   whatsappUrl,
   receiptUrl,
+  pdfUrl,
 }: ReceiptViewProps) {
   const [copied, setCopied] = useState(false);
 
@@ -188,16 +190,18 @@ export default function ReceiptView({
               </a>
 
               {/* Download PDF */}
-              <a
-                href={`/api/receipts/${orderNumber}/pdf`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-secondary receipt-action-btn"
-                title="Download official PDF invoice"
-              >
-                <Download size={16} style={{ color: 'var(--primary)' }} />
-                <span>Download PDF</span>
-              </a>
+              {pdfUrl && (
+                <a
+                  href={pdfUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-secondary receipt-action-btn"
+                  title="Download official PDF invoice"
+                >
+                  <Download size={16} style={{ color: 'var(--primary)' }} />
+                  <span>Download PDF</span>
+                </a>
+              )}
 
               {/* Print Receipt */}
               <button

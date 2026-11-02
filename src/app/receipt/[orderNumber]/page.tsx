@@ -1,132 +1,82 @@
-import React from 'react';
-import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
-import { connectToDatabase } from '@/lib/mongodb';
-import { Order } from '@/models/Order';
-import { Tenant } from '@/models/Tenant';
-import { generateWhatsAppUrl } from '@/lib/whatsapp';
+import { notFound } from 'next/navigation';
+import { getPublicReceiptByIdentifier } from '@/lib/supabase';
 import ReceiptView, { ReceiptItemData } from './ReceiptView';
 
-interface ReceiptPageProps {
-  params: Promise<{ orderNumber: string }>;
-}
+export default async function PublicReceiptPage({ params }: { params: Promise<{ orderNumber: string }> }) {
+  const clean = decodeURIComponent((await params).orderNumber || '').trim();
+  if (!clean) return notFound();
 
-export default async function PublicReceiptPage(props: ReceiptPageProps) {
-  const { orderNumber } = await props.params;
-  if (!orderNumber) return notFound();
-
-  const cleanOrderNumber = decodeURIComponent(orderNumber).trim();
-  await connectToDatabase();
-
-  const [headerList, order] = await Promise.all([
-    headers(),
-    Order.findOne({
-      $or: [{ orderNumber: cleanOrderNumber }, { orderNumber: cleanOrderNumber.toUpperCase() }],
-    })
-      .populate('tenantId')
-      .lean() as Promise<any>,
-  ]);
-
+  const order = await getPublicReceiptByIdentifier(clean);
   if (!order) return notFound();
 
-  const tenant: any =
-    order.tenantId && typeof order.tenantId === 'object'
-      ? order.tenantId
-      : await Tenant.findById(order.tenantId).lean();
-
-  const businessName = tenant?.businessName || 'Business Receipt';
-  const businessAddress = tenant?.address || '';
-  const businessPhone = tenant?.phone || '';
-  const currency = order.currency || tenant?.currency || '$';
-
-  const showGst = tenant ? Boolean(tenant.showGstOnReceipt) : Boolean(order.gstNumber);
-  const gstNumber = order.gstNumber || (tenant ? tenant.gstNumber : '');
-
-  const showGoogle = tenant ? Boolean(tenant.showGoogleReviewOnReceipt) : Boolean(order.googleProfileUrl);
-  const googleProfileUrl = order.googleProfileUrl || (tenant ? tenant.googleProfileUrl : '');
-
+  const headerList = await headers();
   const host = headerList.get('x-forwarded-host') || headerList.get('host') || 'localhost:3000';
   const proto = headerList.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
-  const envAppUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL;
-  const baseUrl = envAppUrl ? envAppUrl.replace(/\/+$/, '') : `${proto}://${host}`;
-  const receiptUrl = `${baseUrl}/receipt/${order.orderNumber}`;
-  const pdfUrl = `${baseUrl}/api/receipts/${order.orderNumber}/pdf`;
+  const base = (process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || `${proto}://${host}`).replace(/\/+$/, '');
 
-  const { url: whatsappUrl } = generateWhatsAppUrl({
-    businessName,
-    businessType: tenant?.businessType || '',
-    businessPhone,
-    businessAddress,
-    currency,
-    orderNumber: order.orderNumber,
-    customerName: order.customerName,
-    customerPhone: order.customerPhone,
-    createdAt: order.createdAt,
-    items: (order.items || []).map((i: any) => ({
-      productName: i.productName,
-      quantity: i.quantity,
-      unitPrice: i.unitPrice,
-      lineTotal: i.lineTotal,
-      sku: i.sku || '',
-    })),
-    subtotal: order.subtotal,
-    tax: order.tax,
-    discount: order.discount,
-    totalAmount: order.totalAmount,
-    paymentStatus: order.paymentStatus,
-    paymentMethod: order.paymentMethod,
-    paymentReference: order.paymentReference,
-    employee: order.employee || tenant?.defaultEmployee,
-    notes: order.notes,
-    defaultCountryCode: tenant?.countryCode || '91',
-    gstNumber,
-    showGstOnReceipt: showGst,
-    googleProfileUrl,
-    showGoogleReviewOnReceipt: showGoogle,
-    receiptUrl,
-    pdfUrl,
+  const displayOrderNumber = order.order_number || clean;
+  const receiptUrl = `${base}/receipt/${encodeURIComponent(displayOrderNumber)}`;
+  const pdfUrl = `${base}/api/receipts/${encodeURIComponent(displayOrderNumber)}/pdf`;
+  const phone = String(order.customer_phone || '').replace(/\D/g, '');
+
+  const customerGreeting = order.customer_name ? `Dear ${order.customer_name},` : 'Hello,';
+  const businessLabel = order.business_name || 'our store';
+  const currencySymbol = order.currency || '$';
+  const totalStr = Number(order.total_amount || 0).toFixed(2);
+  const whatsappText = [
+    customerGreeting,
+    `Thank you for your order with *${businessLabel}*! (Order #${displayOrderNumber})`,
+    `*Total Amount:* ${currencySymbol}${totalStr}`,
+    `View or download your digital receipt:\n${receiptUrl}`,
+  ].join('\n\n');
+  const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(whatsappText)}`;
+
+  const items: ReceiptItemData[] = (order.items || []).map((item: any) => {
+    const qty = Number(item.quantity || 1);
+    const unitPrice = Number(item.unit_price || item.unitPrice || 0);
+    const lineTotal = Number(item.line_total || item.lineTotal || (qty * unitPrice));
+    return {
+      productName: String(item.product_name || item.name || item.productName || 'Custom Item'),
+      quantity: qty,
+      unitPrice,
+      lineTotal,
+      sku: item.sku || undefined,
+    };
   });
-
-  const serializedItems: ReceiptItemData[] = (order.items || []).map((i: any) => ({
-    productName: i.productName || 'Custom Item',
-    quantity: Number(i.quantity || 1),
-    unitPrice: Number(i.unitPrice || 0),
-    lineTotal: Number(i.lineTotal || 0),
-    sku: i.sku || undefined,
-    discount: i.discount ? Number(i.discount) : undefined,
-  }));
 
   return (
     <ReceiptView
-      orderNumber={order.orderNumber}
-      customerName={order.customerName || 'Valued Customer'}
-      customerPhone={order.customerPhone || ''}
-      customerEmail={order.customerEmail || undefined}
+      orderNumber={displayOrderNumber}
+      customerName={order.customer_name || 'Valued Customer'}
+      customerPhone={phone}
+      customerEmail={order.customer_email || undefined}
       notes={order.notes || undefined}
-      createdAt={order.createdAt ? new Date(order.createdAt).toISOString() : new Date().toISOString()}
-      items={serializedItems}
+      createdAt={order.created_at || new Date().toISOString()}
+      items={items}
       subtotal={Number(order.subtotal || 0)}
       tax={Number(order.tax || 0)}
-      taxRate={order.taxRate !== undefined ? order.taxRate : (tenant?.defaultTaxRate !== undefined ? tenant.defaultTaxRate : (order.tax > 0 ? 18 : 0))}
-      taxName={order.taxName || order.tax1Name || tenant?.defaultTaxName || 'GST'}
-      isTaxIncluded={Boolean(order.isTaxIncluded || order.taxType === 'INCLUDED')}
-      taxType={order.taxType || (order.isTaxIncluded ? 'INCLUDED' : 'EXCLUDED')}
+      taxRate={order.tax_rate !== undefined ? Number(order.tax_rate) : undefined}
+      taxName={order.tax_name || 'GST'}
+      isTaxIncluded={Boolean(order.is_tax_included)}
+      taxType={order.tax_type}
       discount={Number(order.discount || 0)}
-      totalAmount={Number(order.totalAmount || 0)}
-      currency={currency}
-      paymentStatus={order.paymentStatus || 'PAID'}
-      paymentMethod={order.paymentMethod || undefined}
-      paymentReference={order.paymentReference || undefined}
-      paymentId={order.paymentId || undefined}
-      gstNumber={gstNumber || undefined}
-      showGst={showGst}
-      googleProfileUrl={googleProfileUrl || undefined}
-      showGoogle={showGoogle}
-      businessName={businessName}
-      businessAddress={businessAddress || undefined}
-      businessPhone={businessPhone || undefined}
+      totalAmount={Number(order.total_amount || 0)}
+      currency={currencySymbol}
+      paymentStatus={order.payment_status || 'PAID'}
+      paymentMethod={order.payment_method || undefined}
+      paymentReference={order.payment_reference || undefined}
+      paymentId={order.payment_id || undefined}
+      gstNumber={order.gst_number || undefined}
+      showGst={Boolean(order.show_gst)}
+      googleProfileUrl={order.google_profile_url || undefined}
+      showGoogle={Boolean(order.show_google)}
+      businessName={businessLabel}
+      businessAddress={order.business_address || undefined}
+      businessPhone={order.business_phone || undefined}
       whatsappUrl={whatsappUrl}
       receiptUrl={receiptUrl}
+      pdfUrl={pdfUrl}
     />
   );
 }

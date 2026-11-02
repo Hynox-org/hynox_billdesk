@@ -12,9 +12,9 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/favicon') ||
     pathname.startsWith('/api/auth/') ||
     pathname.startsWith('/api/receipts/') ||
+    pathname === '/receipt' ||
     pathname.startsWith('/receipt/') ||
     pathname.startsWith('/api/test-email') ||
-    pathname.startsWith('/api/seed') ||
     pathname === '/' ||
     pathname === '/login' ||
     pathname === '/register'
@@ -22,14 +22,15 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Read Session Cookie
+  // 2. Read Session Cookies (wa_saas_token or Supabase access token)
   const token = request.cookies.get(COOKIE_NAME)?.value;
+  const hasSupabaseToken = Boolean(request.cookies.get('hynox_access_token')?.value);
 
   // Protected paths: /dashboard, /admin, and internal APIs
   const isDashboardRoute = pathname.startsWith('/dashboard');
   const isAdminRoute = pathname.startsWith('/admin') || pathname.startsWith('/api/admin');
 
-  if (!token) {
+  if (!token && !hasSupabaseToken) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -37,25 +38,27 @@ export function middleware(request: NextRequest) {
   }
 
   // 3. Lightweight decode for role-based route guard
-  try {
-    const parts = token.split('.');
-    if (parts.length === 3) {
-      const payloadJson = atob(parts[1]);
-      const session = JSON.parse(payloadJson);
+  if (token) {
+    try {
+      const parts = token.split('.');
+      if (parts.length === 3) {
+        const payloadJson = atob(parts[1]);
+        const session = JSON.parse(payloadJson);
 
-      // Super Admin route guard
-      if (isAdminRoute && session.role !== 'SUPER_ADMIN') {
-        return NextResponse.redirect(new URL('/dashboard/pos', request.url));
-      }
+        // Super Admin route guard
+        if (isAdminRoute && session.role !== 'SUPER_ADMIN') {
+          return NextResponse.redirect(new URL('/dashboard/pos', request.url));
+        }
 
-      // Vendor trying to access admin, or Super Admin navigating vendor dashboard
-      if (isDashboardRoute && session.role === 'SUPER_ADMIN') {
-        return NextResponse.redirect(new URL('/admin', request.url));
+        // Vendor trying to access admin, or Super Admin navigating vendor dashboard
+        if (isDashboardRoute && session.role === 'SUPER_ADMIN') {
+          return NextResponse.redirect(new URL('/admin', request.url));
+        }
       }
+    } catch {
+      // Corrupted token, redirect to login
+      return NextResponse.redirect(new URL('/login', request.url));
     }
-  } catch (e) {
-    // Corrupted token, redirect to login
-    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   return NextResponse.next();

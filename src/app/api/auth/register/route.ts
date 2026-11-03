@@ -17,6 +17,9 @@ export async function POST(req: NextRequest) {
     const { data: tenantRow, error: tenantError } = await supabase.from('tenants').select('*').eq('id', user.tenantId).single();
     throwIfError(tenantError);
     const tenant: any = fromSupabase(tenantRow);
+    supabase.functions.invoke('login-notification', {
+      body: { businessName: tenant.businessName },
+    }).catch(() => undefined);
     const token = signAuthToken({ userId: user.id, email: user.email, fullName: user.fullName, role: 'VENDOR',
       tenantId: tenant.id, businessName: tenant.businessName });
     const response = NextResponse.json({ success: true,

@@ -13,15 +13,6 @@ export async function POST(req: NextRequest) {
 
     const supabase = createUserClient(data.session.access_token);
 
-    // Non-blocking login email notification edge function trigger
-    try {
-      supabase.functions.invoke('login-notification', {
-        body: { device: 'HYNOX Billing Web Portal' },
-      }).catch(() => undefined);
-    } catch {
-      // Notification failure must never block or fail a successful login
-    }
-
     const { data: profileRow, error: profileError } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
     throwIfError(profileError);
     const user: any = fromSupabase(profileRow);

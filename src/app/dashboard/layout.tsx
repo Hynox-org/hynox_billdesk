@@ -65,6 +65,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         setAuth(data);
         if (data.tenant?.isExpired && pathname !== '/dashboard/paywall') {
           router.push('/dashboard/paywall');
+          return;
+        }
+        if (!data.tenant?.isExpired && pathname === '/dashboard/paywall') {
+          router.push('/dashboard');
         }
       } catch (err) {
         router.push('/login');
@@ -114,7 +118,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span>Notice: Only {tenant.daysRemaining} day{tenant.daysRemaining === 1 ? '' : 's'} remaining in your free trial!</span>
           </div>
           <Link href="/dashboard/paywall" className="dashboard-trial-link">
-            Upgrade to Pro <ChevronRight size={14} />
+            View Plans <ChevronRight size={14} />
           </Link>
         </div>
       )}
@@ -140,11 +144,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Trial / Plan Badge */}
           {tenant && (
             <div className="dashboard-badge-container">
-              {tenant.isPro ? (
+              {tenant.isPro && !tenant.isExpired ? (
                 <span className="badge badge-pro">
                   <Sparkles size={11} />
-                  <span className="badge-text-full">PRO Plan</span>
-                  <span className="badge-text-short">PRO</span>
+                  <span className="badge-text-full">{tenant.plan === 'REGULAR' ? 'Regular' : 'Premium'} · {tenant.daysRemaining}d</span>
+                  <span className="badge-text-short">{tenant.plan === 'REGULAR' ? 'REG' : 'PREM'} {tenant.daysRemaining}d</span>
                 </span>
               ) : tenant.isExpired ? (
                 <span className="badge badge-expired">

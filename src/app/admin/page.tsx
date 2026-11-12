@@ -32,9 +32,10 @@ interface TenantItem {
   currency: string;
   address: string;
   status: 'ACTIVE' | 'SUSPENDED' | 'EXPIRED';
-  plan: 'FREE_TRIAL' | 'PRO';
+  plan: 'FREE_TRIAL' | 'REGULAR' | 'PREMIUM' | 'PRO';
   trialStartsAt: string;
   trialEndsAt: string;
+  accessEndsAt: string;
   daysRemaining: number;
   isExpired: boolean;
   isPro: boolean;
@@ -53,7 +54,8 @@ interface Stats {
   totalTenants: number;
   activeTrials: number;
   expiredTrials: number;
-  proSubscribers: number;
+  regularSubscribers: number;
+  premiumSubscribers: number;
   totalOrders: number;
   totalGmv: number;
 }
@@ -252,10 +254,19 @@ export default function SuperAdminPage() {
 
             <div className="glass-panel" style={{ padding: '20px' }}>
               <div style={{ fontSize: '0.85rem', color: 'var(--emerald)', marginBottom: '6px' }}>
-                Pro Subscribers
+                Regular Subscribers
               </div>
               <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--emerald)' }}>
-                {stats.proSubscribers}
+                {stats.regularSubscribers}
+              </div>
+            </div>
+
+            <div className="glass-panel" style={{ padding: '20px' }}>
+              <div style={{ fontSize: '0.85rem', color: 'var(--emerald)', marginBottom: '6px' }}>
+                Premium Subscribers
+              </div>
+              <div style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--emerald)' }}>
+                {stats.premiumSubscribers}
               </div>
             </div>
 
@@ -384,7 +395,7 @@ export default function SuperAdminPage() {
                       <td style={{ padding: '14px 18px' }}>
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                           {t.isPro ? (
-                            <span className="badge badge-pro">PRO</span>
+                            <span className="badge badge-pro">{t.plan === 'REGULAR' ? 'Regular' : 'Premium'}</span>
                           ) : (
                             <span className="badge badge-trial">Trial</span>
                           )}
@@ -402,8 +413,8 @@ export default function SuperAdminPage() {
                       </td>
 
                       <td style={{ padding: '14px 18px' }}>
-                        {t.isPro ? (
-                          <span style={{ color: 'var(--emerald)', fontWeight: 600 }}>Unlimited Pro</span>
+                        {t.isPro && !t.isExpired ? (
+                          <div><span style={{ color: 'var(--emerald)', fontWeight: 700 }}>{t.daysRemaining} days remaining</span><div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Ends {new Date(t.accessEndsAt).toLocaleDateString()}</div></div>
                         ) : t.isExpired ? (
                           <span style={{ color: 'var(--moss-badge-text)', fontWeight: 700 }}>0 Days (Locked)</span>
                         ) : (
@@ -439,19 +450,28 @@ export default function SuperAdminPage() {
                             <Plus size={12} /> +15d Trial
                           </button>
 
-                          {/* Activate Pro */}
-                          {!t.isPro ? (
-                            <button
+                          {/* Subscription activation */}
+                          <button
                               type="button"
-                              onClick={() => handleAction(t.id, 'ACTIVATE_PRO')}
-                              disabled={actionLoading === `${t.id}-ACTIVATE_PRO`}
+                              onClick={() => handleAction(t.id, 'ACTIVATE_REGULAR')}
+                              disabled={actionLoading === `${t.id}-ACTIVATE_REGULAR`}
                               className="btn btn-primary btn-sm"
-                              title="Manually upgrade to Pro plan"
+                              title="Activate Regular for 30 days"
                               style={{ fontSize: '0.75rem', padding: '5px 9px' }}
                             >
-                              <Sparkles size={12} /> Activate Pro
-                            </button>
-                          ) : (
+                              <Sparkles size={12} /> {t.plan === 'REGULAR' ? 'Extend Regular' : 'Regular'} · ₹299
+                          </button>
+                          <button
+                              type="button"
+                              onClick={() => handleAction(t.id, 'ACTIVATE_PREMIUM')}
+                              disabled={actionLoading === `${t.id}-ACTIVATE_PREMIUM`}
+                              className="btn btn-primary btn-sm"
+                              title="Activate Premium for 90 days"
+                              style={{ fontSize: '0.75rem', padding: '5px 9px' }}
+                            >
+                              <Sparkles size={12} /> {t.plan === 'PREMIUM' || t.plan === 'PRO' ? 'Extend Premium' : 'Premium'} · ₹799
+                          </button>
+                          {t.isPro && (
                             <button
                               type="button"
                               onClick={() => handleAction(t.id, 'DOWNGRADE_TRIAL')}

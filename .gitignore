@@ -39,3 +39,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local work artifacts (never commit)
+/tmp/
+/temp/
+/output/
+/screenshots/
+/work-reports/
+/work_report*
+/work-report*
+/daily_work_report*
+/AGENTS.md
+/scripts/mongo-inventory.cjs

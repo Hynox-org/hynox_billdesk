@@ -21,13 +21,14 @@ export interface ProfileRecord extends Record<string, any> {
 }
 
 export interface TenantRecord extends Record<string, any> {
-  _id: string; id: string; plan: 'FREE_TRIAL' | 'PRO';
-  status: 'ACTIVE' | 'SUSPENDED' | 'EXPIRED'; trialEndsAt: string;
+  _id: string; id: string; plan: 'FREE_TRIAL' | 'REGULAR' | 'PREMIUM' | 'PRO';
+  status: 'ACTIVE' | 'SUSPENDED' | 'EXPIRED'; trialEndsAt: string; proExpiresAt?: string | null;
 }
 
 export interface TenantTrialInfo {
   isExpired: boolean; daysRemaining: number; isPro: boolean;
-  plan: 'FREE_TRIAL' | 'PRO'; status: 'ACTIVE' | 'SUSPENDED' | 'EXPIRED'; trialEndsAt: Date;
+  plan: 'FREE_TRIAL' | 'REGULAR' | 'PREMIUM' | 'PRO'; status: 'ACTIVE' | 'SUSPENDED' | 'EXPIRED';
+  trialEndsAt: Date; accessEndsAt: Date;
 }
 
 export function signAuthToken(payload: AuthSession): string {
@@ -44,12 +45,14 @@ export async function getSession(): Promise<AuthSession | null> {
 }
 
 export function computeTrialInfo(tenant: TenantRecord): TenantTrialInfo {
-  const isPro = tenant.plan === 'PRO' && tenant.status !== 'SUSPENDED';
   const trialEndsAt = new Date(tenant.trialEndsAt);
-  const daysRemaining = Math.max(0, Math.ceil((trialEndsAt.getTime() - Date.now()) / 86400000));
-  const isExpired = !isPro && daysRemaining === 0;
-  return { isExpired, daysRemaining: isPro ? 999 : daysRemaining, isPro, plan: tenant.plan,
-    status: isExpired ? 'EXPIRED' : tenant.status, trialEndsAt };
+  const isPro = tenant.plan !== 'FREE_TRIAL';
+  const subscriptionEnd = tenant.proExpiresAt ? new Date(tenant.proExpiresAt) : new Date(0);
+  const accessEndsAt = isPro ? subscriptionEnd : trialEndsAt;
+  const daysRemaining = Math.max(0, Math.ceil((accessEndsAt.getTime() - Date.now()) / 86400000));
+  const isExpired = tenant.status !== 'ACTIVE' || daysRemaining === 0;
+  return { isExpired, daysRemaining, isPro, plan: tenant.plan,
+    status: isExpired ? 'EXPIRED' : tenant.status, trialEndsAt, accessEndsAt };
 }
 
 async function authenticatedClient() {
@@ -96,11 +99,6 @@ export async function getAuthenticatedUserAndTenant() {
     tenant = fromSupabase<TenantRecord>(data);
   }
   const trialInfo = tenant ? computeTrialInfo(tenant) : null;
-  if (tenant && trialInfo?.isExpired && tenant.status === 'ACTIVE') {
-    await auth.client.from('tenants').update({ status: 'EXPIRED' }).eq('id', tenant.id);
-    tenant.status = 'EXPIRED';
-  }
-
   const currentSession: AuthSession = session || {
     userId: user.id,
     email: user.email,

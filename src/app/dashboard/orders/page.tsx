@@ -1756,7 +1756,7 @@ export default function OrdersPage() {
               <span>This action cannot be undone. Associated records will be wiped.</span>
             </div>
 
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '16px' }}>
               <button
                 type="button"
                 onClick={() =>
@@ -1764,7 +1764,15 @@ export default function OrdersPage() {
                 }
                 disabled={deleteConfirm.isDeleting}
                 className="btn btn-secondary"
-                style={{ flex: 1 }}
+                style={{
+                  flex: 1,
+                  background: 'var(--bg-card)',
+                  color: 'var(--text-main)',
+                  border: '1px solid var(--border-medium)',
+                  fontWeight: 600,
+                  padding: '10px 16px',
+                  borderRadius: '10px',
+                }}
               >
                 Cancel
               </button>
@@ -1772,14 +1780,25 @@ export default function OrdersPage() {
                 type="button"
                 onClick={handleConfirmDelete}
                 disabled={deleteConfirm.isDeleting}
-                className="btn btn-primary"
                 style={{
                   flex: 1,
-                  background: 'var(--danger)',
-                  borderColor: 'var(--danger)',
+                  background: '#ef4444',
+                  color: '#ffffff',
+                  border: '1px solid #dc2626',
+                  borderRadius: '10px',
+                  padding: '10px 16px',
+                  fontWeight: 700,
+                  fontSize: '0.92rem',
+                  cursor: deleteConfirm.isDeleting ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 14px rgba(239, 68, 68, 0.3)',
+                  transition: 'all 0.2s ease',
                 }}
               >
-                {deleteConfirm.isDeleting ? 'Deleting...' : 'Delete'}
+                {deleteConfirm.isDeleting ? 'Deleting...' : 'Delete Permanently'}
               </button>
             </div>
           </div>

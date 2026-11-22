@@ -1,185 +1,73 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUserAndTenant } from '@/lib/auth';
-import { Product } from '@/models/Product';
-import { Category } from '@/models/Category';
-
+import { fromSupabase, rowsFromSupabase, toSupabase } from '@/lib/supabase-mappers';
 
 export async function GET(req: NextRequest) {
-  try {
-    const auth = await getAuthenticatedUserAndTenant();
-    if (!auth || !auth.tenant) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { searchParams } = new URL(req.url);
-    const categoryId = searchParams.get('categoryId');
-    const availableOnly = searchParams.get('availableOnly') === 'true';
-
-    const filter: Record<string, any> = { tenantId: auth.tenant._id };
-    if (categoryId) filter.categoryId = categoryId;
-    if (availableOnly) filter.isAvailable = true;
-
-    const products = await Product.find(filter)
-      .populate('categoryId', 'name')
-      .sort({ createdAt: -1 })
-      .lean();
-
-    return NextResponse.json({ success: true, products, currency: auth.tenant.currency || '$' });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Error fetching products' }, { status: 500 });
-  }
+  const auth = await getAuthenticatedUserAndTenant();
+  if (!auth?.tenant) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const params = new URL(req.url).searchParams;
+  let query = auth.supabase.from('products').select('*, category:categories(id,name)').order('created_at', { ascending: false });
+  if (params.get('categoryId')) query = query.eq('category_id', params.get('categoryId')!);
+  if (params.get('availableOnly') === 'true') query = query.eq('is_available', true);
+  const { data, error } = await query;
+  const products = rowsFromSupabase(data).map((p: any) => ({ ...p, categoryId: p.category ? { _id: p.category.id, ...p.category } : p.categoryId }));
+  return error ? NextResponse.json({ error: error.message }, { status: 500 }) : NextResponse.json({ success: true, products, currency: auth.tenant.currency || '$' });
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    const auth = await getAuthenticatedUserAndTenant();
-    if (!auth || !auth.tenant) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    if (auth.trialInfo?.isExpired) {
-      return NextResponse.json(
-        {
-          error: 'TRIAL_EXPIRED',
-          message: 'Your 15-day free trial has expired. Contact support to upgrade.',
-        },
-        { status: 403 }
-      );
-    }
-
-    const {
-      categoryId,
-      name,
-      description,
-      price,
-      sku,
-      isAvailable = true,
-      trackStock = false,
-      stockQuantity = 0,
-      imageUrl,
-    } = await req.json();
-
-    if (!categoryId || !name || price === undefined) {
-      return NextResponse.json(
-        { error: 'Category, Product Name, and Price are required' },
-        { status: 400 }
-      );
-    }
-
-    // Verify category belongs to this tenant
-    const category = await Category.findOne({ _id: categoryId, tenantId: auth.tenant._id });
-    if (!category) {
-      return NextResponse.json({ error: 'Invalid category for this store' }, { status: 400 });
-    }
-
-    const product = await Product.create({
-      tenantId: auth.tenant._id,
-      categoryId,
-      name: name.trim(),
-      description: description ? description.trim() : '',
-      price: Math.max(0, Number(price)),
-      sku: sku ? sku.trim() : '',
-      isAvailable: Boolean(isAvailable),
-      trackStock: Boolean(trackStock),
-      stockQuantity: trackStock ? Math.max(0, parseInt(stockQuantity, 10) || 0) : 0,
-      imageUrl: imageUrl ? imageUrl.trim() : '',
-    });
-
-    return NextResponse.json({ success: true, product }, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Error creating product' }, { status: 500 });
-  }
+  const auth = await getAuthenticatedUserAndTenant();
+  if (!auth?.tenant) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (auth.trialInfo?.isExpired) return NextResponse.json({ error: 'TRIAL_EXPIRED', message: 'Your 15-day free trial has expired. Contact support to upgrade.' }, { status: 403 });
+  const body = await req.json();
+  const categoryId = typeof body.categoryId === 'object' ? body.categoryId?._id || body.categoryId?.id : body.categoryId;
+  if (!categoryId || !body.name || body.price === undefined) return NextResponse.json({ error: 'Category, Product Name, and Price are required' }, { status: 400 });
+  const { data: category } = await auth.supabase.from('categories').select('id').eq('id', categoryId).maybeSingle();
+  if (!category) return NextResponse.json({ error: 'Invalid category for this store' }, { status: 400 });
+  const value = {
+    tenant_id: auth.tenant.id,
+    category_id: categoryId,
+    name: body.name.trim(),
+    description: body.description?.trim() || '',
+    price: Math.max(0, Number(body.price)),
+    sku: body.sku?.trim() || '',
+    is_available: body.isAvailable !== false,
+    track_stock: Boolean(body.trackStock),
+    stock_quantity: body.trackStock ? Math.max(0, parseInt(body.stockQuantity, 10) || 0) : 0,
+    image_url: body.imageUrl?.trim() || '',
+  };
+  const { data, error } = await auth.supabase.from('products').insert(value).select().single();
+  return error ? NextResponse.json({ error: error.message }, { status: 500 }) : NextResponse.json({ success: true, product: fromSupabase(data) }, { status: 201 });
 }
 
 export async function PUT(req: NextRequest) {
-  try {
-    const auth = await getAuthenticatedUserAndTenant();
-    if (!auth || !auth.tenant) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    if (auth.trialInfo?.isExpired) {
-      return NextResponse.json(
-        { error: 'TRIAL_EXPIRED', message: 'Trial expired. Cannot modify products.' },
-        { status: 403 }
-      );
-    }
-
-    const {
-      id,
-      categoryId,
-      name,
-      description,
-      price,
-      sku,
-      isAvailable,
-      trackStock,
-      stockQuantity,
-      imageUrl,
-    } = await req.json();
-
-    if (!id) {
-      return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
-    }
-
-    const updateData: Record<string, any> = {};
-    if (name !== undefined) updateData.name = name.trim();
-    if (description !== undefined) updateData.description = description.trim();
-    if (price !== undefined) updateData.price = Math.max(0, Number(price));
-    if (sku !== undefined) updateData.sku = sku.trim();
-    if (isAvailable !== undefined) updateData.isAvailable = Boolean(isAvailable);
-    if (trackStock !== undefined) updateData.trackStock = Boolean(trackStock);
-    if (stockQuantity !== undefined) updateData.stockQuantity = Math.max(0, parseInt(stockQuantity, 10) || 0);
-    if (imageUrl !== undefined) updateData.imageUrl = imageUrl.trim();
-    if (categoryId) {
-      const category = await Category.findOne({ _id: categoryId, tenantId: auth.tenant._id });
-      if (!category) {
-        return NextResponse.json({ error: 'Invalid category' }, { status: 400 });
+  const auth = await getAuthenticatedUserAndTenant();
+  if (!auth?.tenant) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (auth.trialInfo?.isExpired) return NextResponse.json({ error: 'TRIAL_EXPIRED', message: 'Trial expired. Cannot modify products.' }, { status: 403 });
+  const body = await req.json();
+  if (!body.id) return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
+  const allowed = ['categoryId','name','description','price','sku','isAvailable','trackStock','stockQuantity','imageUrl'];
+  const sanitized: Record<string, any> = {};
+  for (const key of allowed) {
+    if (body[key] !== undefined) {
+      if (key === 'categoryId') {
+        sanitized[key] = typeof body[key] === 'object' ? body[key]?._id || body[key]?.id : body[key];
+      } else {
+        sanitized[key] = body[key];
       }
-      updateData.categoryId = categoryId;
     }
-
-    const product = await Product.findOneAndUpdate(
-      { _id: id, tenantId: auth.tenant._id },
-      updateData,
-      { new: true }
-    );
-
-    if (!product) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
-    }
-
-    return NextResponse.json({ success: true, product });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Error updating product' }, { status: 500 });
   }
+  const changes = toSupabase(sanitized);
+  const { data, error } = await auth.supabase.from('products').update(changes).eq('id', body.id).select().maybeSingle();
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return data ? NextResponse.json({ success: true, product: fromSupabase(data) }) : NextResponse.json({ error: 'Product not found' }, { status: 404 });
 }
 
 export async function DELETE(req: NextRequest) {
-  try {
-    const auth = await getAuthenticatedUserAndTenant();
-    if (!auth || !auth.tenant) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    if (auth.trialInfo?.isExpired) {
-      return NextResponse.json(
-        { error: 'TRIAL_EXPIRED', message: 'Trial expired. Cannot delete products.' },
-        { status: 403 }
-      );
-    }
-
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
-      return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
-    }
-
-    await Product.findOneAndDelete({ _id: id, tenantId: auth.tenant._id });
-
-    return NextResponse.json({ success: true, message: 'Product deleted' });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Error deleting product' }, { status: 500 });
-  }
+  const auth = await getAuthenticatedUserAndTenant();
+  if (!auth?.tenant) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (auth.trialInfo?.isExpired) return NextResponse.json({ error: 'TRIAL_EXPIRED', message: 'Trial expired. Cannot delete products.' }, { status: 403 });
+  const id = new URL(req.url).searchParams.get('id');
+  if (!id) return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
+  const { error } = await auth.supabase.from('products').delete().eq('id', id);
+  return error ? NextResponse.json({ error: error.message }, { status: 500 }) : NextResponse.json({ success: true, message: 'Product deleted' });
 }

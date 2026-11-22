@@ -40,6 +40,8 @@ export async function GET() {
             plan: tenant.plan,
             trialStartsAt: tenant.trialStartsAt,
             trialEndsAt: tenant.trialEndsAt,
+            proExpiresAt: tenant.proExpiresAt,
+            accessEndsAt: trialInfo?.accessEndsAt.toISOString(),
             daysRemaining: trialInfo?.daysRemaining ?? 0,
             isExpired: trialInfo?.isExpired ?? false,
             isPro: trialInfo?.isPro ?? false,

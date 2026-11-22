@@ -75,7 +75,10 @@ export function buildWhatsAppReceiptText(options: ReceiptOptions): string {
     showGoogleReviewOnReceipt,
   } = options;
 
-  const downloadLink = (receiptUrl && receiptUrl.trim()) || (pdfUrl && pdfUrl.trim()) || '';
+  const candidateLink = (pdfUrl && pdfUrl.trim()) || (receiptUrl && receiptUrl.trim()) || '';
+  const downloadLink = candidateLink.includes('/receipt/') && !candidateLink.endsWith('/pdf')
+    ? candidateLink.replace(/\/receipt\//, '/api/receipts/') + '/pdf'
+    : candidateLink;
   const customerGreeting = customerName && customerName.trim() ? customerName.trim() : 'Customer';
   const cleanBusinessName = businessName && businessName.trim() ? businessName.trim() : 'our store';
 

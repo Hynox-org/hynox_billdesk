@@ -59,10 +59,11 @@ interface SettingsData {
     defaultTaxType?: 'EXCLUDED' | 'INCLUDED';
     googleProfileUrl?: string;
     showGoogleReviewOnReceipt?: boolean;
-    plan: 'FREE_TRIAL' | 'PRO';
+    plan: 'FREE_TRIAL' | 'REGULAR' | 'PREMIUM' | 'PRO';
     status: string;
     trialStartsAt: string;
     trialEndsAt: string;
+    proExpiresAt?: string | null;
     daysRemaining: number;
     isExpired: boolean;
     isPro: boolean;
@@ -1057,7 +1058,7 @@ export default function SettingsPage() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   {tenant?.isPro ? (
-                    <span className="badge badge-pro"><Sparkles size={12} /> PRO Plan</span>
+                    <span className="badge badge-pro"><Sparkles size={12} /> {tenant.plan === 'REGULAR' ? 'Regular' : 'Premium'} · {tenant.daysRemaining} Days Left</span>
                   ) : tenant?.isExpired ? (
                     <span className="badge badge-expired">Trial Expired</span>
                   ) : (
@@ -1070,7 +1071,7 @@ export default function SettingsPage() {
                   )}
                 </div>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                  {tenant?.isPro ? 'Full access with no billing limits.' : `Trial expires: ${new Date(tenant?.trialEndsAt || '').toLocaleDateString()}`}
+                  {tenant?.isPro ? `Subscription expires: ${new Date(tenant.proExpiresAt || '').toLocaleDateString()}` : `Trial expires: ${new Date(tenant?.trialEndsAt || '').toLocaleDateString()}`}
                 </div>
               </div>
 

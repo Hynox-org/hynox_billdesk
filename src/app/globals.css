@@ -74,6 +74,11 @@
   --moss-badge-border: rgba(8, 127, 91, 0.25);
   --moss-badge-text: var(--color-primary);
 
+  /* Danger & Destructive Actions */
+  --danger: #ef4444;
+  --danger-hover: #dc2626;
+  --danger-light: rgba(239, 68, 68, 0.12);
+
   --deep-badge-bg: var(--color-light-green);
   --deep-badge-border: rgba(8, 127, 91, 0.45);
   --deep-badge-text: var(--color-black);
@@ -7004,7 +7009,24 @@ nextjs-portal,
 /* PRINT MEDIA QUERY                                                         */
 /* ------------------------------------------------------------------------- */
 
+@page {
+  size: 80mm auto;
+  margin: 0;
+}
+
 @media print {
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+
+  html, body {
+    width: 80mm !important;
+    max-width: 80mm !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
   .receipt-screen-only,
   .dashboard-header,
   .dashboard-nav,
